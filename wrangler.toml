@@ -1,7 +1,11 @@
-name = "diet-behavior-coach-app"
+name = "balance-diet"
 main = "src/worker.js"
 compatibility_date = "2026-07-25"
 account_id = "a6d9cbae720e9a59dc0487fde7b832b7"
+
+[[kv_namespaces]]
+binding = "SYNC_KV"
+id = "b984c2b3dfb14e2f86e3a99c1b0c1475"
 
 # 這個專案目前 CF 帳號裡似乎還沒有正式 Worker 存在
 # 如果之後有加 D1/KV,再補上對應區塊
