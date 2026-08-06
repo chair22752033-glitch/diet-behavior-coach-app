@@ -8,7 +8,8 @@
       "本資料庫僅供飲食衛教參考，不能取代醫師或營養師的專業診斷與處方。",
       "有任何症狀或健康疑慮，請務必優先諮詢醫師或營養師，切勿依本內容自行診斷、調整用藥或大量補充。",
       "content_per_100g 欄位刻意留空 (null)：精確的每 100g 含量需比對經驗證的食品成分資料庫 (如衛福部台灣食品成分資料庫)，本檔不臆測數值。",
-      "dosages 為一般健康成人參考值，實際需求依年齡、性別、體重、活動量與生理狀況 (如懷孕、疾病) 而異。"
+      "dosages 為一般健康成人參考值，實際需求依年齡、性別、體重、活動量與生理狀況 (如懷孕、疾病) 而異。",
+      "discovery_history 為營養科學史實 (發現者、年代)；evidence_source 為可查證的權威機構與指引 (如衛福部DRIs、WHO、NIH ODS、Linus Pauling Institute、AREDS2、DASH/NEJM 1997、MRC/Lancet 1991 等)，非逐字文獻引用。植化素的人體證據多屬初步，已於文字中據實標註。"
     ]
   },
   "nutrients_database": [
@@ -69,7 +70,9 @@
       "synergistic_nutrients": [
         "膳食纖維"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "19世紀化學家確立醣類由碳、氫、氧組成（Carbo-hydrate 意為「碳的水合物」）；20世紀確立葡萄糖為大腦主要燃料。",
+      "evidence_source": "衛福部第八版 DRIs 巨量營養素章；WHO/FAO 醣類攝取建議。"
     },
     {
       "id": "protein",
@@ -128,7 +131,9 @@
       "synergistic_nutrients": [
         "維生素B6"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1838年荷蘭化學家 Mulder 命名 protein（源自希臘文「最重要」）；20世紀確立 9 種必需胺基酸。",
+      "evidence_source": "衛福部第八版 DRIs 蛋白質章；WHO/FAO/UNU 蛋白質與胺基酸需求報告。"
     },
     {
       "id": "lipids_fats",
@@ -200,7 +205,9 @@
         "維生素E",
         "維生素K"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1929年 Burr 夫婦以大鼠實驗證明「必需脂肪酸」存在；Omega-3 的心血管益處由1970年代 Dyerberg 對格陵蘭因紐特人的研究揭開。",
+      "evidence_source": "衛福部第八版 DRIs 脂質章；美國心臟協會（AHA）脂肪攝取建議。"
     },
     {
       "id": "water",
@@ -245,7 +252,9 @@
         "鈉",
         "鉀"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "水為生命之本自古已知；現代生理學確立其約占體重 60%，負責運輸、代謝廢物與體溫調節。",
+      "evidence_source": "衛福部第八版 DRIs 水分與電解質章；歐洲 EFSA 水分攝取建議。"
     },
     {
       "id": "vitamin_a",
@@ -311,7 +320,9 @@
         "維生素E",
         "鋅"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "古埃及即以動物肝臟治夜盲；1913年美國 McCollum 與 Davis 發現「脂溶性因子 A」。",
+      "evidence_source": "美國 NIH 膳食補充品辦公室（ODS）維生素A實況；Linus Pauling Institute 微量營養素資訊中心；衛福部 DRIs。"
     },
     {
       "id": "vitamin_b1",
@@ -367,7 +378,9 @@
       ],
       "antagonistic_nutrients": [
         "酒精"
-      ]
+      ],
+      "discovery_history": "1897年荷蘭醫師 Eijkman 發現白米與腳氣病的關係（1929年諾貝爾獎）；1912年 Casimir Funk 分離出來並創「vitamine」一詞。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "vitamin_b2",
@@ -421,7 +434,9 @@
       "synergistic_nutrients": [],
       "antagonistic_nutrients": [
         "光照"
-      ]
+      ],
+      "discovery_history": "1920–1933年間自牛奶乳清中分離鑑定，因呈黃色螢光而命名 riboflavin。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "vitamin_b3_niacin",
@@ -475,7 +490,9 @@
       "synergistic_nutrients": [
         "色胺酸"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1937年美國 Conrad Elvehjem 證實菸鹼酸可治療糙皮病（pellagra）。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "vitamin_b5_pantothenic",
@@ -532,7 +549,9 @@
       ],
       "supplement_vs_wholefood_notes": "分布極廣，正常飲食幾乎不會缺——不需特別補充。",
       "synergistic_nutrients": [],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1931年美國 Roger Williams 發現，命名自希臘文 pantothen（無所不在）。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "vitamin_b6",
@@ -586,7 +605,9 @@
       "synergistic_nutrients": [
         "蛋白質"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1934年匈牙利裔美籍 Paul György 發現並命名。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "vitamin_b7_biotin",
@@ -640,7 +661,9 @@
       "synergistic_nutrients": [],
       "antagonistic_nutrients": [
         "生蛋白 (avidin)"
-      ]
+      ],
+      "discovery_history": "1930–40年代確認，因與生蛋白造成的皮膚炎有關，早期又稱維生素 H。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "folate_b9",
@@ -695,7 +718,9 @@
         "維生素B12",
         "維生素C"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1931年英國醫師 Lucy Wills 發現菠菜與酵母萃取物可治孕婦貧血（Wills 因子）；1941年自菠菜分離，命名取自拉丁文 folium（葉）。",
+      "evidence_source": "NIH ODS；MRC 神經管缺陷試驗（Lancet, 1991）；衛福部 DRIs。"
     },
     {
       "id": "vitamin_b12",
@@ -740,7 +765,9 @@
         "葉酸",
         "鈣"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1926年 Minot 與 Murphy 以肝臟療法治療惡性貧血（1934年諾貝爾獎）；1950年代 Dorothy Hodgkin 以 X 光繞射解出其結構（後獲諾貝爾獎）。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "vitamin_c",
@@ -796,7 +823,9 @@
       ],
       "antagonistic_nutrients": [
         "加熱"
-      ]
+      ],
+      "discovery_history": "1747年英國海軍軍醫 James Lind 進行史上最早的臨床對照試驗之一，證明柑橘可治壞血病；1932年 Szent-Györgyi 分離出抗壞血酸（1937年諾貝爾獎）。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute；衛福部 DRIs。"
     },
     {
       "id": "vitamin_d",
@@ -847,7 +876,9 @@
         "鎂",
         "維生素K"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1922年 McCollum 發現；同期 Mellanby 以佝僂病研究確立其角色，並發現陽光可促進皮膚合成。",
+      "evidence_source": "NIH ODS；美國內分泌學會臨床指引；衛福部 DRIs。"
     },
     {
       "id": "vitamin_e",
@@ -898,7 +929,9 @@
         "硒",
         "脂質"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1922年美國 Herbert Evans 與 Katharine Bishop 以大鼠生殖實驗發現。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "vitamin_k",
@@ -955,7 +988,9 @@
       ],
       "antagonistic_nutrients": [
         "抗凝血藥 (Warfarin)"
-      ]
+      ],
+      "discovery_history": "1929年丹麥 Henrik Dam 發現其與凝血有關（K 取自丹麥文 Koagulation），1943年諾貝爾獎。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "calcium",
@@ -1020,7 +1055,9 @@
         "草酸",
         "咖啡因",
         "磷 (過量)"
-      ]
+      ],
+      "discovery_history": "元素於1808年由英國 Humphry Davy 分離；其骨骼與肌肉神經角色由19–20世紀生理學確立。",
+      "evidence_source": "NIH ODS；衛福部 DRIs；骨質疏鬆防治指引。"
     },
     {
       "id": "iron",
@@ -1084,7 +1121,9 @@
         "單寧酸 (茶/咖啡)",
         "鈣 (同服)",
         "草酸"
-      ]
+      ],
+      "discovery_history": "鐵為古老已知金屬；20世紀確立無機鐵可補血紅素、治療缺鐵性貧血。",
+      "evidence_source": "WHO 缺鐵性貧血指引；NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "zinc",
@@ -1140,7 +1179,9 @@
         "鐵 (高劑量同服)",
         "銅",
         "植酸"
-      ]
+      ],
+      "discovery_history": "1961年美國 Ananda Prasad 在中東發現飲食缺鋅造成生長遲緩與性腺發育不良，確立人體必需性。",
+      "evidence_source": "NIH ODS；WHO；衛福部 DRIs。"
     },
     {
       "id": "magnesium",
@@ -1202,7 +1243,9 @@
       ],
       "antagonistic_nutrients": [
         "鈣 (高劑量同服)"
-      ]
+      ],
+      "discovery_history": "元素1808年由 Davy 分離；20世紀確立其參與人體數百種酵素反應。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "potassium",
@@ -1263,7 +1306,9 @@
       ],
       "antagonistic_nutrients": [
         "鈉 (過量)"
-      ]
+      ],
+      "discovery_history": "18世紀分離出鉀元素；20世紀確立其與鈉共同維持細胞電位與血壓。",
+      "evidence_source": "WHO 鉀攝取指引；NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "sodium",
@@ -1317,7 +1362,9 @@
       "synergistic_nutrients": [
         "鉀 (平衡)"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "食鹽自古為重要物資；20世紀流行病學（如 INTERSALT 研究）確立高鈉與高血壓的關係。",
+      "evidence_source": "WHO 鈉攝取指引（<2000mg/日）；衛福部 DRIs。"
     },
     {
       "id": "iodine",
@@ -1373,7 +1420,9 @@
       ],
       "antagonistic_nutrients": [
         "生食十字花科 (過量)"
-      ]
+      ],
+      "discovery_history": "1811年法國 Courtois 發現碘；1920年代美國 David Marine 證實碘可預防甲狀腺腫，催生加碘鹽政策。",
+      "evidence_source": "WHO/UNICEF 碘營養指引；NIH ODS。"
     },
     {
       "id": "selenium",
@@ -1423,7 +1472,9 @@
         "維生素E",
         "碘"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1817年 Berzelius 發現硒元素；1957年 Schwarz 確立其營養必需性；1970年代中國研究其與克山病的關係。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute；衛福部 DRIs。"
     },
     {
       "id": "phosphorus",
@@ -1479,7 +1530,9 @@
       ],
       "antagonistic_nutrients": [
         "鈣 (比例失衡)"
-      ]
+      ],
+      "discovery_history": "1669年德國 Brand 發現磷元素；其在骨骼與能量（ATP）的角色由生物化學確立。",
+      "evidence_source": "NIH ODS；衛福部 DRIs。"
     },
     {
       "id": "chromium",
@@ -1533,7 +1586,9 @@
       "synergistic_nutrients": [],
       "antagonistic_nutrients": [
         "精製糖 (促流失)"
-      ]
+      ],
+      "discovery_history": "1959年 Schwarz 與 Mertz 提出含三價鉻的「葡萄糖耐量因子」概念。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "copper",
@@ -1594,7 +1649,9 @@
       ],
       "antagonistic_nutrients": [
         "鋅 (高劑量)"
-      ]
+      ],
+      "discovery_history": "1928年 Hart 等以大鼠實驗證明銅為造血所必需（與鐵協同）。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "manganese",
@@ -1653,7 +1710,9 @@
       "synergistic_nutrients": [],
       "antagonistic_nutrients": [
         "鐵 (競爭吸收)"
-      ]
+      ],
+      "discovery_history": "1930年代確立錳為動物必需微量元素，參與多種酵素運作。",
+      "evidence_source": "NIH ODS；Linus Pauling Institute。"
     },
     {
       "id": "soluble_fiber",
@@ -1715,7 +1774,9 @@
         "益生元／寡糖",
         "水"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1970年代英國 Burkitt 與 Trowell 提出「膳食纖維假說」，觀察到高纖飲食族群慢性病較少。",
+      "evidence_source": "衛福部 DRIs 纖維建議；美國 FDA 健康聲明（燕麥 β-聚醣與心臟病）。"
     },
     {
       "id": "insoluble_fiber",
@@ -1775,7 +1836,9 @@
       "synergistic_nutrients": [
         "水"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "同源於1970年代 Burkitt 對纖維與腸道疾病的研究。",
+      "evidence_source": "衛福部 DRIs；美國飲食指南（DGA）。"
     },
     {
       "id": "prebiotics_oligosaccharides",
@@ -1834,7 +1897,9 @@
       "synergistic_nutrients": [
         "益生菌 (probiotics)"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1995年比利時 Gibson 與 Roberfroid 正式提出 prebiotics（益生元）的科學概念。",
+      "evidence_source": "國際益生菌與益生元科學協會（ISAPP）共識聲明。"
     },
     {
       "id": "beta_carotene",
@@ -1888,7 +1953,9 @@
       "synergistic_nutrients": [
         "脂質"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1831年德國 Wackenroder 自胡蘿蔔分離出胡蘿蔔素。",
+      "evidence_source": "NIH ODS（維生素A）；美國國家癌症研究所 ATBC/CARET 試驗（吸菸者風險）。"
     },
     {
       "id": "lycopene",
@@ -1938,7 +2005,9 @@
         "脂質",
         "加熱"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1873年首次自漿果分離，1910年代確認結構並命名。",
+      "evidence_source": "美國國家癌症研究所文獻；哈佛男性健康追蹤研究（HPFS）。"
     },
     {
       "id": "lutein",
@@ -1993,7 +2062,9 @@
         "脂質",
         "玉米黃素"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "類胡蘿蔔素，20世紀鑑定；其護眼角色由大型臨床試驗支持。",
+      "evidence_source": "美國國家眼科研究所 AREDS2 試驗。"
     },
     {
       "id": "anthocyanin",
@@ -2052,7 +2123,9 @@
       "synergistic_nutrients": [],
       "antagonistic_nutrients": [
         "高溫"
-      ]
+      ],
+      "discovery_history": "1835年德國 Marquart 命名 anthocyanin（源自希臘文「植物」與「藍」）。",
+      "evidence_source": "美國農業部（USDA）類黃酮資料庫；相關流行病學研究。"
     },
     {
       "id": "catechin",
@@ -2098,7 +2171,9 @@
       ],
       "antagonistic_nutrients": [
         "鐵 (抑制吸收)"
-      ]
+      ],
+      "discovery_history": "20世紀自綠茶分離鑑定表沒食子兒茶素沒食子酸酯（EGCG）。",
+      "evidence_source": "相關人體試驗與統合分析；歐洲 EFSA 評估。"
     },
     {
       "id": "resveratrol",
@@ -2145,7 +2220,9 @@
       ],
       "supplement_vs_wholefood_notes": "想攝取白藜蘆醇不一定要喝酒——吃紅葡萄（帶皮）、花生也可以。",
       "synergistic_nutrients": [],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1939年日本學者自藜蘆分離；1990年代因「法國悖論」受到關注。",
+      "evidence_source": "多為細胞與動物研究，人體證據仍有限，宜理性看待。"
     },
     {
       "id": "isoflavone",
@@ -2197,7 +2274,9 @@
       ],
       "supplement_vs_wholefood_notes": "更年期女性多吃豆製品有助緩解熱潮紅和骨質流失。",
       "synergistic_nutrients": [],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "20世紀自大豆分離鑑定，其植物雌激素作用經多項研究探討。",
+      "evidence_source": "多項更年期與骨質統合分析；歐洲 EFSA 評估。"
     },
     {
       "id": "allicin",
@@ -2238,7 +2317,9 @@
       ],
       "antagonistic_nutrients": [
         "久煮"
-      ]
+      ],
+      "discovery_history": "1944年美國 Cavallito 分離出大蒜素（allicin）並證明其抗菌性。",
+      "evidence_source": "相關降血壓統合分析（如 Cochrane 回顧）。"
     },
     {
       "id": "sulforaphane",
@@ -2289,7 +2370,9 @@
       ],
       "antagonistic_nutrients": [
         "高溫水煮"
-      ]
+      ],
+      "discovery_history": "1992年美國約翰霍普金斯大學 Paul Talalay 團隊自青花菜分離鑑定，發現其能活化人體解毒酵素。",
+      "evidence_source": "Johns Hopkins 相關研究；動物與細胞層級抗癌研究。"
     },
     {
       "id": "quercetin",
@@ -2338,7 +2421,9 @@
       "synergistic_nutrients": [
         "維生素C"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "類黃酮化合物，20世紀鑑定，其抗發炎與抗過敏作用經研究探討。",
+      "evidence_source": "USDA 類黃酮資料庫；相關人體試驗。"
     },
     {
       "id": "curcumin",
@@ -2378,7 +2463,9 @@
         "胡椒鹼 (piperine)",
         "脂質"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1815年首次分離，1910年鑑定其化學結構。",
+      "evidence_source": "多項抗發炎與關節炎臨床試驗及統合分析。"
     },
     {
       "id": "zeaxanthin",
@@ -2433,7 +2520,9 @@
         "脂質",
         "葉黃素"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "類胡蘿蔔素，與葉黃素同為黃斑部色素；護眼角色由臨床試驗支持。",
+      "evidence_source": "美國國家眼科研究所 AREDS2 試驗。"
     },
     {
       "id": "astaxanthin",
@@ -2482,7 +2571,9 @@
       "synergistic_nutrients": [
         "脂質"
       ],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "1930年代由德國 Richard Kuhn 等鑑定，為自然界強效抗氧化類胡蘿蔔素。",
+      "evidence_source": "相關抗氧化人體與動物研究。"
     },
     {
       "id": "chlorogenic_acid",
@@ -2529,7 +2620,9 @@
       ],
       "supplement_vs_wholefood_notes": "咖啡的保健成分很多來自綠原酸——但別為此加糖加奶油。",
       "synergistic_nutrients": [],
-      "antagonistic_nutrients": []
+      "antagonistic_nutrients": [],
+      "discovery_history": "咖啡酸酯類化合物，20世紀鑑定為咖啡的主要多酚。",
+      "evidence_source": "相關血糖與血壓統合分析。"
     }
   ],
   "scenarios_and_symptoms_matrix": [
@@ -2565,7 +2658,9 @@
         }
       ],
       "recommended_dietary_pattern": "三餐定時、每餐有蛋白質；紅肉或豆類補鐵、搭配芭樂/柑橘的維C幫助吸收；先確認睡眠與喝水是否足夠。",
-      "red_flag_warnings": "若休息後仍持續疲勞數週、伴隨體重驟降、發燒、心悸或呼吸困難，請盡快就醫檢查（貧血、甲狀腺、心臟等）。"
+      "red_flag_warnings": "若休息後仍持續疲勞數週、伴隨體重驟降、發燒、心悸或呼吸困難，請盡快就醫檢查（貧血、甲狀腺、心臟等）。",
+      "evidence_basis": "疲勞與缺鐵、維生素B12、甲狀腺功能異常的關聯已有大量臨床文獻。",
+      "evidence_source": "WHO 缺鐵性貧血指引；NIH ODS。"
     },
     {
       "scenario_or_symptom_id": "insomnia",
@@ -2594,7 +2689,9 @@
         }
       ],
       "recommended_dietary_pattern": "晚餐可含小份助眠食材：香蕉、堅果、溫牛奶、燕麥；睡前避免咖啡因與酒精；鎂有助肌肉與神經放鬆。",
-      "red_flag_warnings": "長期失眠會影響身心健康，若已影響白天功能，請就醫評估，勿自行長期使用助眠保健品或藥物。"
+      "red_flag_warnings": "長期失眠會影響身心健康，若已影響白天功能，請就醫評估，勿自行長期使用助眠保健品或藥物。",
+      "evidence_basis": "鎂、色胺酸與睡眠的關係有初步研究支持；睡眠衛生仍是第一線建議。",
+      "evidence_source": "美國睡眠醫學會（AASM）睡眠衛生建議。"
     },
     {
       "scenario_or_symptom_id": "muscle_cramps",
@@ -2628,7 +2725,9 @@
         }
       ],
       "recommended_dietary_pattern": "運動流汗後補充電解質與水；日常多吃深綠蔬菜、香蕉、堅果、乳製品；避免只補水不補電解質。",
-      "red_flag_warnings": "若抽筋頻繁、劇烈、伴隨肌肉無力或非運動引起，可能是電解質失衡或神經血管問題，請就醫。"
+      "red_flag_warnings": "若抽筋頻繁、劇烈、伴隨肌肉無力或非運動引起，可能是電解質失衡或神經血管問題，請就醫。",
+      "evidence_basis": "運動性抽筋與電解質及水分流失相關；夜間抽筋成因較多元。",
+      "evidence_source": "美國運動醫學會（ACSM）補水與電解質建議。"
     },
     {
       "scenario_or_symptom_id": "constipation",
@@ -2657,7 +2756,9 @@
         }
       ],
       "recommended_dietary_pattern": "纖維+水+運動缺一不可；早上一杯溫水、多吃蔬果全穀與發酵食物（優格）；養成固定如廁時間。",
-      "red_flag_warnings": "若便祕突然發生、伴隨血便、腹痛、體重減輕或排便習慣明顯改變，請盡快就醫排除腸道疾病。"
+      "red_flag_warnings": "若便祕突然發生、伴隨血便、腹痛、體重減輕或排便習慣明顯改變，請盡快就醫排除腸道疾病。",
+      "evidence_basis": "「纖維＋水分＋運動」為改善功能性便祕的實證基礎。",
+      "evidence_source": "美國與歐洲胃腸病學會功能性便祕指引。"
     },
     {
       "scenario_or_symptom_id": "anemia",
@@ -2691,7 +2792,9 @@
         }
       ],
       "recommended_dietary_pattern": "缺鐵性：紅肉、肝臟、鴨血+維C（芭樂、柑橘）；素食者特別注意B12與鐵；避免與茶、咖啡同時吃。",
-      "red_flag_warnings": "貧血成因很多（缺鐵、B12、慢性出血、疾病），請先就醫抽血確認類型，不可自行亂補鐵。"
+      "red_flag_warnings": "貧血成因很多（缺鐵、B12、慢性出血、疾病），請先就醫抽血確認類型，不可自行亂補鐵。",
+      "evidence_basis": "缺鐵、B12、葉酸為常見的營養性貧血成因，需抽血鑑別診斷。",
+      "evidence_source": "WHO 貧血指引；NIH ODS。"
     },
     {
       "scenario_or_symptom_id": "hypertension_prevention_dash",
@@ -2725,7 +2828,9 @@
         }
       ],
       "recommended_dietary_pattern": "得舒飲食（DASH）：多蔬果、全穀、低脂乳、堅果、白肉魚；減少加工食品與外食的高鈉；用香料取代鹽。",
-      "red_flag_warnings": "已診斷高血壓或正在服藥者，飲食調整需配合醫師，切勿自行停藥或以保健品取代藥物。"
+      "red_flag_warnings": "已診斷高血壓或正在服藥者，飲食調整需配合醫師，切勿自行停藥或以保健品取代藥物。",
+      "evidence_basis": "得舒飲食（DASH）由1997年發表於《新英格蘭醫學期刊》的 DASH 隨機對照試驗證實可有效降血壓。",
+      "evidence_source": "DASH 試驗（NEJM, 1997）；美國心臟協會（AHA）。"
     },
     {
       "scenario_or_symptom_id": "muscle_gain_fat_loss",
@@ -2759,7 +2864,9 @@
         }
       ],
       "recommended_dietary_pattern": "每餐一掌蛋白質、平均分配；訓練後補蛋白+碳水；選原型澱粉、控制精製糖與油炸；搭配阻力訓練。",
-      "red_flag_warnings": "極端節食、過量蛋白或濫用補劑可能傷腎與代謝，體重管理計畫建議諮詢營養師個別化設計。"
+      "red_flag_warnings": "極端節食、過量蛋白或濫用補劑可能傷腎與代謝，體重管理計畫建議諮詢營養師個別化設計。",
+      "evidence_basis": "蛋白質分配與阻力訓練對肌肉合成的效益有豐富的運動營養文獻。",
+      "evidence_source": "國際運動營養學會（ISSN）立場聲明。"
     },
     {
       "scenario_or_symptom_id": "pregnancy_nutrition",
@@ -2798,7 +2905,9 @@
         }
       ],
       "recommended_dietary_pattern": "孕前3個月起補葉酸；均衡多元、足夠鈣與鐵；DHA有助胎兒腦部發育；避免生食、酒精與過量咖啡因與維生素A。",
-      "red_flag_warnings": "孕期營養與補充劑務必由婦產科醫師與營養師依個人狀況指導，切勿自行服用高劑量補充品。"
+      "red_flag_warnings": "孕期營養與補充劑務必由婦產科醫師與營養師依個人狀況指導，切勿自行服用高劑量補充品。",
+      "evidence_basis": "孕前補充葉酸可降低胎兒神經管缺陷風險，由 MRC 1991 等大型試驗確立。",
+      "evidence_source": "MRC 葉酸試驗（Lancet, 1991）；台灣婦產科醫學會；WHO 孕產婦營養指引。"
     }
   ]
 }
