@@ -1,0 +1,2804 @@
+{
+  "_meta": {
+    "title": "飲食行為教練 App — 營養素與症狀資料庫",
+    "version": "1.0",
+    "generated": "2026-08-06",
+    "reference_source": "劑量參考基準：衛生福利部第八版《國人膳食營養素參考攝取量 (DRIs)》與 WHO 建議，適用於一般健康成人。",
+    "important_notes": [
+      "本資料庫僅供飲食衛教參考，不能取代醫師或營養師的專業診斷與處方。",
+      "有任何症狀或健康疑慮，請務必優先諮詢醫師或營養師，切勿依本內容自行診斷、調整用藥或大量補充。",
+      "content_per_100g 欄位刻意留空 (null)：精確的每 100g 含量需比對經驗證的食品成分資料庫 (如衛福部台灣食品成分資料庫)，本檔不臆測數值。",
+      "dosages 為一般健康成人參考值，實際需求依年齡、性別、體重、活動量與生理狀況 (如懷孕、疾病) 而異。"
+    ]
+  },
+  "nutrients_database": [
+    {
+      "id": "carbohydrate",
+      "name_zh": "碳水化合物",
+      "name_en": "Carbohydrates",
+      "category": "必需營養素",
+      "sub_components": [
+        "主要能量來源"
+      ],
+      "biological_functions": "大腦與紅血球最主要（幾乎唯一）的能量來源。分成好的（全穀、根莖、豆類）與精製的（白糖、白飯、含糖飲料）。",
+      "dosages": {
+        "rda_or_ai": "占每日總熱量 50–60%",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "精製糖與含糖飲料是最該減的碳水；完全不吃碳水易疲勞、掉髮、情緒差。",
+      "whole_food_sources": [
+        {
+          "food_name": "全穀（糙米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "燕麥）",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "馬鈴薯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "水果",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "不是不能吃澱粉，是要選「原型、帶纖維」的——地瓜 > 白吐司，差別在血糖起伏。",
+      "synergistic_nutrients": [
+        "膳食纖維"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "protein",
+      "name_zh": "蛋白質",
+      "name_en": "Protein",
+      "category": "必需營養素",
+      "sub_components": [
+        "身體的建材"
+      ],
+      "biological_functions": "構成肌肉、器官、酵素、荷爾蒙與免疫抗體。由 20 種胺基酸組成，其中 9 種必需胺基酸只能從食物取得。",
+      "dosages": {
+        "rda_or_ai": "一般成人每公斤體重 0.8–1.2g",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "腎功能不佳者的蛋白質攝取量務必先諮詢醫師，不可自行高蛋白飲食。",
+      "whole_food_sources": [
+        {
+          "food_name": "雞蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞胸肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "海鮮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "瘦肉",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "每餐都要有一個手掌大的蛋白質，平均分配比一餐狂吃更好吸收。",
+      "synergistic_nutrients": [
+        "維生素B6"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "lipids_fats",
+      "name_zh": "脂質",
+      "name_en": "Lipids / Fats (Omega-3/6/9)",
+      "category": "必需營養素",
+      "sub_components": [
+        "Omega-3/6/9"
+      ],
+      "biological_functions": "構成細胞膜、合成荷爾蒙、幫助脂溶性維生素（A、D、E、K）吸收。重點是「油的品質」而非完全不吃油。",
+      "dosages": {
+        "rda_or_ai": "占每日總熱量 20–30%",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "反式脂肪對心血管傷害最大，看到成分表有「氫化」就避開。",
+      "whole_food_sources": [
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "鯖魚",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "橄欖油",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "亞麻仁",
+          "content_per_100g": null,
+          "notes": "好油"
+        },
+        {
+          "food_name": "油炸物",
+          "content_per_100g": null,
+          "notes": "少碰"
+        },
+        {
+          "food_name": "反式脂肪（酥油",
+          "content_per_100g": null,
+          "notes": "少碰"
+        },
+        {
+          "food_name": "乳瑪琳）",
+          "content_per_100g": null,
+          "notes": "少碰"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "每週吃 2–3 次深海魚補 Omega-3；用橄欖油或苦茶油取代精製調和油。",
+      "synergistic_nutrients": [
+        "維生素A",
+        "維生素D",
+        "維生素E",
+        "維生素K"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "water",
+      "name_zh": "水",
+      "name_en": "Water",
+      "category": "必需營養素",
+      "sub_components": [
+        "最被忽略的營養素"
+      ],
+      "biological_functions": "占體重約 60%。運輸養分、排除廢物、調節體溫、潤滑關節。輕微脫水就會疲勞、頭痛、注意力下降。",
+      "dosages": {
+        "rda_or_ai": "一般成人約 2000–3000ml/日（含食物水分）",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "ml"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "心臟、腎臟疾病患者的飲水量需依醫囑限制，不可一味多喝。",
+      "whole_food_sources": [
+        {
+          "food_name": "白開水",
+          "content_per_100g": null,
+          "notes": "最佳"
+        },
+        {
+          "food_name": "無糖茶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "湯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蔬果",
+          "content_per_100g": null,
+          "notes": "含水量高"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "別等口渴才喝——尿液呈淡黃色代表水分剛好，深黃就是不夠了。",
+      "synergistic_nutrients": [
+        "鈉",
+        "鉀"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_a",
+      "name_zh": "維生素A",
+      "name_en": "Vitamin A (Retinol)",
+      "category": "必需營養素",
+      "sub_components": [
+        "視黃醇（脂溶性）"
+      ],
+      "biological_functions": "維持視力、皮膚屏障、免疫功能。缺乏時夜間視力變差、皮膚乾燥。",
+      "dosages": {
+        "rda_or_ai": "男 600 / 女 500 μg RAE",
+        "ul_upper_limit": "UL 3000μg",
+        "dosage_unit": "μg RAE"
+      },
+      "deficiency_effects": "缺乏時夜間視力變差、皮膚乾燥。",
+      "excess_effects": "動物性來源（尤其補充劑）過量有肝毒性與致畸性，孕婦不可補高劑量A。",
+      "whole_food_sources": [
+        {
+          "food_name": "肝臟",
+          "content_per_100g": null,
+          "notes": "動物性"
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": "動物性"
+        },
+        {
+          "food_name": "奶油",
+          "content_per_100g": null,
+          "notes": "動物性"
+        },
+        {
+          "food_name": "胡蘿蔔",
+          "content_per_100g": null,
+          "notes": "植物性（β-胡蘿蔔素轉化）"
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": "植物性（β-胡蘿蔔素轉化）"
+        },
+        {
+          "food_name": "南瓜",
+          "content_per_100g": null,
+          "notes": "植物性（β-胡蘿蔔素轉化）"
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": "植物性（β-胡蘿蔔素轉化）"
+        },
+        {
+          "food_name": "芒果",
+          "content_per_100g": null,
+          "notes": "植物性（β-胡蘿蔔素轉化）"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "β-胡蘿蔔素配油脂吸收更好——炒紅蘿蔔比生吃有效。",
+      "synergistic_nutrients": [
+        "脂質",
+        "維生素E",
+        "鋅"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_b1",
+      "name_zh": "維生素B1",
+      "name_en": "Vitamin B1 (Thiamine)",
+      "category": "必需營養素",
+      "sub_components": [
+        "硫胺素（水溶性）"
+      ],
+      "biological_functions": "把碳水化合物轉化為能量、維持神經功能。缺乏時容易疲勞、食慾不振、腳麻。",
+      "dosages": {
+        "rda_or_ai": "男 1.2 / 女 0.9 mg",
+        "ul_upper_limit": "水溶性，無明確上限",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "缺乏時容易疲勞、食慾不振、腳麻。",
+      "excess_effects": "精製加工會大量流失，長期大量飲酒會嚴重消耗B1。",
+      "whole_food_sources": [
+        {
+          "food_name": "糙米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "燕麥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豬肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "葵花籽",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "白米幾乎不含B1——如果主食是白飯，搭配豬肉或豆類補回來。",
+      "synergistic_nutrients": [
+        "維生素B群"
+      ],
+      "antagonistic_nutrients": [
+        "酒精"
+      ]
+    },
+    {
+      "id": "vitamin_b2",
+      "name_zh": "維生素B2",
+      "name_en": "Vitamin B2 (Riboflavin)",
+      "category": "必需營養素",
+      "sub_components": [
+        "核黃素（水溶性）"
+      ],
+      "biological_functions": "參與能量代謝、維持皮膚黏膜。缺乏時嘴破、嘴角炎、眼睛怕光。",
+      "dosages": {
+        "rda_or_ai": "男 1.3 / 女 1.0 mg",
+        "ul_upper_limit": "水溶性，無明確上限",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "缺乏時嘴破、嘴角炎、眼睛怕光。",
+      "excess_effects": "光照會破壞B2，牛奶不要放在透明容器曬太陽。",
+      "whole_food_sources": [
+        {
+          "food_name": "牛奶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "優格",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香菇",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "內臟",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "杏仁",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "容易嘴破的人，先檢查B2夠不夠——一杯牛奶+一顆蛋就接近每日需求。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "光照"
+      ]
+    },
+    {
+      "id": "vitamin_b3_niacin",
+      "name_zh": "維生素B3",
+      "name_en": "Vitamin B3 (Niacin)",
+      "category": "必需營養素",
+      "sub_components": [
+        "菸鹼酸（水溶性）"
+      ],
+      "biological_functions": "能量代謝、維持皮膚和神經系統、調節血脂。",
+      "dosages": {
+        "rda_or_ai": "男 16 / 女 14 mg NE",
+        "ul_upper_limit": "UL 35mg",
+        "dosage_unit": "mg NE"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "高劑量補充可能引起臉紅、皮膚發燙（菸鹼酸潮紅），有肝毒性風險。",
+      "whole_food_sources": [
+        {
+          "food_name": "雞胸肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鮪魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花生",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蘑菇",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肝臟",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "色胺酸可以在體內轉化為菸鹼酸——所以喝牛奶也算間接補充。",
+      "synergistic_nutrients": [
+        "色胺酸"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_b5_pantothenic",
+      "name_zh": "維生素B5",
+      "name_en": "Vitamin B5 (Pantothenic acid)",
+      "category": "必需營養素",
+      "sub_components": [
+        "泛酸（水溶性）"
+      ],
+      "biological_functions": "合成輔酶A、參與能量與脂肪代謝、製造荷爾蒙。名字源於「無所不在」，缺乏罕見。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 5mg",
+        "ul_upper_limit": "水溶性，無明確上限",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "缺乏罕見。",
+      "excess_effects": "極高劑量補充可能引起腹瀉。",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "內臟",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香菇",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "優格",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "分布極廣，正常飲食幾乎不會缺——不需特別補充。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_b6",
+      "name_zh": "維生素B6",
+      "name_en": "Vitamin B6 (Pyridoxine)",
+      "category": "必需營養素",
+      "sub_components": [
+        "吡哆醇（水溶性）"
+      ],
+      "biological_functions": "蛋白質代謝、神經傳導物質（血清素）合成、紅血球生成。",
+      "dosages": {
+        "rda_or_ai": "1.5 mg",
+        "ul_upper_limit": "UL 80mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "長期高劑量補充（>100mg/天）可能導致神經損傷、手腳麻木。",
+      "whole_food_sources": [
+        {
+          "food_name": "香蕉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞胸肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "馬鈴薯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鷹嘴豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "葵花籽",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "高蛋白飲食的人需要更多B6來代謝蛋白質。",
+      "synergistic_nutrients": [
+        "蛋白質"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_b7_biotin",
+      "name_zh": "維生素B7",
+      "name_en": "Vitamin B7 (Biotin)",
+      "category": "必需營養素",
+      "sub_components": [
+        "生物素（水溶性）"
+      ],
+      "biological_functions": "參與醣類、脂肪、蛋白質代謝，維持頭髮、皮膚、指甲健康。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 30μg",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "高劑量生物素補充會干擾甲狀腺與心肌等抽血檢驗數值，抽血前請告知醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": "煮熟"
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豬肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "生蛋白會抓住生物素影響吸收，蛋要煮熟吃。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "生蛋白 (avidin)"
+      ]
+    },
+    {
+      "id": "folate_b9",
+      "name_zh": "葉酸",
+      "name_en": "Folate (Vitamin B9)",
+      "category": "必需營養素",
+      "sub_components": [
+        "維生素B9（水溶性）"
+      ],
+      "biological_functions": "DNA合成、細胞分裂、紅血球生成。孕期不足會增加胎兒神經管缺陷風險。",
+      "dosages": {
+        "rda_or_ai": "400 μg DFE",
+        "ul_upper_limit": "UL 1000μg",
+        "dosage_unit": "μg DFE"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "葉酸怕熱怕水——蔬菜別煮太久；高劑量會掩蓋B12缺乏，補充前宜諮詢。",
+      "whole_food_sources": [
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蘆筍",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肝臟",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柑橘",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "備孕女性應在懷孕前 3 個月就開始補充葉酸（400μg/天）。",
+      "synergistic_nutrients": [
+        "維生素B12",
+        "維生素C"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_b12",
+      "name_zh": "維生素B12",
+      "name_en": "Vitamin B12 (Cobalamin)",
+      "category": "必需營養素",
+      "sub_components": [
+        "鈷胺素（水溶性）"
+      ],
+      "biological_functions": "造血、維持神經髓鞘、DNA合成。缺乏導致惡性貧血、手腳麻木、認知退化。",
+      "dosages": {
+        "rda_or_ai": "2.4 μg",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "缺乏導致惡性貧血、手腳麻木、認知退化。",
+      "excess_effects": "B12缺乏症狀可能數年後才出現，素食者與長者應定期抽血檢查。",
+      "whole_food_sources": [
+        {
+          "food_name": "肉類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "海鮮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": "植物幾乎不含"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "純素食者一定要額外補充B12，靠海苔或味噌是不夠的。",
+      "synergistic_nutrients": [
+        "葉酸",
+        "鈣"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_c",
+      "name_zh": "維生素C",
+      "name_en": "Vitamin C (Ascorbic acid)",
+      "category": "必需營養素",
+      "sub_components": [
+        "抗壞血酸（水溶性）"
+      ],
+      "biological_functions": "膠原蛋白合成、免疫增強、促進鐵吸收、抗氧化。",
+      "dosages": {
+        "rda_or_ai": "100 mg",
+        "ul_upper_limit": "UL 2000mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "加熱會大量破壞——水果生吃、蔬菜快炒；一次超過2000mg可能腹瀉、結石。",
+      "whole_food_sources": [
+        {
+          "food_name": "芭樂",
+          "content_per_100g": null,
+          "notes": "維C之王"
+        },
+        {
+          "food_name": "奇異果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "甜椒",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柑橘",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "草莓",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花椰菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "吃素鐵不足時，飯後吃一顆芭樂幫助植物性鐵吸收，效果驚人。",
+      "synergistic_nutrients": [
+        "鐵 (非血鐵質)"
+      ],
+      "antagonistic_nutrients": [
+        "加熱"
+      ]
+    },
+    {
+      "id": "vitamin_d",
+      "name_zh": "維生素D",
+      "name_en": "Vitamin D",
+      "category": "必需營養素",
+      "sub_components": [
+        "陽光維生素（脂溶性）"
+      ],
+      "biological_functions": "促進鈣吸收、骨骼健康、免疫調節、情緒穩定。",
+      "dosages": {
+        "rda_or_ai": "成人 10μg(400IU)",
+        "ul_upper_limit": "UL 50μg(2000IU)",
+        "dosage_unit": "μg (IU)"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "脂溶性會累積，長期過量補充會導致高血鈣；補充前建議先驗血。",
+      "whole_food_sources": [
+        {
+          "food_name": "日曬15-20分鐘",
+          "content_per_100g": null,
+          "notes": "最佳來源"
+        },
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鯖魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "曬過的香菇",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "台灣人超過六成維D不足——不是飲食問題，是不曬太陽。每天露手臂曬15分鐘。",
+      "synergistic_nutrients": [
+        "鈣",
+        "鎂",
+        "維生素K"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_e",
+      "name_zh": "維生素E",
+      "name_en": "Vitamin E (Tocopherol)",
+      "category": "必需營養素",
+      "sub_components": [
+        "生育醇（脂溶性）"
+      ],
+      "biological_functions": "抗氧化、保護細胞膜、皮膚修復。",
+      "dosages": {
+        "rda_or_ai": "12 mg α-TE",
+        "ul_upper_limit": "UL 1000mg",
+        "dosage_unit": "mg α-TE"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "天然維E比合成的吸收率高；高劑量補充可能增加出血風險。",
+      "whole_food_sources": [
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": "杏仁最多"
+        },
+        {
+          "food_name": "葵花籽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "植物油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "每天一小把堅果（約10顆杏仁）就能滿足大部分需求。",
+      "synergistic_nutrients": [
+        "維生素C",
+        "硒",
+        "脂質"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "vitamin_k",
+      "name_zh": "維生素K",
+      "name_en": "Vitamin K",
+      "category": "必需營養素",
+      "sub_components": [
+        "凝血維生素（脂溶性）"
+      ],
+      "biological_functions": "血液凝固、骨骼鈣化。K1來自植物，K2來自發酵食物。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 男 120 / 女 90 μg",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "服用抗凝血藥物（如華法林 Warfarin）者需維持維K攝取穩定，務必諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "深綠色蔬菜（羽衣甘藍",
+          "content_per_100g": null,
+          "notes": "K1"
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": "K1"
+        },
+        {
+          "food_name": "花椰菜）",
+          "content_per_100g": null,
+          "notes": "K1"
+        },
+        {
+          "food_name": "納豆",
+          "content_per_100g": null,
+          "notes": "K2；最佳來源"
+        },
+        {
+          "food_name": "起司",
+          "content_per_100g": null,
+          "notes": "K2"
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": "K2"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "吃深綠色蔬菜配油脂——清燙菠菜不如炒菠菜吸收好。",
+      "synergistic_nutrients": [
+        "脂質",
+        "維生素D"
+      ],
+      "antagonistic_nutrients": [
+        "抗凝血藥 (Warfarin)"
+      ]
+    },
+    {
+      "id": "calcium",
+      "name_zh": "鈣",
+      "name_en": "Calcium",
+      "category": "必需營養素",
+      "sub_components": [
+        "骨骼之王"
+      ],
+      "biological_functions": "骨骼和牙齒的主要成分、肌肉收縮、神經傳導、血液凝固。",
+      "dosages": {
+        "rda_or_ai": "1000 mg",
+        "ul_upper_limit": "UL 2500mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "茶、咖啡、菠菜中的草酸會抑制鈣吸收，不要同時大量攝取。",
+      "whole_food_sources": [
+        {
+          "food_name": "牛奶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "優格",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "起司",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "小魚乾",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "板豆腐",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黑芝麻",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "深綠色蔬菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "鈣+維生素D是黃金組合——單吃鈣片不曬太陽等於白吃。",
+      "synergistic_nutrients": [
+        "維生素D",
+        "鎂",
+        "維生素K"
+      ],
+      "antagonistic_nutrients": [
+        "草酸",
+        "咖啡因",
+        "磷 (過量)"
+      ]
+    },
+    {
+      "id": "iron",
+      "name_zh": "鐵",
+      "name_en": "Iron",
+      "category": "必需營養素",
+      "sub_components": [
+        "造血元素"
+      ],
+      "biological_functions": "血紅素核心成分，運送氧氣到全身。缺乏導致貧血、疲勞、臉色蒼白。",
+      "dosages": {
+        "rda_or_ai": "男 10 / 女 15 mg（停經後 10）",
+        "ul_upper_limit": "UL 40mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "缺乏導致貧血、疲勞、臉色蒼白。",
+      "excess_effects": "茶和咖啡的單寧酸會抑制鐵吸收；補鐵過量會傷肝，勿自行長期高劑量補。",
+      "whole_food_sources": [
+        {
+          "food_name": "紅肉",
+          "content_per_100g": null,
+          "notes": "血鐵質（吸收率高）"
+        },
+        {
+          "food_name": "肝臟",
+          "content_per_100g": null,
+          "notes": "血鐵質（吸收率高）"
+        },
+        {
+          "food_name": "鴨血",
+          "content_per_100g": null,
+          "notes": "血鐵質（吸收率高）"
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": "非血鐵質"
+        },
+        {
+          "food_name": "紅豆",
+          "content_per_100g": null,
+          "notes": "非血鐵質"
+        },
+        {
+          "food_name": "黑芝麻",
+          "content_per_100g": null,
+          "notes": "非血鐵質"
+        },
+        {
+          "food_name": "葡萄乾",
+          "content_per_100g": null,
+          "notes": "非血鐵質"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "植物性鐵吸收率只有動物性的1/5——搭配維生素C可以提升3-6倍。",
+      "synergistic_nutrients": [
+        "維生素C",
+        "銅"
+      ],
+      "antagonistic_nutrients": [
+        "單寧酸 (茶/咖啡)",
+        "鈣 (同服)",
+        "草酸"
+      ]
+    },
+    {
+      "id": "zinc",
+      "name_zh": "鋅",
+      "name_en": "Zinc",
+      "category": "必需營養素",
+      "sub_components": [
+        "免疫守門員"
+      ],
+      "biological_functions": "免疫功能、傷口癒合、味覺嗅覺、蛋白質合成、生殖健康。",
+      "dosages": {
+        "rda_or_ai": "男 15 / 女 12 mg",
+        "ul_upper_limit": "UL 35mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "鋅和鐵、銅會互相競爭吸收，高劑量鋅補充品不要和鐵一起吃。",
+      "whole_food_sources": [
+        {
+          "food_name": "牡蠣",
+          "content_per_100g": null,
+          "notes": "含鋅之王"
+        },
+        {
+          "food_name": "牛肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜籽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "腰果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蟹",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "感冒初期補充鋅含片可能縮短病程——但要在24小時內開始。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "鐵 (高劑量同服)",
+        "銅",
+        "植酸"
+      ]
+    },
+    {
+      "id": "magnesium",
+      "name_zh": "鎂",
+      "name_en": "Magnesium",
+      "category": "必需營養素",
+      "sub_components": [
+        "放鬆礦物質"
+      ],
+      "biological_functions": "肌肉放鬆、神經穩定、睡眠品質、能量產生、血糖調節。缺乏時容易抽筋。",
+      "dosages": {
+        "rda_or_ai": "男 380 / 女 320 mg",
+        "ul_upper_limit": "UL 350mg（",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "缺乏時容易抽筋。",
+      "excess_effects": "台灣人普遍缺鎂；補充劑過量會腹瀉，腎功能不佳者需諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "堅果（腰果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "杏仁）",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "深綠色蔬菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香蕉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黑巧克力",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "睡前腳抽筋？肌肉緊繃？壓力大？先想想鎂夠不夠。",
+      "synergistic_nutrients": [
+        "維生素D",
+        "維生素B6"
+      ],
+      "antagonistic_nutrients": [
+        "鈣 (高劑量同服)"
+      ]
+    },
+    {
+      "id": "potassium",
+      "name_zh": "鉀",
+      "name_en": "Potassium",
+      "category": "必需營養素",
+      "sub_components": [
+        "血壓調節者"
+      ],
+      "biological_functions": "維持正常血壓、心臟節律、肌肉功能、體液平衡。是得舒（DASH）飲食核心。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 約 3500mg（WHO 建議 ≥3510mg）",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "腎功能不好的人排鉀能力差，高血鉀有心律不整風險，攝取量務必遵醫囑。",
+      "whole_food_sources": [
+        {
+          "food_name": "香蕉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "馬鈴薯",
+          "content_per_100g": null,
+          "notes": "帶皮"
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柳橙",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "番茄",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "鉀和鈉要平衡——吃太鹹就要多吃蔬果來補鉀，不是光喝水。",
+      "synergistic_nutrients": [
+        "鎂"
+      ],
+      "antagonistic_nutrients": [
+        "鈉 (過量)"
+      ]
+    },
+    {
+      "id": "sodium",
+      "name_zh": "鈉",
+      "name_en": "Sodium",
+      "category": "必需營養素",
+      "sub_components": [
+        "雙面刃電解質"
+      ],
+      "biological_functions": "維持體液平衡、神經傳導、肌肉收縮。身體需要，但現代人幾乎都攝取過量。",
+      "dosages": {
+        "rda_or_ai": "建議 <2400mg（食鹽 <6g）",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "高鈉與高血壓、心血管疾病、腎臟負擔直接相關；外食族最該注意的就是鈉。",
+      "whole_food_sources": [
+        {
+          "food_name": "食鹽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "醬油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "加工食品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "醃漬物",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "湯麵湯底",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "零食",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "減鈉不是吃無味——用蔥薑蒜、檸檬、香料提味，慢慢降低對鹹的依賴。",
+      "synergistic_nutrients": [
+        "鉀 (平衡)"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "iodine",
+      "name_zh": "碘",
+      "name_en": "Iodine",
+      "category": "必需營養素",
+      "sub_components": [
+        "甲狀腺燃料"
+      ],
+      "biological_functions": "甲狀腺荷爾蒙的原料，調節新陳代謝與生長發育。缺乏導致甲狀腺腫大。",
+      "dosages": {
+        "rda_or_ai": "140 μg",
+        "ul_upper_limit": "UL 1000μg",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "缺乏導致甲狀腺腫大。",
+      "excess_effects": "碘過量也會影響甲狀腺——不需要天天大量吃海帶；甲狀腺疾病者請諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "海帶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紫菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "碘鹽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "海魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蝦",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛤蜊",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "如果你用的是玫瑰鹽或進口岩鹽，可能沒加碘——偶爾吃點海帶味噌湯。",
+      "synergistic_nutrients": [
+        "硒"
+      ],
+      "antagonistic_nutrients": [
+        "生食十字花科 (過量)"
+      ]
+    },
+    {
+      "id": "selenium",
+      "name_zh": "硒",
+      "name_en": "Selenium",
+      "category": "必需營養素",
+      "sub_components": [
+        "抗氧化將軍"
+      ],
+      "biological_functions": "強效抗氧化、甲狀腺功能、免疫力、精子健康。",
+      "dosages": {
+        "rda_or_ai": "55 μg",
+        "ul_upper_limit": "UL 400μg",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "硒的安全範圍很窄，過量會中毒（掉髮、指甲脆裂、蒜味口氣）。",
+      "whole_food_sources": [
+        {
+          "food_name": "巴西堅果",
+          "content_per_100g": null,
+          "notes": "1-2顆就夠"
+        },
+        {
+          "food_name": "海鮮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蒜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "巴西堅果是硒含量最高的食物——每天1-2顆，不要多吃。",
+      "synergistic_nutrients": [
+        "維生素E",
+        "碘"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "phosphorus",
+      "name_zh": "磷",
+      "name_en": "Phosphorus",
+      "category": "必需營養素",
+      "sub_components": [
+        "能量搬運工"
+      ],
+      "biological_functions": "骨骼和牙齒結構、能量代謝（ATP）、細胞膜成分。",
+      "dosages": {
+        "rda_or_ai": "800 mg",
+        "ul_upper_limit": "UL 4000mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "磷太多會影響鈣吸收；腎臟病患者需嚴格限磷，少喝含磷酸的可樂汽水。",
+      "whole_food_sources": [
+        {
+          "food_name": "肉類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "磷通常不會缺——現代飲食反而容易攝取過量（加工食品含磷添加物）。",
+      "synergistic_nutrients": [
+        "鈣"
+      ],
+      "antagonistic_nutrients": [
+        "鈣 (比例失衡)"
+      ]
+    },
+    {
+      "id": "chromium",
+      "name_zh": "鉻",
+      "name_en": "Chromium",
+      "category": "必需營養素",
+      "sub_components": [
+        "血糖穩定器"
+      ],
+      "biological_functions": "增強胰島素敏感度，幫助血糖調節。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 男 35 / 女 25 μg",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "μg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "正常飲食通常足夠；糖尿病患者勿自行以鉻補充劑取代藥物。",
+      "whole_food_sources": [
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花椰菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "馬鈴薯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "精製糖會加速鉻的流失——吃越多甜食，身體需要的鉻就越多。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "精製糖 (促流失)"
+      ]
+    },
+    {
+      "id": "copper",
+      "name_zh": "銅",
+      "name_en": "Copper",
+      "category": "必需營養素",
+      "sub_components": [
+        "造血好夥伴"
+      ],
+      "biological_functions": "協助鐵的運送與利用、形成紅血球、維持結締組織與神經、是抗氧化酵素的成分。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 約 0.9mg",
+        "ul_upper_limit": "UL 10mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "長期大量補鋅會抑制銅吸收，可能導致銅缺乏。",
+      "whole_food_sources": [
+        {
+          "food_name": "內臟",
+          "content_per_100g": null,
+          "notes": "肝"
+        },
+        {
+          "food_name": "牡蠣",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "種子",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黑巧克力",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香菇",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "補鐵無效的貧血，有時是缺銅——銅幫助鐵被身體利用。",
+      "synergistic_nutrients": [
+        "鐵"
+      ],
+      "antagonistic_nutrients": [
+        "鋅 (高劑量)"
+      ]
+    },
+    {
+      "id": "manganese",
+      "name_zh": "錳",
+      "name_en": "Manganese",
+      "category": "必需營養素",
+      "sub_components": [
+        "骨骼與抗氧化酵素"
+      ],
+      "biological_functions": "參與骨骼形成、抗氧化酵素（SOD）運作、醣類與脂肪代謝。",
+      "dosages": {
+        "rda_or_ai": "適當攝取量 AI 男 4.0 / 女 3.0 mg",
+        "ul_upper_limit": "UL 11mg",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "過量多來自污染或補充劑，可能影響神經系統；正常飲食安全。",
+      "whole_food_sources": [
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "糙米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鳳梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "茶",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "全穀與堅果吃得夠，錳幾乎不會缺。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "鐵 (競爭吸收)"
+      ]
+    },
+    {
+      "id": "soluble_fiber",
+      "name_zh": "水溶性膳食纖維",
+      "name_en": "Soluble Dietary Fiber",
+      "category": "膳食纖維",
+      "sub_components": [
+        "果膠",
+        "葡甘聚糖",
+        "β-葡聚醣"
+      ],
+      "biological_functions": "溶於水形成膠狀，延緩糖分吸收、穩定血糖、抓住膽固醇排出、增加飽足感。",
+      "dosages": {
+        "rda_or_ai": "總膳食纖維每日 25–35g（水溶+非水溶）",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "突然大量增加纖維會脹氣，要循序漸進並搭配足夠喝水。",
+      "whole_food_sources": [
+        {
+          "food_name": "燕麥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蘋果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柑橘",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "木耳",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "秋葵",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蒟蒻",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "想穩血糖、降膽固醇——早餐一碗燕麥粥是最簡單的起點。",
+      "synergistic_nutrients": [
+        "益生元／寡糖",
+        "水"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "insoluble_fiber",
+      "name_zh": "非水溶性膳食纖維",
+      "name_en": "Insoluble Dietary Fiber",
+      "category": "膳食纖維",
+      "sub_components": [
+        "纖維素",
+        "木質素"
+      ],
+      "biological_functions": "不溶於水，像掃把一樣增加糞便體積、促進腸道蠕動、預防便祕與大腸憩室。",
+      "dosages": {
+        "rda_or_ai": "總膳食纖維每日 25–35g（水溶+非水溶）",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "腸道狹窄、術後或急性腸炎患者需限制纖維，請依醫囑調整。",
+      "whole_food_sources": [
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "糙米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蔬菜梗",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "芹菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菇類",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "便祕時「纖維+水+運動」三者缺一不可，光吃纖維不喝水反而更硬。",
+      "synergistic_nutrients": [
+        "水"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "prebiotics_oligosaccharides",
+      "name_zh": "益生元／寡糖",
+      "name_en": "Prebiotics / Oligosaccharides",
+      "category": "膳食纖維",
+      "sub_components": [
+        "Prebiotics（腸道好菌的食物）"
+      ],
+      "biological_functions": "人體不消化，但能餵養腸道益生菌，維護腸道微生態、增強免疫、幫助礦物質吸收。",
+      "dosages": {
+        "rda_or_ai": "無明確建議量",
+        "ul_upper_limit": "無明確上限",
+        "dosage_unit": "g"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "腸躁症（IBS）患者對某些寡糖（FODMAP）敏感，可能脹氣，需個別調整。",
+      "whole_food_sources": [
+        {
+          "food_name": "洋蔥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "大蒜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蘆筍",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香蕉",
+          "content_per_100g": null,
+          "notes": "微生"
+        },
+        {
+          "food_name": "菊苣",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "益生元是益生菌的「飼料」——補了益生菌也要餵它，兩者一起效果更好。",
+      "synergistic_nutrients": [
+        "益生菌 (probiotics)"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "beta_carotene",
+      "name_zh": "β-胡蘿蔔素",
+      "name_en": "Beta-carotene",
+      "category": "機能成分",
+      "sub_components": [
+        "類胡蘿蔔素／維生素A前驅物"
+      ],
+      "biological_functions": "抗氧化，並可在體內依需求轉化為維生素A，保護視力與皮膚黏膜。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "吸菸者長期高劑量β-胡蘿蔔素「補充劑」可能增加肺癌風險，從食物攝取則安全。",
+      "whole_food_sources": [
+        {
+          "food_name": "胡蘿蔔",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "地瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "木瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "芒果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "深綠色蔬菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "配油脂吸收更好，且由食物攝取的β-胡蘿蔔素不會造成維生素A中毒。",
+      "synergistic_nutrients": [
+        "脂質"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "lycopene",
+      "name_zh": "茄紅素",
+      "name_en": "Lycopene",
+      "category": "機能成分",
+      "sub_components": [
+        "類胡蘿蔔素"
+      ],
+      "biological_functions": "強效抗氧化、保護心血管、與降低前列腺癌風險有關。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "茄紅素是脂溶性的，空腹吃生番茄幾乎吸收不了。",
+      "whole_food_sources": [
+        {
+          "food_name": "番茄",
+          "content_per_100g": null,
+          "notes": "煮熟+油脂吸收提升5倍"
+        },
+        {
+          "food_name": "西瓜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紅葡萄柚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紅甜椒",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "木瓜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "番茄炒蛋 > 番茄沙拉——茄紅素是少數加熱後吸收更好的營養素。",
+      "synergistic_nutrients": [
+        "脂質",
+        "加熱"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "lutein",
+      "name_zh": "葉黃素",
+      "name_en": "Lutein",
+      "category": "機能成分",
+      "sub_components": [
+        "類胡蘿蔔素／眼睛防曬乳"
+      ],
+      "biological_functions": "過濾藍光、保護黃斑部、預防老年性黃斑部病變。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "葉黃素是脂溶性的，配油脂一起吃吸收更好。",
+      "whole_food_sources": [
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": "含量最高"
+        },
+        {
+          "food_name": "羽衣甘藍",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "玉米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "枸杞",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柳橙",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "3C族必備——每天一把菠菜或2顆蛋黃，保護你的黃斑部。",
+      "synergistic_nutrients": [
+        "脂質",
+        "玉米黃素"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "anthocyanin",
+      "name_zh": "花青素",
+      "name_en": "Anthocyanin",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類"
+      ],
+      "biological_functions": "超強抗氧化、保護眼睛微血管、抗發炎、與改善記憶力有關。顏色越深含量越高。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "花青素怕高溫，蒸或微波比水煮保留更多。",
+      "whole_food_sources": [
+        {
+          "food_name": "藍莓",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紫葡萄",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紫薯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紫高麗菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "桑椹",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "櫻桃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "茄子",
+          "content_per_100g": null,
+          "notes": "皮"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "用眼過度的人——藍莓、桑椹是你的好朋友。冷凍的營養價值不輸新鮮。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "高溫"
+      ]
+    },
+    {
+      "id": "catechin",
+      "name_zh": "兒茶素",
+      "name_en": "Catechin (EGCG)",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類（綠茶）"
+      ],
+      "biological_functions": "抗氧化、促進脂肪代謝、口腔保健、抗菌。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "空腹喝綠茶可能傷胃；兒茶素會抑制鐵吸收，貧血的人飯後再喝。",
+      "whole_food_sources": [
+        {
+          "food_name": "綠茶",
+          "content_per_100g": null,
+          "notes": "最佳來源"
+        },
+        {
+          "food_name": "抹茶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "白茶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黑巧克力",
+          "content_per_100g": null,
+          "notes": ">70%"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "綠茶用80°C沖泡、泡3分鐘——溫度太高或泡太久會苦且破壞兒茶素。",
+      "synergistic_nutrients": [
+        "維生素C"
+      ],
+      "antagonistic_nutrients": [
+        "鐵 (抑制吸收)"
+      ]
+    },
+    {
+      "id": "resveratrol",
+      "name_zh": "白藜蘆醇",
+      "name_en": "Resveratrol",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類"
+      ],
+      "biological_functions": "抗氧化、保護心血管、抗發炎、與延緩老化研究相關。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "紅酒的酒精傷害可能大於白藜蘆醇的好處——不喝酒的人不需要為此開始喝。",
+      "whole_food_sources": [
+        {
+          "food_name": "紅葡萄皮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花生",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "藍莓",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蔓越莓",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紅酒",
+          "content_per_100g": null,
+          "notes": "適量"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "想攝取白藜蘆醇不一定要喝酒——吃紅葡萄（帶皮）、花生也可以。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "isoflavone",
+      "name_zh": "異黃酮",
+      "name_en": "Isoflavone",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類／植物雌激素"
+      ],
+      "biological_functions": "類似雌激素的溫和作用、保護骨骼、與改善更年期症狀有關。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "荷爾蒙相關癌症（如乳癌）患者是否適合大量攝取，務必先諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆腐",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆漿",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "毛豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "味噌",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "納豆",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "更年期女性多吃豆製品有助緩解熱潮紅和骨質流失。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "allicin",
+      "name_zh": "大蒜素",
+      "name_en": "Allicin",
+      "category": "機能成分",
+      "sub_components": [
+        "有機硫化物"
+      ],
+      "biological_functions": "抗菌、抗病毒、降血壓、降膽固醇、防血栓。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "空腹生吃大蒜會刺激胃；服用抗凝血藥物者大量食用前宜諮詢。",
+      "whole_food_sources": [
+        {
+          "food_name": "大蒜",
+          "content_per_100g": null,
+          "notes": "切碎或壓碎後靜置10分鐘最有效"
+        },
+        {
+          "food_name": "洋蔥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "韭菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "大蒜切碎後等10分鐘再煮——酵素需要時間把前驅物轉化為大蒜素。",
+      "synergistic_nutrients": [
+        "靜置 10 分鐘活化"
+      ],
+      "antagonistic_nutrients": [
+        "久煮"
+      ]
+    },
+    {
+      "id": "sulforaphane",
+      "name_zh": "蘿蔔硫素",
+      "name_en": "Sulforaphane",
+      "category": "機能成分",
+      "sub_components": [
+        "有機硫化物（十字花科）"
+      ],
+      "biological_functions": "啟動人體自身的抗氧化與解毒酵素系統、抗發炎，抗癌研究非常活躍。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "高溫水煮會破壞酵素，快炒、清蒸或涼拌保留最多。",
+      "whole_food_sources": [
+        {
+          "food_name": "青花菜苗",
+          "content_per_100g": null,
+          "notes": "含量最高"
+        },
+        {
+          "food_name": "花椰菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "青花菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "高麗菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "白蘿蔔",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "切碎後靜置40分鐘讓酵素作用，或搭配一點生的芥末／蘿蔔一起吃，轉化率更高。",
+      "synergistic_nutrients": [
+        "芥子酶 (myrosinase)"
+      ],
+      "antagonistic_nutrients": [
+        "高溫水煮"
+      ]
+    },
+    {
+      "id": "quercetin",
+      "name_zh": "槲皮素",
+      "name_en": "Quercetin",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類（類黃酮）"
+      ],
+      "biological_functions": "抗過敏、抗發炎、抗氧化、穩定免疫細胞。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "洋蔥外層含量比內層高，別剝太多層。",
+      "whole_food_sources": [
+        {
+          "food_name": "洋蔥",
+          "content_per_100g": null,
+          "notes": "紫洋蔥含量最高"
+        },
+        {
+          "food_name": "蘋果",
+          "content_per_100g": null,
+          "notes": "帶皮"
+        },
+        {
+          "food_name": "莓果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "綠茶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花椰菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "過敏體質的人可以多吃紫洋蔥——天然的抗組織胺，不會嗜睡。",
+      "synergistic_nutrients": [
+        "維生素C"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "curcumin",
+      "name_zh": "薑黃素",
+      "name_en": "Curcumin",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類"
+      ],
+      "biological_functions": "強效抗發炎、抗氧化、保護肝臟、與改善關節炎有關。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "薑黃素單獨吃幾乎不吸收；膽結石、服用抗凝血藥物者大量補充前宜諮詢。",
+      "whole_food_sources": [
+        {
+          "food_name": "薑黃粉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "咖哩",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃芥末",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "薑黃素+黑胡椒（胡椒鹼）吸收率大幅提升——吃咖哩記得加黑胡椒與油脂。",
+      "synergistic_nutrients": [
+        "胡椒鹼 (piperine)",
+        "脂質"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "zeaxanthin",
+      "name_zh": "玉米黃素",
+      "name_en": "Zeaxanthin",
+      "category": "機能成分",
+      "sub_components": [
+        "類胡蘿蔔素（葉黃素的夥伴）"
+      ],
+      "biological_functions": "與葉黃素一起集中在黃斑部中心，過濾藍光、保護視網膜。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "脂溶性，配油脂吸收更好。",
+      "whole_food_sources": [
+        {
+          "food_name": "玉米",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "枸杞",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "柳橙",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "深綠色蔬菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "顧眼睛時玉米黃素常和葉黃素一起補——兩個要搭配。",
+      "synergistic_nutrients": [
+        "脂質",
+        "葉黃素"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "astaxanthin",
+      "name_zh": "蝦紅素",
+      "name_en": "Astaxanthin",
+      "category": "機能成分",
+      "sub_components": [
+        "類胡蘿蔔素（紅色抗氧化）"
+      ],
+      "biological_functions": "抗氧化力極強、保護皮膚、抗發炎、護眼。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "脂溶性，隨餐吃吸收較好；孕婦補充劑前宜諮詢。",
+      "whole_food_sources": [
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鮭魚卵",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蝦",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蟹",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "紅色藻類",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "鮭魚、蝦蟹的紅色就是蝦紅素——來自牠們吃的藻類。",
+      "synergistic_nutrients": [
+        "脂質"
+      ],
+      "antagonistic_nutrients": []
+    },
+    {
+      "id": "chlorogenic_acid",
+      "name_zh": "綠原酸",
+      "name_en": "Chlorogenic acid",
+      "category": "機能成分",
+      "sub_components": [
+        "多酚類（咖啡酸家族）"
+      ],
+      "biological_functions": "抗氧化，與延緩糖分吸收、調節血糖及血壓的研究有關。",
+      "dosages": {
+        "rda_or_ai": "無明確建議攝取量（RDA）",
+        "ul_upper_limit": "無明確上限（非必需營養素）",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "咖啡因敏感、心悸、失眠者仍要控制咖啡量。",
+      "whole_food_sources": [
+        {
+          "food_name": "咖啡",
+          "content_per_100g": null,
+          "notes": "主要來源"
+        },
+        {
+          "food_name": "蘋果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "茄子",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "地瓜葉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "牛蒡",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "咖啡的保健成分很多來自綠原酸——但別為此加糖加奶油。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": []
+    }
+  ],
+  "scenarios_and_symptoms_matrix": [
+    {
+      "scenario_or_symptom_id": "chronic_fatigue",
+      "name": "慢性疲勞",
+      "type": "symptom",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "鐵",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「慢性疲勞」相關"
+        },
+        {
+          "nutrient_name": "維生素B群（尤其B12）",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「慢性疲勞」相關"
+        },
+        {
+          "nutrient_name": "維生素C",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「慢性疲勞」相關"
+        },
+        {
+          "nutrient_name": "優質蛋白質",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「慢性疲勞」相關"
+        },
+        {
+          "nutrient_name": "水分",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「慢性疲勞」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "三餐定時、每餐有蛋白質；紅肉或豆類補鐵、搭配芭樂/柑橘的維C幫助吸收；先確認睡眠與喝水是否足夠。",
+      "red_flag_warnings": "若休息後仍持續疲勞數週、伴隨體重驟降、發燒、心悸或呼吸困難，請盡快就醫檢查（貧血、甲狀腺、心臟等）。"
+    },
+    {
+      "scenario_or_symptom_id": "insomnia",
+      "name": "失眠",
+      "type": "symptom",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "鎂",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「失眠」相關"
+        },
+        {
+          "nutrient_name": "色胺酸",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「失眠」相關"
+        },
+        {
+          "nutrient_name": "維生素B6",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「失眠」相關"
+        },
+        {
+          "nutrient_name": "鈣",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「失眠」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "晚餐可含小份助眠食材：香蕉、堅果、溫牛奶、燕麥；睡前避免咖啡因與酒精；鎂有助肌肉與神經放鬆。",
+      "red_flag_warnings": "長期失眠會影響身心健康，若已影響白天功能，請就醫評估，勿自行長期使用助眠保健品或藥物。"
+    },
+    {
+      "scenario_or_symptom_id": "muscle_cramps",
+      "name": "肌肉抽筋",
+      "type": "symptom",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "鎂",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「肌肉抽筋」相關"
+        },
+        {
+          "nutrient_name": "鈣",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「肌肉抽筋」相關"
+        },
+        {
+          "nutrient_name": "鉀",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「肌肉抽筋」相關"
+        },
+        {
+          "nutrient_name": "鈉（電解質）",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「肌肉抽筋」相關"
+        },
+        {
+          "nutrient_name": "水分",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「肌肉抽筋」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "運動流汗後補充電解質與水；日常多吃深綠蔬菜、香蕉、堅果、乳製品；避免只補水不補電解質。",
+      "red_flag_warnings": "若抽筋頻繁、劇烈、伴隨肌肉無力或非運動引起，可能是電解質失衡或神經血管問題，請就醫。"
+    },
+    {
+      "scenario_or_symptom_id": "constipation",
+      "name": "便祕",
+      "type": "symptom",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "膳食纖維（水溶+非水溶）",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「便祕」相關"
+        },
+        {
+          "nutrient_name": "水分",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「便祕」相關"
+        },
+        {
+          "nutrient_name": "益生元",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「便祕」相關"
+        },
+        {
+          "nutrient_name": "鎂",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「便祕」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "纖維+水+運動缺一不可；早上一杯溫水、多吃蔬果全穀與發酵食物（優格）；養成固定如廁時間。",
+      "red_flag_warnings": "若便祕突然發生、伴隨血便、腹痛、體重減輕或排便習慣明顯改變，請盡快就醫排除腸道疾病。"
+    },
+    {
+      "scenario_or_symptom_id": "anemia",
+      "name": "貧血",
+      "type": "symptom",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "鐵",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「貧血」相關"
+        },
+        {
+          "nutrient_name": "維生素B12",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「貧血」相關"
+        },
+        {
+          "nutrient_name": "葉酸",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「貧血」相關"
+        },
+        {
+          "nutrient_name": "維生素C",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「貧血」相關"
+        },
+        {
+          "nutrient_name": "優質蛋白質",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「貧血」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "缺鐵性：紅肉、肝臟、鴨血+維C（芭樂、柑橘）；素食者特別注意B12與鐵；避免與茶、咖啡同時吃。",
+      "red_flag_warnings": "貧血成因很多（缺鐵、B12、慢性出血、疾病），請先就醫抽血確認類型，不可自行亂補鐵。"
+    },
+    {
+      "scenario_or_symptom_id": "hypertension_prevention_dash",
+      "name": "高血壓防護",
+      "type": "goal",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "鉀",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「高血壓防護」相關"
+        },
+        {
+          "nutrient_name": "鎂",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「高血壓防護」相關"
+        },
+        {
+          "nutrient_name": "鈣",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「高血壓防護」相關"
+        },
+        {
+          "nutrient_name": "膳食纖維",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「高血壓防護」相關"
+        },
+        {
+          "nutrient_name": "並嚴格減鈉",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「高血壓防護」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "得舒飲食（DASH）：多蔬果、全穀、低脂乳、堅果、白肉魚；減少加工食品與外食的高鈉；用香料取代鹽。",
+      "red_flag_warnings": "已診斷高血壓或正在服藥者，飲食調整需配合醫師，切勿自行停藥或以保健品取代藥物。"
+    },
+    {
+      "scenario_or_symptom_id": "muscle_gain_fat_loss",
+      "name": "增肌減脂",
+      "type": "goal",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "優質蛋白質",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「增肌減脂」相關"
+        },
+        {
+          "nutrient_name": "複合碳水",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「增肌減脂」相關"
+        },
+        {
+          "nutrient_name": "Omega-3",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「增肌減脂」相關"
+        },
+        {
+          "nutrient_name": "維生素D",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「增肌減脂」相關"
+        },
+        {
+          "nutrient_name": "水分",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「增肌減脂」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "每餐一掌蛋白質、平均分配；訓練後補蛋白+碳水；選原型澱粉、控制精製糖與油炸；搭配阻力訓練。",
+      "red_flag_warnings": "極端節食、過量蛋白或濫用補劑可能傷腎與代謝，體重管理計畫建議諮詢營養師個別化設計。"
+    },
+    {
+      "scenario_or_symptom_id": "pregnancy_nutrition",
+      "name": "孕婦調理",
+      "type": "goal",
+      "key_nutrients_mapped": [
+        {
+          "nutrient_name": "葉酸",
+          "weight": 5,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        },
+        {
+          "nutrient_name": "鐵",
+          "weight": 4,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        },
+        {
+          "nutrient_name": "鈣",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        },
+        {
+          "nutrient_name": "碘",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        },
+        {
+          "nutrient_name": "Omega-3（DHA）",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        },
+        {
+          "nutrient_name": "優質蛋白質",
+          "weight": 3,
+          "recommendation_reason": "見飲食方向；此營養素與「孕婦調理」相關"
+        }
+      ],
+      "recommended_dietary_pattern": "孕前3個月起補葉酸；均衡多元、足夠鈣與鐵；DHA有助胎兒腦部發育；避免生食、酒精與過量咖啡因與維生素A。",
+      "red_flag_warnings": "孕期營養與補充劑務必由婦產科醫師與營養師依個人狀況指導，切勿自行服用高劑量補充品。"
+    }
+  ]
+}
