@@ -1,15 +1,16 @@
 {
   "_meta": {
     "title": "飲食行為教練 App — 營養素與症狀資料庫",
-    "version": "1.0",
-    "generated": "2026-08-06",
-    "reference_source": "劑量參考基準：衛生福利部第八版《國人膳食營養素參考攝取量 (DRIs)》與 WHO 建議，適用於一般健康成人。",
+    "version": "1.1",
+    "generated": "2026-08-07",
+    "changelog": "v1.1：新增「胺基酸」（9 種必需 + 5 種條件性／非必需）與「脂肪酸／油脂」（飽和、單元不飽和、多元不飽和、Omega-3、Omega-6、反式脂肪、膽固醇），各附 discovery_history 與 evidence_source。",
+    "reference_source": "劑量參考基準：衛生福利部第八版《國人膳食營養素參考攝取量 (DRIs)》與 WHO 建議，適用於一般健康成人；胺基酸需求另參 WHO/FAO/UNU (2007) 報告。",
     "important_notes": [
       "本資料庫僅供飲食衛教參考，不能取代醫師或營養師的專業診斷與處方。",
       "有任何症狀或健康疑慮，請務必優先諮詢醫師或營養師，切勿依本內容自行診斷、調整用藥或大量補充。",
       "content_per_100g 欄位刻意留空 (null)：精確的每 100g 含量需比對經驗證的食品成分資料庫 (如衛福部台灣食品成分資料庫)，本檔不臆測數值。",
-      "dosages 為一般健康成人參考值，實際需求依年齡、性別、體重、活動量與生理狀況 (如懷孕、疾病) 而異。",
-      "discovery_history 為營養科學史實 (發現者、年代)；evidence_source 為可查證的權威機構與指引 (如衛福部DRIs、WHO、NIH ODS、Linus Pauling Institute、AREDS2、DASH/NEJM 1997、MRC/Lancet 1991 等)，非逐字文獻引用。植化素的人體證據多屬初步，已於文字中據實標註。"
+      "dosages 為一般健康成人參考值，實際需求依年齡、性別、體重、活動量與生理狀況 (如懷孕、疾病) 而異；胺基酸與脂肪酸的 rda_or_ai 多以文字敘述，非單一數值。",
+      "discovery_history 為營養科學史實 (發現者、年代)；evidence_source 為可查證的權威機構與指引 (如衛福部DRIs、WHO、NIH ODS、Linus Pauling Institute、WHO/FAO/UNU 2007、AHA、NEJM PREDIMED 2013、WHO REPLACE 2018 等)，非逐字文獻引用。植化素與部分機能成分的人體證據多屬初步，已於文字中據實標註。"
     ]
   },
   "nutrients_database": [
@@ -127,7 +128,7 @@
           "notes": ""
         }
       ],
-      "supplement_vs_wholefood_notes": "每餐都要有一個手掌大的蛋白質，平均分配比一餐狂吃更好吸收。",
+      "supplement_vs_wholefood_notes": "每餐都要有一個手掌大的蛋白質，平均分配比一餐狂吃更好吸收。想知道 9 種必需胺基酸各自的作用，切到上方「胺基酸」分頁。",
       "synergistic_nutrients": [
         "維生素B6"
       ],
@@ -141,7 +142,9 @@
       "name_en": "Lipids / Fats (Omega-3/6/9)",
       "category": "必需營養素",
       "sub_components": [
-        "Omega-3/6/9"
+        "Omega-3",
+        "6",
+        "9"
       ],
       "biological_functions": "構成細胞膜、合成荷爾蒙、幫助脂溶性維生素（A、D、E、K）吸收。重點是「油的品質」而非完全不吃油。",
       "dosages": {
@@ -198,7 +201,7 @@
           "notes": "少碰"
         }
       ],
-      "supplement_vs_wholefood_notes": "每週吃 2–3 次深海魚補 Omega-3；用橄欖油或苦茶油取代精製調和油。",
+      "supplement_vs_wholefood_notes": "每週吃 2–3 次深海魚補 Omega-3；用橄欖油或苦茶油取代精製調和油。想細看飽和／單元／多元不飽和與反式脂肪的差別，切到上方「脂肪酸／油脂」分頁。",
       "synergistic_nutrients": [
         "維生素A",
         "維生素D",
@@ -255,6 +258,1206 @@
       "antagonistic_nutrients": [],
       "discovery_history": "水為生命之本自古已知；現代生理學確立其約占體重 60%，負責運輸、代謝廢物與體溫調節。",
       "evidence_source": "衛福部第八版 DRIs 水分與電解質章；歐洲 EFSA 水分攝取建議。"
+    },
+    {
+      "id": "leucine",
+      "name_zh": "白胺酸",
+      "name_en": "Leucine (BCAA)",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸",
+        "支鏈BCAA"
+      ],
+      "biological_functions": "支鏈胺基酸之一，是啟動肌肉蛋白質合成（mTOR 路徑）最關鍵的開關，運動後補充特別重要。",
+      "dosages": {
+        "rda_or_ai": "無單獨RDA；成人需求約每公斤體重 39mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "補充劑不能取代完整蛋白質；肝腎疾病者使用BCAA前請諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "乳清蛋白",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "牛肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鮪魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "訓練後一份含足量白胺酸的蛋白質（約每餐2–3g白胺酸）最能刺激肌肉合成。",
+      "synergistic_nutrients": [
+        "異白胺酸",
+        "纈胺酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "19世紀初由化學家自肉類與乳酪分離，名稱源自希臘文 leukos「白色」；其作為肌肉蛋白質合成主要開關的角色，由現代運動營養研究確立。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；國際運動營養學會（ISSN）立場聲明。"
+    },
+    {
+      "id": "isoleucine",
+      "name_zh": "異白胺酸",
+      "name_en": "Isoleucine (BCAA)",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸",
+        "支鏈BCAA"
+      ],
+      "biological_functions": "支鏈胺基酸之一，參與肌肉修復、運動時的能量供應與血糖調節。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 20mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "瘦肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "起司",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "扁豆",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "BCAA（白／異白／纈胺酸）在完整蛋白質裡就有，均衡吃肉蛋豆魚就足夠。",
+      "synergistic_nutrients": [
+        "白胺酸",
+        "纈胺酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "支鏈胺基酸的必需地位，由20世紀 William Cumming Rose 等人以動物與人體氮平衡實驗確立。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "valine",
+      "name_zh": "纈胺酸",
+      "name_en": "Valine (BCAA)",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸",
+        "支鏈BCAA"
+      ],
+      "biological_functions": "支鏈胺基酸之一，維持肌肉代謝、組織修復與神經系統正常運作。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 26mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肉類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菇類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花生",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "三種BCAA協同作用，補充時比例均衡比單吃一種更有意義。",
+      "synergistic_nutrients": [
+        "白胺酸",
+        "異白胺酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1901年由德國化學家 Emil Fischer 分離並研究其結構；必需胺基酸的分類由 Rose 的研究確立。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "lysine",
+      "name_zh": "離胺酸",
+      "name_en": "Lysine",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸"
+      ],
+      "biological_functions": "合成膠原蛋白、幫助鈣質吸收、製造肉鹼（把脂肪轉為能量）、支持免疫。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 30mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": "穀類含量偏低"
+        }
+      ],
+      "supplement_vs_wholefood_notes": "穀類離胺酸少、豆類豐富——「米飯配豆類」正好互補，這是素食蛋白質搭配的關鍵。",
+      "synergistic_nutrients": [
+        "豆類 (與穀類互補)"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1889年由 Drechsel 自酪蛋白分離；因穀類含量偏低，是穀類為主飲食的「限制胺基酸」，此概念為蛋白質互補理論的基礎。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "methionine",
+      "name_zh": "甲硫胺酸",
+      "name_en": "Methionine",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸",
+        "含硫"
+      ],
+      "biological_functions": "含硫胺基酸，參與甲基化反應、肝臟解毒、合成肉鹼，也是蛋白質合成的起始胺基酸。",
+      "dosages": {
+        "rda_or_ai": "與半胱胺酸合計約每公斤 15mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "長期極高攝取與同半胱胺酸上升有關，需搭配足夠B6、B12、葉酸幫助代謝。",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "巴西堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "芝麻",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "",
+      "synergistic_nutrients": [
+        "半胱胺酸",
+        "維生素B6",
+        "維生素B12",
+        "葉酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1921年由 Mueller 自酪蛋白分離；為含硫必需胺基酸，也是蛋白質合成的起始胺基酸。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "phenylalanine",
+      "name_zh": "苯丙胺酸",
+      "name_en": "Phenylalanine",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸"
+      ],
+      "biological_functions": "是酪胺酸的前驅物，進而合成多巴胺、正腎上腺素等神經傳導物質，影響情緒與警覺。",
+      "dosages": {
+        "rda_or_ai": "與酪胺酸合計約每公斤 25mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "苯酮尿症（PKU）患者無法代謝苯丙胺酸，必須嚴格限制，含阿斯巴甜的代糖也要避開。",
+      "whole_food_sources": [
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜籽",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "",
+      "synergistic_nutrients": [
+        "酪胺酸"
+      ],
+      "antagonistic_nutrients": [
+        "苯酮尿症 PKU (禁忌)"
+      ],
+      "discovery_history": "19世紀後期被分離；其作為多巴胺等神經傳導物質前驅物、以及與苯酮尿症（PKU）的關係，是現代生化與新生兒篩檢的重要基礎。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；美國 NIH 遺傳與代謝資料。"
+    },
+    {
+      "id": "threonine",
+      "name_zh": "蘇胺酸",
+      "name_en": "Threonine",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸"
+      ],
+      "biological_functions": "構成膠原蛋白與彈力蛋白、維持腸道黏膜屏障、支持抗體與免疫功能。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 15mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "瘦肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "扁豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "芝麻",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "腸道黏膜更新快、需求高——腸胃道健康和足夠蛋白質息息相關。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1935年由美國生化學家 William Cumming Rose 發現——這是最後一個被確認的必需胺基酸，也讓「9 種必需胺基酸」的清單就此完整。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "tryptophan",
+      "name_zh": "色胺酸",
+      "name_en": "Tryptophan",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸",
+        "助眠"
+      ],
+      "biological_functions": "是血清素（穩定情緒）與褪黑激素（幫助入睡）的前驅物，也參與菸鹼酸（B3）合成。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 4mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "正在服用抗憂鬱藥（尤其SSRI）者，額外補充色胺酸／5-HTP前務必諮詢醫師，以免血清素過量。",
+      "whole_food_sources": [
+        {
+          "food_name": "牛奶",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "香蕉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "燕麥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "火雞肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜籽",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "睡前一杯溫牛奶的「助眠」說法有部分根據——色胺酸配一點碳水更容易進入大腦。",
+      "synergistic_nutrients": [
+        "維生素B6",
+        "碳水化合物"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1901年由英國生化學家 Frederick Gowland Hopkins 自酪蛋白分離（他後來因發現維生素獲諾貝爾獎）；其為血清素與褪黑激素前驅物的角色由後續神經科學確立。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；美國 NIH 膳食補充品辦公室（ODS）。"
+    },
+    {
+      "id": "histidine",
+      "name_zh": "組胺酸",
+      "name_en": "Histidine",
+      "category": "胺基酸",
+      "sub_components": [
+        "必需胺基酸"
+      ],
+      "biological_functions": "合成組織胺（免疫與發炎反應）、維持血紅素與神經髓鞘，對嬰幼兒成長尤其重要。",
+      "dosages": {
+        "rda_or_ai": "約每公斤體重 10mg/日",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg/kg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "成人可少量自製，但仍歸類為必需——嬰幼兒與生長期需求較高。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1896年由 Kossel 與 Hedin 各自分離；長期被視為僅嬰幼兒必需，現行分類將其列為成人亦必需。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；衛福部第八版 DRIs 蛋白質章。"
+    },
+    {
+      "id": "glutamine",
+      "name_zh": "麩醯胺酸",
+      "name_en": "Glutamine",
+      "category": "胺基酸",
+      "sub_components": [
+        "條件性必需（壓力下）"
+      ],
+      "biological_functions": "血液中含量最高的胺基酸，是腸道細胞與免疫細胞的主要燃料；重病、手術、劇烈運動等壓力下需求會超過自製能力。",
+      "dosages": {
+        "rda_or_ai": "無RDA；一般飲食即足夠",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "健康者通常不需額外補充；肝腎疾病者補充前請諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "甘藍",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "菠菜",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1930年代被確認為血液中含量最高的胺基酸；「條件性必需」概念（壓力、重症下需求超過自製）為現代臨床營養所提出。",
+      "evidence_source": "美國腸道與靜脈營養學會（ASPEN）臨床營養指引；WHO/FAO/UNU（2007）報告。"
+    },
+    {
+      "id": "arginine",
+      "name_zh": "精胺酸",
+      "name_en": "Arginine",
+      "category": "胺基酸",
+      "sub_components": [
+        "條件性必需"
+      ],
+      "biological_functions": "是一氧化氮（NO）的原料，能放鬆血管、促進血液循環，也參與傷口癒合與免疫。成長期、受傷或重病時需求增加。",
+      "dosages": {
+        "rda_or_ai": "無RDA",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "心血管疾病、低血壓或正服用相關藥物者，高劑量補充前請諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜籽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "海鮮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全穀",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1886年由 Ernst Schulze 自羽扇豆幼苗分離；其為一氧化氮（NO）前驅物、可舒張血管的機制，源自1998年諾貝爾生理醫學獎的一氧化氮研究。",
+      "evidence_source": "美國 NIH 資料；WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告。"
+    },
+    {
+      "id": "glycine",
+      "name_zh": "甘胺酸",
+      "name_en": "Glycine",
+      "category": "胺基酸",
+      "sub_components": [
+        "條件性必需（最小胺基酸）"
+      ],
+      "biological_functions": "結構最小的胺基酸，是膠原蛋白的主要成分（約占三分之一）、合成抗氧化物穀胱甘肽與膽汁，也與睡眠品質有關。",
+      "dosages": {
+        "rda_or_ai": "無RDA",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "骨頭湯",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豬皮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞皮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "明膠",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豆類",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "膠原蛋白富含甘胺酸——但只要蛋白質吃夠，身體會自行合成需要的膠原，不一定要買補充品。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1820年由法國化學家 Braconnot 自明膠分離，是最早被發現的胺基酸之一，因帶甜味而以希臘文 glykys「甜」命名。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；美國 NIH 資料。"
+    },
+    {
+      "id": "tyrosine",
+      "name_zh": "酪胺酸",
+      "name_en": "Tyrosine",
+      "category": "胺基酸",
+      "sub_components": [
+        "條件性必需"
+      ],
+      "biological_functions": "由苯丙胺酸轉化而來，是多巴胺、正腎上腺素、腎上腺素與甲狀腺素的共同前驅物，影響專注、動力與代謝。",
+      "dosages": {
+        "rda_or_ai": "無RDA",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "起司",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "黃豆",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "雞肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "南瓜籽",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "苯酮尿症患者無法把苯丙胺酸轉成酪胺酸，酪胺酸對他們反而變成必需。",
+      "synergistic_nutrients": [
+        "苯丙胺酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1846年由德國化學家 Liebig 自酪蛋白（乳酪）分離，名稱源自希臘文 tyros「乳酪」；為多巴胺與甲狀腺素的共同前驅物。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；美國 NIH 資料。"
+    },
+    {
+      "id": "cysteine",
+      "name_zh": "半胱胺酸",
+      "name_en": "Cysteine",
+      "category": "胺基酸",
+      "sub_components": [
+        "條件性必需",
+        "含硫"
+      ],
+      "biological_functions": "含硫胺基酸，是抗氧化主力「穀胱甘肽」的關鍵原料，也構成頭髮與指甲的角蛋白。",
+      "dosages": {
+        "rda_or_ai": "與甲硫胺酸合計計算",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "大蒜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "洋蔥",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "青花菜",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "燕麥",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "身體可由甲硫胺酸轉換半胱胺酸，含硫蔬菜（蒜、洋蔥、十字花科）也有幫助。",
+      "synergistic_nutrients": [
+        "甲硫胺酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "其氧化型「胱胺酸」早於1810年由 Wollaston 自膀胱結石發現；半胱胺酸為抗氧化物穀胱甘肽的關鍵原料。",
+      "evidence_source": "WHO/FAO/UNU（2007）蛋白質與胺基酸需求報告；Linus Pauling Institute 微量營養素資訊中心。"
+    },
+    {
+      "id": "saturated_fat",
+      "name_zh": "飽和脂肪酸",
+      "name_en": "Saturated Fatty Acids",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "Saturated fat"
+      ],
+      "biological_functions": "碳鏈上沒有雙鍵、結構穩定、室溫多為固態。是能量與細胞膜的原料，但過量會升高LDL（壞膽固醇）。",
+      "dosages": {
+        "rda_or_ai": "建議低於每日總熱量10%（心血管高風險者更低）",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "% kcal"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "心血管疾病或高膽固醇者尤其要控制飽和脂肪比例。",
+      "whole_food_sources": [
+        {
+          "food_name": "肥肉",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "奶油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "豬油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "椰子油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "棕櫚油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "全脂乳製品",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "不必完全禁絕，但別當主要油脂——把一部分換成橄欖油、堅果等不飽和油更護心。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "20世紀中葉 Ancel Keys 的「七國研究」將飽和脂肪攝取與血膽固醇、心血管風險連結，奠定現代脂肪攝取建議的基礎。",
+      "evidence_source": "美國心臟協會（AHA）脂肪攝取建議；WHO 飽和與反式脂肪攝取指引（2018）。"
+    },
+    {
+      "id": "monounsaturated_fat_mufa",
+      "name_zh": "單元不飽和脂肪酸",
+      "name_en": "Monounsaturated Fatty Acids (MUFA, Omega-9)",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "MUFA",
+        "Omega-9・油酸"
+      ],
+      "biological_functions": "碳鏈上有一個雙鍵。能幫助降低LDL、維持HDL（好膽固醇），是地中海飲食護心的核心油脂。",
+      "dosages": {
+        "rda_or_ai": "可作為主要油脂來源，取代部分飽和脂肪",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "橄欖油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "苦茶油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酪梨油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "腰果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "杏仁",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "花生",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "日常炒菜用橄欖油或苦茶油取代精製調和油，是最容易做到的護心習慣。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "以橄欖油為核心的地中海飲食益處，由 PREDIMED 等大型隨機試驗（2013年 NEJM）證實可降低心血管事件。",
+      "evidence_source": "NEJM（2013）PREDIMED 試驗；美國心臟協會（AHA）。"
+    },
+    {
+      "id": "polyunsaturated_fat_pufa",
+      "name_zh": "多元不飽和脂肪酸",
+      "name_en": "Polyunsaturated Fatty Acids (PUFA)",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "PUFA",
+        "必需脂肪酸"
+      ],
+      "biological_functions": "碳鏈上有兩個以上雙鍵，包含人體無法自行合成、必須從食物取得的「必需脂肪酸」——Omega-3 與 Omega-6。",
+      "dosages": {
+        "rda_or_ai": "Omega-3與Omega-6都需要，重點是兩者比例平衡",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "深海魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "亞麻仁",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "核桃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "葵花油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "大豆油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "多元不飽和油不耐高溫，適合涼拌或低溫烹調，高溫油炸容易氧化變質。",
+      "synergistic_nutrients": [
+        "Omega-3",
+        "Omega-6"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1929年 Burr 夫婦以大鼠實驗證明「必需脂肪酸」存在，確立 Omega-3、Omega-6 人體無法自製、須從食物取得。",
+      "evidence_source": "衛福部第八版 DRIs 脂質章；美國心臟協會（AHA）。"
+    },
+    {
+      "id": "omega_3",
+      "name_zh": "Omega-3",
+      "name_en": "Omega-3 (EPA/DHA/ALA)",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "必需脂肪酸（EPA",
+        "DHA",
+        "ALA）"
+      ],
+      "biological_functions": "抗發炎、保護心血管、支持大腦與視網膜（DHA）。現代飲食普遍攝取不足。",
+      "dosages": {
+        "rda_or_ai": "EPA+DHA約250–500mg/日；每週2–3次深海魚",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "mg"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "服用抗凝血藥物者高劑量魚油補充前請諮詢醫師。",
+      "whole_food_sources": [
+        {
+          "food_name": "鮭魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "鯖魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "秋刀魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "沙丁魚",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "亞麻仁",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "奇亞籽",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "核桃",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "植物來源（亞麻仁的ALA）轉換成EPA／DHA效率低，吃魚或藻油較直接；素食者可選藻油。",
+      "synergistic_nutrients": [
+        "多元不飽和脂肪酸"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "1970年代 Dyerberg 與 Bang 對格陵蘭因紐特人的研究，發現高魚類飲食與低心血管疾病率的關聯，揭開 Omega-3 的心血管益處。",
+      "evidence_source": "美國心臟協會（AHA）魚油與 Omega-3 建議；衛福部第八版 DRIs 脂質章。"
+    },
+    {
+      "id": "omega_6",
+      "name_zh": "Omega-6",
+      "name_en": "Omega-6 (Linoleic acid)",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "必需脂肪酸（亞油酸）"
+      ],
+      "biological_functions": "人體必需，參與細胞膜構成與發炎調節。本身不是壞油，但現代飲食（大量植物油、加工食品）常攝取過多，與Omega-3失衡。",
+      "dosages": {
+        "rda_or_ai": "需要但少缺；重點是提高Omega-3、別再過量Omega-6",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "",
+      "whole_food_sources": [
+        {
+          "food_name": "大豆油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "葵花油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "玉米油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "堅果",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "種子",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "少吃油炸與加工食品、多吃魚，就能自然改善Omega-6／Omega-3的比例。",
+      "synergistic_nutrients": [
+        "Omega-3 (需平衡)"
+      ],
+      "antagonistic_nutrients": [],
+      "discovery_history": "亞油酸（Omega-6）的必需性同樣源自 Burr 夫婦1929年的研究；現代對 Omega-6／Omega-3 比例失衡的關注，源自飲食型態改變的流行病學觀察。",
+      "evidence_source": "美國心臟協會（AHA）；衛福部第八版 DRIs 脂質章。"
+    },
+    {
+      "id": "trans_fat",
+      "name_zh": "反式脂肪",
+      "name_en": "Trans Fat",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "對心血管最有害的脂肪"
+      ],
+      "biological_functions": "少量天然存在於反芻動物，但危害主要來自「部分氫化植物油」的人工反式脂肪。它同時升高LDL、降低HDL，是最傷心血管的脂肪。",
+      "dosages": {
+        "rda_or_ai": "越少越好、理想為零；WHO呼籲全球全面淘汰人工反式脂肪",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "台灣自2018年起禁止食品使用不完全氫化油（人工反式脂肪），但仍需留意標示與含量。",
+      "whole_food_sources": [
+        {
+          "food_name": "（應避免）酥油",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "乳瑪琳",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "奶精",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "部分烘焙品",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "油炸物",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "酥皮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "部分餅乾",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "看成分表：出現「氫化」「部分氫化」「植物性乳化油」「人造奶油」就放回架上。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [
+        "心血管健康 (應避免)"
+      ],
+      "discovery_history": "1990年代起，Willett 等人（哈佛護理師健康研究）等流行病學研究確立人工反式脂肪顯著提高心血管疾病風險，促成各國陸續禁用。",
+      "evidence_source": "WHO REPLACE 行動計畫（2018）；台灣衛福部食藥署自2018年禁用不完全氫化油之公告。"
+    },
+    {
+      "id": "cholesterol",
+      "name_zh": "膽固醇",
+      "name_en": "Cholesterol",
+      "category": "脂質/脂肪酸",
+      "sub_components": [
+        "類脂質"
+      ],
+      "biological_functions": "構成細胞膜、合成性荷爾蒙、維生素D與膽汁。約七至八成由肝臟自行製造，飲食只占少部分。",
+      "dosages": {
+        "rda_or_ai": "新版指引不再訂單一上限；重點是控制飽和與反式脂肪",
+        "ul_upper_limit": "見說明／依個人狀況",
+        "dosage_unit": "—"
+      },
+      "deficiency_effects": "",
+      "excess_effects": "已有高膽固醇、心血管疾病或家族性高膽固醇血症者，飲食仍需依醫囑個別化調整。",
+      "whole_food_sources": [
+        {
+          "food_name": "蛋黃",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "內臟",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "海鮮",
+          "content_per_100g": null,
+          "notes": ""
+        },
+        {
+          "food_name": "動物性食品",
+          "content_per_100g": null,
+          "notes": ""
+        }
+      ],
+      "supplement_vs_wholefood_notes": "對多數人而言，吃進的膽固醇對血膽固醇影響有限——控制飽和／反式脂肪、多運動更關鍵。健康者一天一顆蛋沒問題。",
+      "synergistic_nutrients": [],
+      "antagonistic_nutrients": [],
+      "discovery_history": "美國2015–2020飲食指南取消飲食膽固醇的單一每日上限，反映「飲食膽固醇對多數人血膽固醇影響有限」的證據演變。",
+      "evidence_source": "美國飲食指南（2015–2020）；美國心臟協會（AHA）。"
     },
     {
       "id": "vitamin_a",
@@ -1907,7 +3110,8 @@
       "name_en": "Beta-carotene",
       "category": "機能成分",
       "sub_components": [
-        "類胡蘿蔔素／維生素A前驅物"
+        "類胡蘿蔔素",
+        "維生素A前驅物"
       ],
       "biological_functions": "抗氧化，並可在體內依需求轉化為維生素A，保護視力與皮膚黏膜。",
       "dosages": {
@@ -2015,7 +3219,8 @@
       "name_en": "Lutein",
       "category": "機能成分",
       "sub_components": [
-        "類胡蘿蔔素／眼睛防曬乳"
+        "類胡蘿蔔素",
+        "眼睛防曬乳"
       ],
       "biological_functions": "過濾藍光、保護黃斑部、預防老年性黃斑部病變。",
       "dosages": {
@@ -2230,7 +3435,8 @@
       "name_en": "Isoflavone",
       "category": "機能成分",
       "sub_components": [
-        "多酚類／植物雌激素"
+        "多酚類",
+        "植物雌激素"
       ],
       "biological_functions": "類似雌激素的溫和作用、保護骨骼、與改善更年期症狀有關。",
       "dosages": {
