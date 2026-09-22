@@ -15,6 +15,7 @@ import { bind as bindFoodEvents } from './tables/food_events.js';
 import { bind as bindEmotionRecords } from './tables/emotion_records.js';
 import { bind as bindBehaviorPatterns } from './tables/behavior_patterns.js';
 import { bind as bindAiReports } from './tables/ai_reports.js';
+import { bind as bindSessions } from './tables/sessions.js';
 
 /**
  * @param {object} env - Worker 的 env 物件（ES Module fetch handler 的第二個參數）
@@ -38,6 +39,7 @@ export function createDb(env) {
     emotionRecords: bindEmotionRecords(db),
     behaviorPatterns: bindBehaviorPatterns(db),
     aiReports: bindAiReports(db),
+    sessions: bindSessions(db),
   };
 }
 
