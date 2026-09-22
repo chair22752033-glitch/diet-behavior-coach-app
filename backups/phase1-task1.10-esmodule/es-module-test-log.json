@@ -1,0 +1,137 @@
+[
+  {
+    "name": "export default 具備 fetch() function",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/manifest.json 回傳200",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/manifest.json Content-Type正確",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/manifest.json 內容為合法JSON",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/apple-touch-icon.png 回傳200",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/apple-touch-icon.png Content-Type為image/png",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/apple-touch-icon.png 內容非空",
+    "ok": true,
+    "note": "1843 bytes"
+  },
+  {
+    "name": "/icon.svg 回傳200",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/icon.svg 內容為svg",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/img/存在的物件 回傳200",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/img/存在的物件 內容正確（來自R2 binding）",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/img/存在的物件 Cache-Control正確",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/img/不存在的物件 回傳404",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/img/路徑穿越測試 行為與轉換前一致（URL正規化後落到首頁200，未觸及R2）",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync GET 不存在的code 回傳200且內容為null",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync POST 成功",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync POST 確實寫入 env.SYNC_KV（假KV store內可查到）",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync GET 讀回剛才POST的內容",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync 無效code格式 回傳400",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/sync 不支援的方法 回傳405",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/qlive POST 成功",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "/api/qlive GET 讀回剛才POST的內容",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "首頁 回傳200",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "首頁 Content-Type為html",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "首頁 內容包含<!DOCTYPE html>",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "首頁 內容包含NUTRI_DATA/SCEN_DATA/QST_PHOTOS等關鍵變數",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "缺少R2 binding時 /img/ 優雅降級為404（不拋例外）",
+    "ok": true,
+    "note": ""
+  }
+]

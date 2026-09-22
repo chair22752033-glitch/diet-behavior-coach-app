@@ -1,5 +1,5 @@
-export default{fetch:function(r,env,ctx){return handle(r,env);}};
-async function handle(r,env){
+addEventListener('fetch',function(e){e.respondWith(handle(e.request));});
+async function handle(r){
   var p=new URL(r.url).pathname;
   if(p==='/manifest.json')return new Response(getManifest(),{headers:{'Content-Type':'application/manifest+json','Cache-Control':'public,max-age=86400'}});
   if(p==='/apple-touch-icon.png'||p==='/apple-touch-icon-precomposed.png'){
@@ -14,7 +14,7 @@ async function handle(r,env){
       return new Response('Not Found',{status:404});
     }
     try{
-      var imgObj=(env&&typeof env.DIET_COACH_IMAGES!=='undefined')?await env.DIET_COACH_IMAGES.get(imgKey):null;
+      var imgObj=typeof DIET_COACH_IMAGES!=='undefined'?await DIET_COACH_IMAGES.get(imgKey):null;
       if(!imgObj){
         return new Response('Not Found',{status:404});
       }
@@ -30,7 +30,7 @@ async function handle(r,env){
     }
     var key='sync:'+code;
     if(r.method==='GET'){
-      var v=await env.SYNC_KV.get(key);
+      var v=await SYNC_KV.get(key);
       return new Response(v===null?'null':v,{headers:{'Content-Type':'application/json'}});
     }
     if(r.method==='POST'){
@@ -38,7 +38,7 @@ async function handle(r,env){
       if(body.length>1000000){
         return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
       }
-      await env.SYNC_KV.put(key,body);
+      await SYNC_KV.put(key,body);
       return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
     }
     return new Response('Method Not Allowed',{status:405});
@@ -50,7 +50,7 @@ async function handle(r,env){
     }
     var qkey='qlive:'+qcode;
     if(r.method==='GET'){
-      var qv=await env.SYNC_KV.get(qkey);
+      var qv=await SYNC_KV.get(qkey);
       return new Response(qv===null?'null':qv,{headers:{'Content-Type':'application/json'}});
     }
     if(r.method==='POST'){
@@ -58,7 +58,7 @@ async function handle(r,env){
       if(qbody.length>200000){
         return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
       }
-      await env.SYNC_KV.put(qkey,qbody,{expirationTtl:3600});
+      await SYNC_KV.put(qkey,qbody,{expirationTtl:3600});
       return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
     }
     return new Response('Method Not Allowed',{status:405});
