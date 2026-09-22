@@ -11,9 +11,13 @@ id = "b984c2b3dfb14e2f86e3a99c1b0c1475"
 binding = "DIET_COACH_IMAGES"
 bucket_name = "diet-coach-images"
 
-# D1 資料庫已建立（diet-coach-db, database_id=9560446f-5d56-45e4-b605-ddec5cdf909f），
-# Schema 已於 Phase 1 TASK 1.7 建立完成，nutrients/scenarios 靜態內容已於 TASK 1.8 seed 完成
-# （見 migrations/0001_phase1_task1_7_initial_schema.sql、migrations/0002_phase1_task1_8_seed_content.sql）。
-# src/worker.js 已於 Phase 1 TASK 1.10 轉換為 ES Module 格式（export default { fetch }），
-# 技術上已可加入 [[d1_databases]] binding，但依 V1.1 規範「單一變更原則」，
-# 本次 TASK1.10 刻意不接入 D1，留待後續任務（TASK1.11~1.12）評估後再加入。
+[[d1_databases]]
+binding = "DIET_COACH_DB"
+database_name = "diet-coach-db"
+database_id = "9560446f-5d56-45e4-b605-ddec5cdf909f"
+
+# D1 binding 已於 Phase 1 TASK 1.11 正式接入（Schema 見 migrations/0001_...，
+# nutrients/scenarios seed 內容見 migrations/0002_...）。依 V1.1 規範「單一變更原則」，
+# 本次 TASK1.11 只加入 binding 本身，src/worker.js 沒有任何一行程式碼讀取
+# env.DIET_COACH_DB，現有功能（KV/R2/前端）完全不受影響，是否讓功能實際
+# 讀寫 D1，留待後續任務評估。
