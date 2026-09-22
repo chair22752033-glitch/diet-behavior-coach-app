@@ -1,0 +1,73 @@
+{
+  "log": [
+    {
+      "name": "替換前：分類場景 qstArtSVG 產生 img（5類×每類全部張數）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "替換前：信物 qstArtSVG 產生 img（14物件）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "替換後：分類場景 img base64 內容與 R2 來源逐位元組一致（13張）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "替換後：信物 img base64 內容與 R2 來源逐位元組一致（14張）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "替換機制驗證：qstArtSVG 確實讀取當前 QST_PHOTOS 值（非快取舊值）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "替換前後 img base64 內容一致（符合預期，因 R2 與 Base64 內容本就逐位元組相同）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "QUEST流程（single模式，R2來源）畫面正常且有圖片渲染",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "QUEST流程（map模式，R2來源）畫面正常且有圖片渲染",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "QUEST流程（panorama模式，R2來源）畫面正常且有圖片渲染",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "連續12次抽卡（R2來源）過程無中斷",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "記憶體還原回 Base64 來源後與原始結果一致（證明可回滾）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "整體流程無 page error（未捕捉例外，與基準測試方法一致）",
+      "ok": true,
+      "note": ""
+    },
+    {
+      "name": "console.error 中無「已知測試環境限制」以外的錯誤",
+      "ok": true,
+      "note": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    }
+  ],
+  "errs": [],
+  "consoleErrs": [
+    "Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}
