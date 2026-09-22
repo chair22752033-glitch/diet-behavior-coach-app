@@ -1,0 +1,359 @@
+[
+  {
+    "results": [
+      {
+        "id": "amino_01",
+        "category": "amino",
+        "name": "白胺酸"
+      },
+      {
+        "id": "amino_02",
+        "category": "amino",
+        "name": "異白胺酸"
+      },
+      {
+        "id": "amino_03",
+        "category": "amino",
+        "name": "纈胺酸"
+      },
+      {
+        "id": "amino_04",
+        "category": "amino",
+        "name": "離胺酸"
+      },
+      {
+        "id": "amino_05",
+        "category": "amino",
+        "name": "甲硫胺酸"
+      },
+      {
+        "id": "amino_06",
+        "category": "amino",
+        "name": "苯丙胺酸"
+      },
+      {
+        "id": "amino_07",
+        "category": "amino",
+        "name": "蘇胺酸"
+      },
+      {
+        "id": "amino_08",
+        "category": "amino",
+        "name": "色胺酸"
+      },
+      {
+        "id": "amino_09",
+        "category": "amino",
+        "name": "組胺酸"
+      },
+      {
+        "id": "amino_10",
+        "category": "amino",
+        "name": "麩醯胺酸"
+      },
+      {
+        "id": "amino_11",
+        "category": "amino",
+        "name": "精胺酸"
+      },
+      {
+        "id": "amino_12",
+        "category": "amino",
+        "name": "甘胺酸"
+      },
+      {
+        "id": "amino_13",
+        "category": "amino",
+        "name": "酪胺酸"
+      },
+      {
+        "id": "amino_14",
+        "category": "amino",
+        "name": "半胱胺酸"
+      },
+      {
+        "id": "fat_01",
+        "category": "fat",
+        "name": "飽和脂肪酸"
+      },
+      {
+        "id": "fat_02",
+        "category": "fat",
+        "name": "單元不飽和脂肪酸"
+      },
+      {
+        "id": "fat_03",
+        "category": "fat",
+        "name": "多元不飽和脂肪酸"
+      },
+      {
+        "id": "fat_04",
+        "category": "fat",
+        "name": "Omega-3"
+      },
+      {
+        "id": "fat_05",
+        "category": "fat",
+        "name": "Omega-6"
+      },
+      {
+        "id": "fat_06",
+        "category": "fat",
+        "name": "反式脂肪"
+      },
+      {
+        "id": "fat_07",
+        "category": "fat",
+        "name": "膽固醇"
+      },
+      {
+        "id": "fiber_01",
+        "category": "fiber",
+        "name": "水溶性膳食纖維"
+      },
+      {
+        "id": "fiber_02",
+        "category": "fiber",
+        "name": "非水溶性膳食纖維"
+      },
+      {
+        "id": "fiber_03",
+        "category": "fiber",
+        "name": "益生元／寡糖"
+      },
+      {
+        "id": "macro_01",
+        "category": "macro",
+        "name": "碳水化合物"
+      },
+      {
+        "id": "macro_02",
+        "category": "macro",
+        "name": "蛋白質"
+      },
+      {
+        "id": "macro_03",
+        "category": "macro",
+        "name": "脂質"
+      },
+      {
+        "id": "macro_04",
+        "category": "macro",
+        "name": "水"
+      },
+      {
+        "id": "mineral_01",
+        "category": "mineral",
+        "name": "鈣"
+      },
+      {
+        "id": "mineral_02",
+        "category": "mineral",
+        "name": "鐵"
+      },
+      {
+        "id": "mineral_03",
+        "category": "mineral",
+        "name": "鋅"
+      },
+      {
+        "id": "mineral_04",
+        "category": "mineral",
+        "name": "鎂"
+      },
+      {
+        "id": "mineral_05",
+        "category": "mineral",
+        "name": "鉀"
+      },
+      {
+        "id": "mineral_06",
+        "category": "mineral",
+        "name": "鈉"
+      },
+      {
+        "id": "mineral_07",
+        "category": "mineral",
+        "name": "碘"
+      },
+      {
+        "id": "mineral_08",
+        "category": "mineral",
+        "name": "硒"
+      },
+      {
+        "id": "mineral_09",
+        "category": "mineral",
+        "name": "磷"
+      },
+      {
+        "id": "mineral_10",
+        "category": "mineral",
+        "name": "鉻"
+      },
+      {
+        "id": "mineral_11",
+        "category": "mineral",
+        "name": "銅"
+      },
+      {
+        "id": "mineral_12",
+        "category": "mineral",
+        "name": "錳"
+      },
+      {
+        "id": "phyto_01",
+        "category": "phyto",
+        "name": "β-胡蘿蔔素"
+      },
+      {
+        "id": "phyto_02",
+        "category": "phyto",
+        "name": "茄紅素"
+      },
+      {
+        "id": "phyto_03",
+        "category": "phyto",
+        "name": "葉黃素"
+      },
+      {
+        "id": "phyto_04",
+        "category": "phyto",
+        "name": "花青素"
+      },
+      {
+        "id": "phyto_05",
+        "category": "phyto",
+        "name": "兒茶素"
+      },
+      {
+        "id": "phyto_06",
+        "category": "phyto",
+        "name": "白藜蘆醇"
+      },
+      {
+        "id": "phyto_07",
+        "category": "phyto",
+        "name": "異黃酮"
+      },
+      {
+        "id": "phyto_08",
+        "category": "phyto",
+        "name": "大蒜素"
+      },
+      {
+        "id": "phyto_09",
+        "category": "phyto",
+        "name": "蘿蔔硫素"
+      },
+      {
+        "id": "phyto_10",
+        "category": "phyto",
+        "name": "槲皮素"
+      },
+      {
+        "id": "phyto_11",
+        "category": "phyto",
+        "name": "薑黃素"
+      },
+      {
+        "id": "phyto_12",
+        "category": "phyto",
+        "name": "玉米黃素"
+      },
+      {
+        "id": "phyto_13",
+        "category": "phyto",
+        "name": "蝦紅素"
+      },
+      {
+        "id": "phyto_14",
+        "category": "phyto",
+        "name": "綠原酸"
+      },
+      {
+        "id": "vitamin_01",
+        "category": "vitamin",
+        "name": "維生素A"
+      },
+      {
+        "id": "vitamin_02",
+        "category": "vitamin",
+        "name": "維生素B1"
+      },
+      {
+        "id": "vitamin_03",
+        "category": "vitamin",
+        "name": "維生素B2"
+      },
+      {
+        "id": "vitamin_04",
+        "category": "vitamin",
+        "name": "維生素B3"
+      },
+      {
+        "id": "vitamin_05",
+        "category": "vitamin",
+        "name": "維生素B5"
+      },
+      {
+        "id": "vitamin_06",
+        "category": "vitamin",
+        "name": "維生素B6"
+      },
+      {
+        "id": "vitamin_07",
+        "category": "vitamin",
+        "name": "維生素B7"
+      },
+      {
+        "id": "vitamin_08",
+        "category": "vitamin",
+        "name": "葉酸"
+      },
+      {
+        "id": "vitamin_09",
+        "category": "vitamin",
+        "name": "維生素B12"
+      },
+      {
+        "id": "vitamin_10",
+        "category": "vitamin",
+        "name": "維生素C"
+      },
+      {
+        "id": "vitamin_11",
+        "category": "vitamin",
+        "name": "維生素D"
+      },
+      {
+        "id": "vitamin_12",
+        "category": "vitamin",
+        "name": "維生素E"
+      },
+      {
+        "id": "vitamin_13",
+        "category": "vitamin",
+        "name": "維生素K"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "EWR",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 1.0265
+      },
+      "duration": 1.0265,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 266240,
+      "rows_read": 67,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]
