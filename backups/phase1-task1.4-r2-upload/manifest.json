@@ -1,0 +1,164 @@
+[
+  {
+    "varName": "QST_PHOTO_T",
+    "r2path": "quest/scenes/terrain-1.jpg",
+    "localName": "quest__scenes__terrain-1.jpg",
+    "bytes": 20938
+  },
+  {
+    "varName": "QST_PHOTO_T2",
+    "r2path": "quest/scenes/terrain-2.jpg",
+    "localName": "quest__scenes__terrain-2.jpg",
+    "bytes": 22166
+  },
+  {
+    "varName": "QST_PHOTO_T3",
+    "r2path": "quest/scenes/terrain-3.jpg",
+    "localName": "quest__scenes__terrain-3.jpg",
+    "bytes": 17394
+  },
+  {
+    "varName": "QST_PHOTO_F",
+    "r2path": "quest/scenes/figure-1.jpg",
+    "localName": "quest__scenes__figure-1.jpg",
+    "bytes": 26141
+  },
+  {
+    "varName": "QST_PHOTO_F2",
+    "r2path": "quest/scenes/figure-2.jpg",
+    "localName": "quest__scenes__figure-2.jpg",
+    "bytes": 21662
+  },
+  {
+    "varName": "QST_PHOTO_F3",
+    "r2path": "quest/scenes/figure-3.jpg",
+    "localName": "quest__scenes__figure-3.jpg",
+    "bytes": 24330
+  },
+  {
+    "varName": "QST_PHOTO_W",
+    "r2path": "quest/scenes/weather-1.jpg",
+    "localName": "quest__scenes__weather-1.jpg",
+    "bytes": 13217
+  },
+  {
+    "varName": "QST_PHOTO_W2",
+    "r2path": "quest/scenes/weather-2.jpg",
+    "localName": "quest__scenes__weather-2.jpg",
+    "bytes": 14270
+  },
+  {
+    "varName": "QST_PHOTO_W3",
+    "r2path": "quest/scenes/weather-3.jpg",
+    "localName": "quest__scenes__weather-3.jpg",
+    "bytes": 8639
+  },
+  {
+    "varName": "QST_PHOTO_H",
+    "r2path": "quest/scenes/threshold-1.jpg",
+    "localName": "quest__scenes__threshold-1.jpg",
+    "bytes": 16967
+  },
+  {
+    "varName": "QST_PHOTO_H2",
+    "r2path": "quest/scenes/threshold-2.jpg",
+    "localName": "quest__scenes__threshold-2.jpg",
+    "bytes": 21308
+  },
+  {
+    "varName": "QST_PHOTO_E",
+    "r2path": "quest/scenes/wonder-1.jpg",
+    "localName": "quest__scenes__wonder-1.jpg",
+    "bytes": 12856
+  },
+  {
+    "varName": "QST_PHOTO_E2",
+    "r2path": "quest/scenes/wonder-2.jpg",
+    "localName": "quest__scenes__wonder-2.jpg",
+    "bytes": 11875
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_shoes",
+    "r2path": "quest/objects/shoes.jpg",
+    "localName": "quest__objects__shoes.jpg",
+    "bytes": 25752
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_lantern",
+    "r2path": "quest/objects/lantern.jpg",
+    "localName": "quest__objects__lantern.jpg",
+    "bytes": 24525
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_letters",
+    "r2path": "quest/objects/letters.jpg",
+    "localName": "quest__objects__letters.jpg",
+    "bytes": 26658
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_notebook",
+    "r2path": "quest/objects/notebook.jpg",
+    "localName": "quest__objects__notebook.jpg",
+    "bytes": 22839
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_glasses",
+    "r2path": "quest/objects/glasses.jpg",
+    "localName": "quest__objects__glasses.jpg",
+    "bytes": 15194
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_gloves",
+    "r2path": "quest/objects/gloves.jpg",
+    "localName": "quest__objects__gloves.jpg",
+    "bytes": 22687
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_coil",
+    "r2path": "quest/objects/coil.jpg",
+    "localName": "quest__objects__coil.jpg",
+    "bytes": 35066
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_glass",
+    "r2path": "quest/objects/glass.jpg",
+    "localName": "quest__objects__glass.jpg",
+    "bytes": 17461
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_pebble",
+    "r2path": "quest/objects/pebble.jpg",
+    "localName": "quest__objects__pebble.jpg",
+    "bytes": 22770
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_seal",
+    "r2path": "quest/objects/seal.jpg",
+    "localName": "quest__objects__seal.jpg",
+    "bytes": 21458
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_rope",
+    "r2path": "quest/objects/rope.jpg",
+    "localName": "quest__objects__rope.jpg",
+    "bytes": 25879
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_hourglass",
+    "r2path": "quest/objects/hourglass.jpg",
+    "localName": "quest__objects__hourglass.jpg",
+    "bytes": 21962
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_candle",
+    "r2path": "quest/objects/candle.jpg",
+    "localName": "quest__objects__candle.jpg",
+    "bytes": 23214
+  },
+  {
+    "varName": "QST_OBJ_PHOTO_umbrella",
+    "r2path": "quest/objects/umbrella.jpg",
+    "localName": "quest__objects__umbrella.jpg",
+    "bytes": 17777
+  }
+]
