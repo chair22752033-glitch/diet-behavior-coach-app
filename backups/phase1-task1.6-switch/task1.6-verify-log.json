@@ -1,0 +1,82 @@
+[
+  {
+    "name": "情境A（R2正常）QUEST single 模式：畫面有圖片且圖片實際載入成功",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"http://127.0.0.1:8765/img/quest/scenes/terrain-3.jpg\",\"loaded\":true,\"usesR2\":true,\"hasFallbackAttr\":true}"
+  },
+  {
+    "name": "情境A（R2正常）QUEST single 模式：圖片來源為 /img/（R2為主要來源）",
+    "ok": true,
+    "note": "http://127.0.0.1:8765/img/quest/scenes/terrain-3.jpg"
+  },
+  {
+    "name": "情境A（R2正常）QUEST map 模式：畫面有圖片且圖片實際載入成功",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"http://127.0.0.1:8765/img/quest/scenes/terrain-1.jpg\",\"loaded\":true,\"usesR2\":true,\"hasFallbackAttr\":true}"
+  },
+  {
+    "name": "情境A（R2正常）QUEST map 模式：圖片來源為 /img/（R2為主要來源）",
+    "ok": true,
+    "note": "http://127.0.0.1:8765/img/quest/scenes/terrain-1.jpg"
+  },
+  {
+    "name": "情境A（R2正常）QUEST panorama 模式：畫面有圖片且圖片實際載入成功",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"http://127.0.0.1:8765/img/quest/scenes/terrain-1.jpg\",\"loaded\":true,\"usesR2\":true,\"hasFallbackAttr\":true}"
+  },
+  {
+    "name": "情境A（R2正常）QUEST panorama 模式：圖片來源為 /img/（R2為主要來源）",
+    "ok": true,
+    "note": "http://127.0.0.1:8765/img/quest/scenes/terrain-1.jpg"
+  },
+  {
+    "name": "情境A 全程無 page error",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "情境A /img/ 路由確實被呼叫（證明 R2 為主要來源，不是略過直接用Base64）",
+    "ok": true,
+    "note": "3 次"
+  },
+  {
+    "name": "情境B（R2失效）QUEST single 模式：畫面有圖片且圖片實際載入成功（走fallback）",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"data:image/jpeg;base64,/9j/4AAQSkZJRgABA\",\"loaded\":true,\"usesFallback\":true}"
+  },
+  {
+    "name": "情境B（R2失效）QUEST single 模式：圖片來源已退回 data:base64 fallback",
+    "ok": true,
+    "note": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA"
+  },
+  {
+    "name": "情境B（R2失效）QUEST map 模式：畫面有圖片且圖片實際載入成功（走fallback）",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"data:image/jpeg;base64,/9j/4AAQSkZJRgABA\",\"loaded\":true,\"usesFallback\":true}"
+  },
+  {
+    "name": "情境B（R2失效）QUEST map 模式：圖片來源已退回 data:base64 fallback",
+    "ok": true,
+    "note": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA"
+  },
+  {
+    "name": "情境B（R2失效）QUEST panorama 模式：畫面有圖片且圖片實際載入成功（走fallback）",
+    "ok": true,
+    "note": "{\"found\":true,\"src\":\"data:image/jpeg;base64,/9j/4AAQSkZJRgABA\",\"loaded\":true,\"usesFallback\":true}"
+  },
+  {
+    "name": "情境B（R2失效）QUEST panorama 模式：圖片來源已退回 data:base64 fallback",
+    "ok": true,
+    "note": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA"
+  },
+  {
+    "name": "情境B（R2失效）全程無 page error",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "情境B（R2失效）連續10次抽卡後，fallback圖片仍正常載入",
+    "ok": true,
+    "note": ""
+  }
+]
