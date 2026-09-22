@@ -1,0 +1,37 @@
+[
+  {
+    "results": [
+      {
+        "u": 0,
+        "i": 0,
+        "er": 0,
+        "fe": 0,
+        "em": 0,
+        "bp": 0,
+        "iv": 0,
+        "ar": 0,
+        "nu": 0,
+        "sc": 0,
+        "li": 0
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "EWR",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.3354
+      },
+      "duration": 0.3354,
+      "changes": 0,
+      "last_row_id": 1,
+      "changed_db": false,
+      "size_after": 159744,
+      "rows_read": 0,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

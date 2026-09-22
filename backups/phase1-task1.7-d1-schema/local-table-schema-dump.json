@@ -1,0 +1,46 @@
+[
+  {
+    "results": [
+      {
+        "sql": "CREATE TABLE ai_reports (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  report_type TEXT,\n  period_start TEXT,\n  period_end TEXT,\n  content TEXT,\n  model_used TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE behavior_patterns (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  pattern_type TEXT,\n  summary TEXT,\n  evidence_json TEXT,\n  confidence_score REAL,\n  detected_at TEXT NOT NULL DEFAULT (datetime('now')),\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE \"d1_migrations\"(\n\t\tid         INTEGER PRIMARY KEY AUTOINCREMENT,\n\t\tname       TEXT UNIQUE,\n\t\tapplied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)"
+      },
+      {
+        "sql": "CREATE TABLE emotion_records (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  emotion_type TEXT,\n  intensity INTEGER,\n  trigger_note TEXT,\n  linked_food_event_id INTEGER REFERENCES food_events(id) ON DELETE SET NULL,\n  occurred_at TEXT NOT NULL DEFAULT (datetime('now')),\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE exploration_records (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  draw_mode TEXT,\n  card_category TEXT,\n  card_object_key TEXT,\n  card_text TEXT,\n  photo_idx INTEGER,\n  responses_json TEXT,\n  occurred_at TEXT NOT NULL DEFAULT (datetime('now')),\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE food_events (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  meal_type TEXT,\n  description TEXT,\n  nutrients_json TEXT,\n  image_id INTEGER REFERENCES images(id) ON DELETE SET NULL,\n  occurred_at TEXT NOT NULL DEFAULT (datetime('now')),\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE images (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,\n  r2_key TEXT NOT NULL,\n  source_type TEXT NOT NULL,\n  content_type TEXT,\n  byte_size INTEGER,\n  sha256 TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE interventions (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n  behavior_pattern_id INTEGER REFERENCES behavior_patterns(id) ON DELETE SET NULL,\n  intervention_type TEXT,\n  content TEXT,\n  status TEXT NOT NULL DEFAULT 'suggested',\n  created_at TEXT NOT NULL DEFAULT (datetime('now')),\n  updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE legacy_import_log (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  source_type TEXT NOT NULL,\n  source_key TEXT NOT NULL,\n  target_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,\n  status TEXT NOT NULL DEFAULT 'pending',\n  detail_json TEXT,\n  imported_at TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE nutrients (\n  id TEXT PRIMARY KEY,\n  category TEXT,\n  name TEXT NOT NULL,\n  unit TEXT,\n  description TEXT,\n  data_json TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE scenarios (\n  id TEXT PRIMARY KEY,\n  title TEXT,\n  category TEXT,\n  data_json TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      },
+      {
+        "sql": "CREATE TABLE users (\n  id TEXT PRIMARY KEY,\n  auth_provider TEXT,\n  auth_provider_id TEXT,\n  display_name TEXT,\n  is_guest INTEGER NOT NULL DEFAULT 1,\n  legacy_sync_code TEXT,\n  created_at TEXT NOT NULL DEFAULT (datetime('now')),\n  updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n)"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 0
+    }
+  }
+]

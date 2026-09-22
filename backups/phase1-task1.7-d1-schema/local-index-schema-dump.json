@@ -1,0 +1,61 @@
+[
+  {
+    "results": [
+      {
+        "sql": "CREATE INDEX idx_ai_reports_user\n  ON ai_reports(user_id, period_start)"
+      },
+      {
+        "sql": "CREATE INDEX idx_behavior_patterns_user\n  ON behavior_patterns(user_id, pattern_type)"
+      },
+      {
+        "sql": "CREATE INDEX idx_emotion_records_food_event\n  ON emotion_records(linked_food_event_id)"
+      },
+      {
+        "sql": "CREATE INDEX idx_emotion_records_user\n  ON emotion_records(user_id, occurred_at)"
+      },
+      {
+        "sql": "CREATE INDEX idx_exploration_records_user\n  ON exploration_records(user_id, occurred_at)"
+      },
+      {
+        "sql": "CREATE INDEX idx_food_events_image\n  ON food_events(image_id)"
+      },
+      {
+        "sql": "CREATE INDEX idx_food_events_user\n  ON food_events(user_id, occurred_at)"
+      },
+      {
+        "sql": "CREATE UNIQUE INDEX idx_images_r2_key\n  ON images(r2_key)"
+      },
+      {
+        "sql": "CREATE INDEX idx_images_user\n  ON images(user_id)"
+      },
+      {
+        "sql": "CREATE INDEX idx_interventions_pattern\n  ON interventions(behavior_pattern_id)"
+      },
+      {
+        "sql": "CREATE INDEX idx_interventions_user\n  ON interventions(user_id, status)"
+      },
+      {
+        "sql": "CREATE INDEX idx_legacy_import_log_source\n  ON legacy_import_log(source_type, source_key)"
+      },
+      {
+        "sql": "CREATE INDEX idx_legacy_import_log_status\n  ON legacy_import_log(status)"
+      },
+      {
+        "sql": "CREATE INDEX idx_nutrients_category\n  ON nutrients(category)"
+      },
+      {
+        "sql": "CREATE INDEX idx_scenarios_category\n  ON scenarios(category)"
+      },
+      {
+        "sql": "CREATE UNIQUE INDEX idx_users_auth_provider_id\n  ON users(auth_provider, auth_provider_id)\n  WHERE auth_provider IS NOT NULL AND auth_provider_id IS NOT NULL"
+      },
+      {
+        "sql": "CREATE UNIQUE INDEX idx_users_legacy_sync_code\n  ON users(legacy_sync_code)\n  WHERE legacy_sync_code IS NOT NULL"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 1
+    }
+  }
+]
