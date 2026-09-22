@@ -1,0 +1,38 @@
+{
+  "ft": false,
+  "identity": { "key": "active", "ts": 1700000000000 },
+  "ins": [
+    { "ts": 1700000100000, "st": { "mockField": "測試用假快照資料，非真實使用者狀態" }, "beh": "測試用打卡行為描述", "crave": true }
+  ],
+  "quest": {
+    "entries": [
+      {
+        "ts": 1700000200000,
+        "mode": "single",
+        "cards": [ { "c": "T", "photoIdx": 0, "t": "測試用地形卡描述文字" } ],
+        "note": "測試用使用者筆記",
+        "carry": false,
+        "insight": { "title": "測試用洞察標題" }
+      },
+      {
+        "ts": 1700000210000,
+        "mode": "map",
+        "cards": [ { "c": "T", "photoIdx": 1 }, { "c": "O", "o": "shoes" } ],
+        "note": null,
+        "carry": true,
+        "insight": null
+      }
+    ]
+  },
+  "meals": {
+    "entries": [
+      { "ts": 1700000300000, "names": ["測試餐點A", "測試餐點B"], "emojis": ["🍚", "🥗"], "cats": ["主食", "蔬菜"], "mood": "平靜", "reasons": ["肚子餓"] },
+      { "ts": 1700000310000, "names": ["測試點心"], "emojis": ["🍪"], "cats": ["點心"], "mood": "", "reasons": [] }
+    ]
+  },
+  "ba": {
+    "entries": [
+      { "ts": 1700000400000, "food": "測試食物名稱", "cat": "點心", "time": "下午", "situ": "工作中", "why": "測試用原因描述", "mood": "煩躁", "process": "測試用過程描述", "type": "情緒性", "redo": "測試用下次調整方式" }
+    ]
+  }
+}
