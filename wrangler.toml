@@ -7,5 +7,6 @@ account_id = "a6d9cbae720e9a59dc0487fde7b832b7"
 binding = "SYNC_KV"
 id = "b984c2b3dfb14e2f86e3a99c1b0c1475"
 
-# 這個專案目前 CF 帳號裡似乎還沒有正式 Worker 存在
-# 如果之後有加 D1/KV,再補上對應區塊
+# D1 資料庫已建立（diet-coach-db, database_id=9560446f-5d56-45e4-b605-ddec5cdf909f），
+# 但綁定需等 Worker 轉換為 ES Module 格式（Phase 1 TASK 1.10~1.12）後才能加入，
+# 目前 src/worker.js 仍為舊式 addEventListener('fetch') 語法，D1 binding 無法部署。
