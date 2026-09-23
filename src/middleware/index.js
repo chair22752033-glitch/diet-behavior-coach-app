@@ -13,7 +13,7 @@
 import { withErrorHandling } from './error_handler.js';
 import { buildRequestContext } from './request_context.js';
 import { requireAuth } from './auth_middleware.js';
-import { validateBody } from './validator.js';
+import { validateBody, validateContract, createContractValidationMiddleware } from './validator.js';
 
 /**
  * @param {Array<(ctx:object, next:(ctx:object)=>any) => any>} [middlewares]
@@ -42,4 +42,4 @@ export function createMiddlewarePipeline(middlewares) {
 export { withErrorHandling } from './error_handler.js';
 export { buildRequestContext } from './request_context.js';
 export { requireAuth } from './auth_middleware.js';
-export { validateBody } from './validator.js';
+export { validateBody, validateContract, createContractValidationMiddleware } from './validator.js';

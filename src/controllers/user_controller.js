@@ -14,9 +14,12 @@
  *
  * 同樣完全沒有 SQL/db.prepare()/D1操作/KV操作/OAuth流程/session邏輯，
  * 全部委派給 src/services/user_service.js（TASK1.15）。
+ *
+ * TASK1.28 起：response shape 改由 src/contracts/response_contract.js
+ * 統一管理，這裡不再定義 success()/failure() 的形狀，只是呼叫它們。
  */
 import { getUserById } from '../services/user_service.js';
-import { success, failure } from './response.js';
+import { success, failure } from '../contracts/response_contract.js';
 
 /**
  * @param {object} db - createDb(env) 回傳的 db 物件

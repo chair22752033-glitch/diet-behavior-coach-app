@@ -1,9 +1,11 @@
 /*
- * Phase 1 TASK 1.20｜Auth Controller
+ * Phase 1 TASK 1.20｜Auth Controller（TASK1.28 起 response shape 改由 Contract Layer 管理）
  *
  * worker.js（未來）與 Authentication Application Service（TASK1.19）之間的
  * 隔離層：每個 controller function 只做三件事——接收輸入、呼叫對應的
- * application service 函式、用 src/controllers/response.js 統一格式化回傳。
+ * application service 函式、用 src/contracts/response_contract.js
+ * （TASK1.28）統一格式化回傳。Controller 本身不再定義回應的形狀，只是
+ * 呼叫 Contract Layer 提供的 success()/failure()。
  *
  * 完全沒有：
  * - SQL / db.prepare() / 任何 D1 操作（不 import src/db/ 底下任何檔案）
@@ -19,7 +21,7 @@
  * controller 本身不用改。
  */
 import { createGuestLogin, loginWithProvider, logout, getCurrentUser } from '../services/auth_application_service.js';
-import { success, failure } from './response.js';
+import { success, failure } from '../contracts/response_contract.js';
 
 /**
  * 對應未來的 POST /auth/guest
