@@ -21,7 +21,14 @@
  *    這是讓 Legacy Route Adapter 能夠正確透傳 HTML/圖片/純文字回應的
  *    必要條件，否則既有的 controller `{ok,data/reason,status}` 回傳值
  *    仍然照舊由 `makeResponse()` 轉換。
+ *
+ * TASK1.27：呼叫 route handler 之前，先用
+ * `createMiddlewarePipeline([])`（src/middleware/，空 middleware 清單）
+ * 包一層。因為清單是空的，實際效果只有「補完 ctx 的 requestId/timestamp/
+ * user 欄位 + 例外攔截（跟原本 router 自己的 try/catch 效果相同）」，
+ * 不會改變任何既有 route 的輸出——「只建立架構，不開啟正式功能」。
  */
+import { createMiddlewarePipeline } from '../middleware/index.js';
 
 function compilePath(path) {
   const paramNames = [];
@@ -65,6 +72,9 @@ export function resolvePathname(request) {
  */
 export function createRouter() {
   const routes = [];
+  // TASK1.27：空 middleware 清單——目前沒有任何 route 指定要用哪些
+  // middleware，這裡只提供「補完ctx + 例外攔截」的基礎架構。
+  const applyPipeline = createMiddlewarePipeline([]);
 
   function add(method, path, handler) {
     if (!method || typeof method !== 'string') {
@@ -104,7 +114,11 @@ export function createRouter() {
       });
       const routeContext = Object.assign({}, baseContext, { req: request, params });
       try {
-        const result = await route.handler(routeContext);
+        // TASK1.27：request → middleware pipeline → route handler。
+        // 目前 pipeline 的 middleware 清單是空的，僅補完ctx欄位
+        // （requestId/timestamp/user）+ 例外攔截，不改變輸出。
+        const pipelineHandler = applyPipeline(route.handler);
+        const result = await pipelineHandler(routeContext);
         // TASK1.26：handler 若已經回傳真正的 Response（例如legacy route的
         // delegate handler直接把legacy handler的原始回應傳回來），原樣
         // 透傳，不要再套用 makeResponse() 把它硬轉成 JSON。

@@ -144,9 +144,11 @@ async function run() {
     assert.strictEqual(res.status, 200);
   });
 
+  // 注意：TASK1.27 為 createApplication() 新增了 `middleware` 欄位，這是
+  // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
   await test('createApplication(fullEnv) 本身可以成功建立且形狀正確（驗證 worker.js 接的是同一份實作）', () => {
     const app = createApplication(fullEnv);
-    assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'router', 'services']);
+    assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'middleware', 'router', 'services']);
   });
 
   await test('缺少 DIET_COACH_DB binding 時，fetch() 仍正常運作（bootstrap失敗被優雅攔截，不影響既有功能）', async () => {
