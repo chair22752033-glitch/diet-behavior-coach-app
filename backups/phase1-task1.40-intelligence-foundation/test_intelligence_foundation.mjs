@@ -85,8 +85,11 @@ async function run() {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
   });
 
-  await test('（TASK1.41後更新）src/intelligence/ 底下新增的子目錄只有 data_preparation/ 一個', () => {
-    assert.deepStrictEqual(actualDirs, ['data_preparation']);
+  // 注意：TASK1.42 又新增了 contracts/（Insight Context Contract）跟
+  // context/（Insight Context Builder）兩個子目錄，這是明確要做的
+  // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
+  await test('（TASK1.42後更新）src/intelligence/ 底下的子目錄依序是 context/contracts/data_preparation 三個', () => {
+    assert.deepStrictEqual(actualDirs, ['context', 'contracts', 'data_preparation']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -521,13 +524,13 @@ async function run() {
     assert.ok('intelligence' in app);
   });
 
-  // 注意：TASK1.41 為 app.intelligence 新增了 `dataPreparation` 欄位
-  // （Intelligence Data Preparation Layer的extension point，見
-  // src/intelligence/data_preparation/），這是明確要做的擴充，不是
-  // 回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.41後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation 四個欄位', () => {
+  // 注意：TASK1.41 為 app.intelligence 新增了 `dataPreparation` 欄位，
+  // TASK1.42 又新增了 `context` 欄位（Insight Context Builder的
+  // extension point，見src/intelligence/context/），兩者都是明確要做
+  // 的擴充，不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.42後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context 五個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'dataPreparation', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {

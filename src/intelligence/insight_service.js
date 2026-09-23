@@ -1,6 +1,8 @@
 /*
  * Phase 1 TASK 1.40｜Phase 2 Intelligence Architecture Foundation
  * - Insight Service（未來的 Intelligence Application Service）
+ * （TASK1.42 新增 getInsightContext()，串接 Data Preparation Layer
+ * 與 Insight Context Contract）
  *
  * 責任：接收 userId、組合分析需求、呼叫 analysis engine、呼叫
  * recommendation engine——這是Controller/Application Service跟
@@ -35,17 +37,34 @@
  * 現階段都只是回傳 not_implemented 的inert占位結果（見
  * analysis_engine.js/recommendation_engine.js），這裡完全不會讀取、
  * 組裝、或依賴它們回傳的內容來決定 getUserInsight() 的回傳值。
+ *
+ * TASK1.42新增：getInsightContext(db, userId, options)——呼叫
+ * dataPreparation.prepare()蒐集並normalize使用者資料，再交給
+ * contextBuilder.buildInsightContext()轉成穩定的Insight Context格式
+ * （見src/intelligence/contracts/insight_context_contract.js/
+ * src/intelligence/context/insight_context_builder.js），完全不產生
+ * 任何分析結果——成功時一律回傳
+ * {ok:true, status:'context_ready', data:{context}}，這裡只負責
+ * 「把資料準備好、驗證格式對不對」，不解讀context內容、不打分數、不
+ * 產生建議、不組任何prompt。dataPreparation/contextBuilder一樣是透過
+ * 依賴注入傳入（跟analysisEngine/recommendationEngine同樣的DI風格），
+ * 這個檔案本身完全不import任何其他intelligence子模組。
  */
 
 /**
  * @param {object} dependencies
  * @param {{analyze: (userData:*) => Promise<*>}} [dependencies.analysisEngine]
  * @param {{recommend: (insight:*) => Promise<*>}} [dependencies.recommendationEngine]
- * @returns {{getUserInsight: (userId:string, context?:object) => Promise<{ok:true, status:'not_ready', data:null}>}}
+ * @param {{prepare: (db:object, userId:string, options?:object) => Promise<object>}} [dependencies.dataPreparation]
+ * @param {{buildInsightContext: (preparedContext:object) => {context:object, validation:object}}} [dependencies.contextBuilder]
+ * @returns {{
+ *   getUserInsight: (userId:string, context?:object) => Promise<{ok:true, status:'not_ready', data:null}>,
+ *   getInsightContext: (db:object, userId:string, options?:object) => Promise<{ok:boolean, status:string, reason?:string, data:{context:object}|null}>
+ * }}
  */
 export function createInsightService(dependencies) {
   dependencies = dependencies || {};
-  const { analysisEngine, recommendationEngine } = dependencies;
+  const { analysisEngine, recommendationEngine, dataPreparation, contextBuilder } = dependencies;
 
   /**
    * @param {string} userId
@@ -64,5 +83,40 @@ export function createInsightService(dependencies) {
     return { ok: true, status: 'not_ready', data: null };
   }
 
-  return { getUserInsight };
+  /**
+   * 呼叫 Data Preparation Layer 蒐集資料，再交給 Insight Context
+   * Builder 轉成驗證過的 Insight Context——完全不做任何解讀/分析，
+   * 只負責「把資料準備好、格式對不對」。
+   *
+   * @param {object} db - createDb(env) 回傳的 db 物件，一律由呼叫端
+   *   傳入，這裡不持有任何狀態
+   * @param {string} userId - 一律是已經確認過的使用者id，由呼叫端當作
+   *   獨立參數傳入
+   * @param {object} [options] - 轉交給 dataPreparation.prepare() 的選項
+   *   （例如limit），這裡不解讀其內容
+   * @returns {Promise<{ok:boolean, status:string, reason?:string, data:{context:object}|null}>}
+   */
+  async function getInsightContext(db, userId, options) {
+    if (!dataPreparation || typeof dataPreparation.prepare !== 'function') {
+      return { ok: false, status: 'context_unavailable', reason: 'data_preparation_unavailable', data: null };
+    }
+
+    const prepared = await dataPreparation.prepare(db, userId, options);
+    if (!prepared.ok) {
+      return { ok: false, status: 'context_unavailable', reason: prepared.reason || prepared.error || 'context_build_failed', data: null };
+    }
+
+    if (!contextBuilder || typeof contextBuilder.buildInsightContext !== 'function') {
+      return { ok: false, status: 'context_unavailable', reason: 'context_builder_unavailable', data: null };
+    }
+
+    const { context, validation } = contextBuilder.buildInsightContext(prepared.context);
+    if (!validation.ok) {
+      return { ok: false, status: 'context_invalid', reason: validation.reason, data: null };
+    }
+
+    return { ok: true, status: 'context_ready', data: { context } };
+  }
+
+  return { getUserInsight, getInsightContext };
 }

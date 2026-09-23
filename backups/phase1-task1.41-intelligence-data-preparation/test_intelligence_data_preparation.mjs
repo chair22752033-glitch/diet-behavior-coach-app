@@ -276,9 +276,17 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（2.domain service boundary）原始碼掃描：src/intelligence/insight_service.js（TASK1.40既有）完全沒有被TASK1.41修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/insight_service.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // 注意：這裡原本用「git diff --stat 整個insight_service.js」檢查
+  // TASK1.41完全沒有動它，但這是跟TASK1.34/TASK1.38曾經犯過的同一種
+  // 「用live git diff檢查一個檔案，假設它永遠不會再被改」的脆弱設計
+  // ——TASK1.42（架構規格明確要求）之後就會合法地修改這個檔案（新增
+  // getInsightContext()）。改用行為性檢查取代：確認TASK1.40建立的
+  // getUserInsight()函式簽章跟固定回傳值的行為描述仍然存在於原始碼裡，
+  // 這個斷言不會因為TASK1.42在同一個檔案新增其他函式而誤判失敗。
+  await test('（TASK1.42後更新）原始碼掃描：src/intelligence/insight_service.js 仍然保留TASK1.40建立的getUserInsight()函式與其固定回傳值行為（不因後續任務新增其他函式而受影響）', () => {
+    const src = stripComments(fs.readFileSync(path.join(srcRoot, 'intelligence', 'insight_service.js'), 'utf8'));
+    assert.ok(/async function getUserInsight\(userId, context\)/.test(src));
+    assert.ok(/return \{ ok: true, status: 'not_ready', data: null \}/.test(src));
   });
 
   console.log('');
@@ -679,9 +687,12 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.dataPreparation.prepare, 'function');
   });
 
-  await test('（10.bootstrap injection）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine（沒有被TASK1.41取代或破壞）', () => {
+  // 注意：TASK1.42 又新增了 `context` 欄位（Insight Context Builder的
+  // extension point），這是明確要做的擴充，不是回歸，這裡的預期key
+  // 清單已同步更新。
+  await test('（TASK1.42後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation（沒有被TASK1.42取代或破壞）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'dataPreparation', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
   });
 
   await test('（10.bootstrap injection）透過app.intelligence.dataPreparation.prepare()呼叫，可以正確運作（端對端，含mock db）', async () => {

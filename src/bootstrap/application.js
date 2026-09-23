@@ -42,6 +42,21 @@
  * 重新建立的獨立實例。`insightService`本次完全沒有被修改成會呼叫
  * dataPreparation，兩者目前是各自獨立掛在intelligence namespace底下
  * 的extension point，沒有任何route/controller讀取它。
+ *
+ * TASK1.42新增：`intelligence.context`，組裝
+ * src/intelligence/context/ 的 createInsightContextBuilder() 實例——
+ * 負責把dataPreparation的輸出轉成通過驗證的Insight Context（見
+ * src/intelligence/contracts/insight_context_contract.js）。這次
+ * `insightService`真的被修改了（新增getInsightContext()），把同一個
+ * `dataPreparationService`跟`insightContextBuilder`實例都注入進去
+ * （createInsightService({..., dataPreparation, contextBuilder})），
+ * 讓getInsightContext()可以呼叫dataPreparation.prepare() +
+ * contextBuilder.buildInsightContext()組出context——但仍然完全不產生
+ * 任何分析結果，getInsightContext()成功時只回傳
+ * {ok:true, status:'context_ready', data:{context}}。
+ * `app.intelligence.context`跟注入進insightService的是同一個實例
+ * （不是各自獨立建立兩份）。目前依然沒有任何route/controller讀取
+ * app.intelligence，本次任務明確禁止串接任何AI API。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -69,7 +84,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -130,9 +145,21 @@ export function createApplication(env) {
   // 分析/推薦結果，也不呼叫任何AI API。
   const analysisEngine = createAnalysisEngine();
   const recommendationEngine = createRecommendationEngine();
-  const insightService = createInsightService({ analysisEngine, recommendationEngine });
   const dataPreparationService = dataPreparation.createDataPreparationService();
-  const intelligence = { insightService, analysisEngine, recommendationEngine, dataPreparation: dataPreparationService };
+  const insightContextBuilder = insightContext.createInsightContextBuilder();
+  const insightService = createInsightService({
+    analysisEngine,
+    recommendationEngine,
+    dataPreparation: dataPreparationService,
+    contextBuilder: insightContextBuilder,
+  });
+  const intelligence = {
+    insightService,
+    analysisEngine,
+    recommendationEngine,
+    dataPreparation: dataPreparationService,
+    context: insightContextBuilder,
+  };
 
   return { config, db, services, router, middleware, intelligence };
 }
