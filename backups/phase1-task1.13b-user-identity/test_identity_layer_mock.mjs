@@ -116,9 +116,12 @@ async function testUpgradeModule() {
   record('upgradeGuestToProvider 已非訪客時回傳reason=not_guest', r3.ok === false && r3.reason === 'not_guest');
 
   // provider已被別人綁定
+  // 注意（TASK1.18.1）：u3 補上 status:'active'——真實的訪客一律由 createGuestUser()
+  // 產生，status 必定有值（預設'active'），這裡明確補上以符合真實資料形狀，
+  // 才能正確測試「provider_already_linked」而不是被新加入的 status 檢查擋下。
   const db4 = makeMockDb({
     users: [
-      { id: 'u3', is_guest: 1, auth_provider: null, auth_provider_id: null },
+      { id: 'u3', is_guest: 1, auth_provider: null, auth_provider_id: null, status: 'active' },
       { id: 'u4', is_guest: 0, auth_provider: 'google', auth_provider_id: 'g-taken' },
     ],
   });
