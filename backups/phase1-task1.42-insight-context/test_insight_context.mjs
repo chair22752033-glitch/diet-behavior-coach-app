@@ -629,9 +629,11 @@ async function run() {
 
   // 注意：TASK1.43 為 app.intelligence 新增了 `analysis` 欄位，這是
   // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.43後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis 六個欄位', () => {
+  // 注意：TASK1.44 為 app.intelligence 新增了 `recommendation` 欄位，
+  // 這是明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.44後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation 七個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendation', 'recommendationEngine']);
   });
 
   await test('（9.bootstrap injection）app.intelligence.context跟注入進insightService的contextBuilder是同一個實例（不是各自獨立建立兩份）', async () => {
