@@ -23,10 +23,17 @@
  *    仍然照舊由 `makeResponse()` 轉換。
  *
  * TASK1.27：呼叫 route handler 之前，先用
- * `createMiddlewarePipeline([])`（src/middleware/，空 middleware 清單）
- * 包一層。因為清單是空的，實際效果只有「補完 ctx 的 requestId/timestamp/
- * user 欄位 + 例外攔截（跟原本 router 自己的 try/catch 效果相同）」，
- * 不會改變任何既有 route 的輸出——「只建立架構，不開啟正式功能」。
+ * `createMiddlewarePipeline(middlewares)`（src/middleware/）包一層。
+ * 預設（未指定 middlewares）是空清單，效果只有「補完 ctx 的
+ * requestId/timestamp/user 欄位 + 例外攔截（跟原本 router 自己的
+ * try/catch 效果相同）」，不會改變輸出。
+ *
+ * TASK1.29：`router.add(method, path, handler, options)` 新增選填的
+ * 第四個參數 `options.middlewares`，讓個別路由可以指定自己的
+ * middleware 清單（例如 POST /auth/guest 用它接上 TASK1.28 的
+ * contract validation）。沒有提供 `options` 或 `options.middlewares`
+ * 的既有路由（auth/user 其餘路由、legacy 路由）行為完全不變，仍是空
+ * 清單。
  */
 import { createMiddlewarePipeline } from '../middleware/index.js';
 
@@ -72,11 +79,8 @@ export function resolvePathname(request) {
  */
 export function createRouter() {
   const routes = [];
-  // TASK1.27：空 middleware 清單——目前沒有任何 route 指定要用哪些
-  // middleware，這裡只提供「補完ctx + 例外攔截」的基礎架構。
-  const applyPipeline = createMiddlewarePipeline([]);
 
-  function add(method, path, handler) {
+  function add(method, path, handler, options) {
     if (!method || typeof method !== 'string') {
       throw new Error('router.add(method, path, handler)：method 必須是字串');
     }
@@ -87,7 +91,11 @@ export function createRouter() {
       throw new Error('router.add(method, path, handler)：handler 必須是函式');
     }
     const { regex, paramNames } = compilePath(path);
-    routes.push({ method: method.toUpperCase(), path, regex, paramNames, handler });
+    // TASK1.29：每條路由各自的 middleware 清單，預設空陣列（等同
+    // TASK1.27～1.28 的既有行為）。
+    const middlewares = (options && Array.isArray(options.middlewares)) ? options.middlewares : [];
+    const applyPipeline = createMiddlewarePipeline(middlewares);
+    routes.push({ method: method.toUpperCase(), path, regex, paramNames, handler, middlewares, applyPipeline });
   }
 
   /**
@@ -114,10 +122,10 @@ export function createRouter() {
       });
       const routeContext = Object.assign({}, baseContext, { req: request, params });
       try {
-        // TASK1.27：request → middleware pipeline → route handler。
-        // 目前 pipeline 的 middleware 清單是空的，僅補完ctx欄位
-        // （requestId/timestamp/user）+ 例外攔截，不改變輸出。
-        const pipelineHandler = applyPipeline(route.handler);
+        // TASK1.27/1.29：request → 這條路由自己的 middleware pipeline
+        // （預設空清單，等同「補完ctx欄位+例外攔截」；個別路由可透過
+        // router.add() 第四個參數指定 middlewares）→ route handler。
+        const pipelineHandler = route.applyPipeline(route.handler);
         const result = await pipelineHandler(routeContext);
         // TASK1.26：handler 若已經回傳真正的 Response（例如legacy route的
         // delegate handler直接把legacy handler的原始回應傳回來），原樣

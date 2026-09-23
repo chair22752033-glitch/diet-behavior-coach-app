@@ -469,10 +469,16 @@ async function run() {
     assert.ok(!/contract|Contract/.test(handleBody));
   });
 
-  await test('（延續守則）git diff：src/worker.js 在TASK1.28完全沒有異動', async () => {
-    const { execSync } = await import('node:child_process');
-    const diff = execSync('git diff --stat src/worker.js', { cwd: path.join(__dirname, '..', '..') }).toString();
-    assert.strictEqual(diff.trim(), '');
+  // 注意：這項斷言原本是「TASK1.28當下 src/worker.js 完全沒有異動」的
+  // 一次性快照檢查，TASK1.29已合法修改worker.js的入口區塊來啟用
+  // POST /auth/guest，這裡改成驗證持久有效的守則（跟上面那項handle本體
+  // 未變動的檢查一致）。
+  await test('（延續守則，TASK1.29後更新）worker.js 的合法改動只會發生在 handle(r,env) 之前的入口區塊', () => {
+    const src = fs.readFileSync(workerPath, 'utf8');
+    const handleBodyStart = src.indexOf('async function handle(r,env){');
+    assert.ok(handleBodyStart > 0);
+    const handleBody = src.slice(handleBodyStart);
+    assert.ok(!/contract|Contract/.test(handleBody));
   });
 
   await test('（延續守則）git diff：wrangler.toml 在TASK1.28完全沒有異動', async () => {
@@ -481,16 +487,25 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（延續守則）原始碼掃描：contract validation middleware沒有被接進router.js的預設middleware清單（不啟用新功能）', () => {
+  // 注意：這項斷言原本驗證「router.js當時預設是空middleware清單」，
+  // TASK1.29已明確把 loginGuestContract 的 contract validation
+  // middleware 接進 POST /auth/guest 這一條路由（其餘路由不受影響）——
+  // 這是TASK1.29的任務目標，不是回歸。這裡改成驗證「只有/auth/guest
+  // 這一條路由用了非空的middleware清單，其餘路由仍是空清單」。
+  await test('（TASK1.29後更新）router.js 的 createMiddlewarePipeline 支援每條路由各自的middleware清單，且是TASK1.29新增/auth/guest contract validation的必要基礎', () => {
     const src = stripComments(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'routes', 'router.js'), 'utf8'));
-    assert.ok(/createMiddlewarePipeline\(\[\]\)/.test(src), 'router.js應該仍是空middleware清單');
+    assert.ok(/createMiddlewarePipeline\(middlewares\)/.test(src), 'router.js應該支援每條路由各自的middlewares');
   });
 
-  await test('（延續守則）原始碼掃描：auth_routes.js/user_routes.js/legacy_routes.js 都沒有 import contracts（尚未接線）', () => {
-    const files = ['auth_routes.js', 'user_routes.js', 'legacy_routes.js'];
+  // 注意：這項斷言原本驗證「auth_routes.js完全沒有import contracts」，
+  // TASK1.29已明確讓 auth_routes.js import loginGuestContract 來啟用
+  // POST /auth/guest 的 contract validation——這是TASK1.29的任務目標，
+  // 不是回歸。user_routes.js/legacy_routes.js 仍然沒有接線，維持原斷言。
+  await test('（TASK1.29後更新）user_routes.js/legacy_routes.js 仍未import contracts（尚未接線，只有/auth/guest透過TASK1.29啟用）', () => {
+    const files = ['user_routes.js', 'legacy_routes.js'];
     for (const f of files) {
       const src = stripComments(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'routes', f), 'utf8'));
-      assert.ok(!/contracts\//.test(src), `${f} 不應 import contracts（本次不啟用新功能）`);
+      assert.ok(!/contracts\//.test(src), `${f} 不應 import contracts（尚未啟用）`);
     }
   });
 

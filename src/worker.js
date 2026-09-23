@@ -7,14 +7,33 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // router），用 try/catch 包住：任何原因失敗（例如某個 binding 還沒就緒）
 // 都會讓 app 是 null，不影響下面既有功能繼續運作。
 //
-// TASK1.25：實際分派交給 createRouteGateway()——依
+// TASK1.25：其餘所有路由的分派交給 createRouteGateway()——依
 // app.config.app.features.routeMigrationEnabled 這個 feature flag（預設
 // false，見 src/config/app_config.js）決定走新架構的 Router（TASK1.21）
 // 還是舊的 legacy handler（下面完全沒有變動過的 handle(r, env)）。本次
 // wrangler.toml 沒有加入任何 FEATURE_ROUTE_MIGRATION_ENABLED 變數，所以
-// 正式環境目前 100% 繼續走 legacy handler，既有路由（/、/manifest.json、
-// /icon.svg、/apple-touch-icon.png、/img/*、/api/sync、/api/qlive）行為
-// 與接入前逐位元一致，也沒有開放 /auth/* 或 /users/* 這種新路徑。
+// 這個 flag 仍是關閉的。
+//
+// TASK1.29：正式啟用第一條、也是唯一一條真正上線的 API route——
+// POST /auth/guest。刻意不透過上面的 feature flag（那是 all-or-nothing
+// 的機制，打開會連帶啟用 /auth/provider、/auth/logout、/auth/me、
+// /users/:id 這些還沒準備好正式上線的路由），改用最小、明確的判斷式
+// 只接上這一條路由：解析真正的 HTTP body 成 payload，交給
+// app.router.handle() 走完整的 Router → Contract Validation →
+// Controller → Application Service → Identity → Session → D1 流程，
+// 回傳的 Response 已經在 auth_routes.js 附加了真正的 Set-Cookie 標頭。
+// 其餘所有路徑（含 GET /auth/guest 這種方法不符的情況）完全不受影響，
+// 一律照舊落到上面的 gateway/legacy 流程。
+async function parseJsonBody(request) {
+  try {
+    const text = await request.text();
+    if (!text) return {};
+    return JSON.parse(text);
+  } catch (e) {
+    return {};
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     let app;
@@ -23,6 +42,15 @@ export default {
     } catch (e) {
       app = null;
     }
+
+    if (app && request.method === 'POST' && new URL(request.url).pathname === '/auth/guest') {
+      const payload = await parseJsonBody(request);
+      return app.router.handle(
+        { method: 'POST', pathname: '/auth/guest', payload, options: {} },
+        { db: app.db, env, services: app.services }
+      );
+    }
+
     const gateway = createRouteGateway({ app, legacyHandler: handle });
     return gateway.handle(request, env);
   }

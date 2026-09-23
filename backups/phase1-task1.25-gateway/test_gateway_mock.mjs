@@ -345,11 +345,17 @@ async function run() {
     assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
   });
 
-  await test('（端對端）flag未設定：POST /auth/guest 仍落到首頁catch-all（未被router攔截）', async () => {
-    const res = await workerDefault.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), envFlagUnset, {});
-    const text = await res.text();
+  // 注意：這項斷言原本驗證「TASK1.25當下 POST /auth/guest 完全沒有被
+  // router攔截」，這是當時的真實狀態。TASK1.29已依規格明確把這一條
+  // 路由正式上線（不透過這裡測的feature flag，而是worker.js裡專門
+  // 針對這一條路由的判斷式）——這是TASK1.29的任務目標，不是回歸。
+  await test('（TASK1.29起）POST /auth/guest 已正式上線，不論這裡的feature flag狀態都會回傳JSON+Set-Cookie', async () => {
+    // 用獨立的假D1，避免污染後面「flag未設定時D1完全不碰」的斷言。
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await workerDefault.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), isolatedEnv, {});
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
+    assert.ok(res.headers.get('set-cookie'));
   });
 
   await test('（端對端）FEATURE_ROUTE_MIGRATION_ENABLED="false" 明確設定時，GET / 仍是首頁HTML', async () => {
@@ -536,12 +542,14 @@ async function run() {
     assert.ok(runCalls.every((c) => /INSERT INTO (users|sessions)/.test(c.sql)));
   });
 
-  await test('（延續守則）flag未設定時，多次呼叫後假D1完全沒有任何SQL呼叫（legacy路徑完全不碰D1）', async () => {
+  // 注意：TASK1.29 起 POST /auth/guest 是唯一一條會真的寫入D1的路由
+  // （這正是TASK1.29的任務目標），排除它，只驗證其餘legacy路徑
+  // （首頁/KV）依然完全不碰D1。
+  await test('（延續守則）flag未設定時，多次呼叫既有legacy路徑（不含TASK1.29啟用的/auth/guest）後，假D1完全沒有任何SQL呼叫', async () => {
     const freshD1 = makeFakeD1();
     const env = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: freshD1 };
     await workerDefault.fetch(new Request('https://example.com/'), env, {});
     await workerDefault.fetch(new Request('https://example.com/api/sync?code=x2'), env, {});
-    await workerDefault.fetch(new Request('https://example.com/auth/guest', { method: 'POST' }), env, {});
     assert.strictEqual(freshD1.calls.length, 0);
   });
 

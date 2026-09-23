@@ -361,11 +361,19 @@ async function run() {
   // 8. 無auth啟用
   // ---------------------------------------------------------------------
 
-  await test('（無auth啟用）POST /auth/guest 透過真正的 worker.fetch() 完全沒有被特殊處理，落到首頁catch-all', async () => {
-    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), fullEnv, {});
-    const text = await res.text();
+  // 注意：這項斷言原本驗證「TASK1.24當下 POST /auth/guest 完全沒有被
+  // 特殊處理」，這是當時的真實狀態。TASK1.29（Enable Guest Authentication
+  // API Route）已依規格明確把這一條路由正式上線——這是TASK1.29的任務
+  // 目標，不是回歸。這裡改成驗證「現在POST /auth/guest會回傳真正的
+  // JSON+Set-Cookie，不再落到首頁catch-all」。
+  await test('（TASK1.29起）POST /auth/guest 透過真正的 worker.fetch() 已正式上線，回傳JSON+Set-Cookie而非首頁HTML', async () => {
+    // 注意：這裡刻意用獨立的假D1，而不是本檔案共用的 fullEnv/DIET_COACH_DB，
+    // 避免這條會真的寫入D1的測試污染後面「既有路由完全不碰D1」的斷言。
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), isolatedEnv, {});
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
+    assert.ok(res.headers.get('set-cookie'));
   });
 
   await test('（無auth啟用）GET /auth/me 透過真正的 worker.fetch() 也落到首頁catch-all（不是401 JSON）', async () => {
@@ -404,11 +412,14 @@ async function run() {
     assert.ok(!/legacy_import/.test(src));
   });
 
-  await test('（無legacy import）多次呼叫 worker.fetch() 後，假 D1 binding 完全沒有任何 SQL 呼叫', async () => {
+  // 注意：TASK1.29 起 POST /auth/guest 是唯一一條會真的寫入D1的路由
+  // （這正是TASK1.29的任務目標——正式的guest登入本來就該寫入users/
+  // sessions兩張表），所以這裡排除它，只驗證其餘既有路由（首頁/
+  // manifest/KV）依然完全不碰D1。
+  await test('（無legacy import）多次呼叫既有路由（不含TASK1.29啟用的/auth/guest）後，假 D1 binding 完全沒有任何 SQL 呼叫', async () => {
     await worker.fetch(new Request('https://example.com/'), fullEnv, {});
     await worker.fetch(new Request('https://example.com/manifest.json'), fullEnv, {});
     await worker.fetch(new Request('https://example.com/api/sync?code=x1'), fullEnv, {});
-    await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST' }), fullEnv, {});
     assert.strictEqual(DIET_COACH_DB.calls.length, 0);
   });
 

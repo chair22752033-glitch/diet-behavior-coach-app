@@ -269,11 +269,16 @@ async function run() {
     assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
   });
 
-  await test('（1.flag=false）POST /auth/guest 仍落到首頁catch-all（未接router）', async () => {
-    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), envFalse, {});
-    const text = await res.text();
+  // 注意：這項斷言原本驗證「TASK1.26當下 POST /auth/guest 仍落到首頁
+  // catch-all」，這是當時的真實狀態。TASK1.29已依規格明確把這一條路由
+  // 正式上線（不受這裡測的feature flag影響）——這是TASK1.29的任務目標，
+  // 不是回歸。
+  await test('（TASK1.29起）POST /auth/guest 已正式上線，不受這裡測的flag狀態影響，回傳JSON+Set-Cookie', async () => {
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST', body: '{}' }), isolatedEnv, {});
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
+    assert.ok(res.headers.get('set-cookie'));
   });
 
   await test('（1.flag=false）D1完全沒有任何SQL呼叫', async () => {
@@ -451,10 +456,12 @@ async function run() {
     assert.strictEqual(res.status, 401);
   });
 
-  await test('（8.auth route）flag=false：POST /auth/guest 依然落到首頁catch-all（未受legacy adapter影響）', async () => {
-    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST' }), envFalse, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+  // 注意：同上，TASK1.29 已將 POST /auth/guest 正式上線，不論flag狀態。
+  await test('（TASK1.29起）POST /auth/guest 已正式上線，flag=false時依然回傳JSON（不受legacy adapter影響，因為根本沒有經過gateway）', async () => {
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await worker.fetch(new Request('https://example.com/auth/guest', { method: 'POST' }), isolatedEnv, {});
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
   });
 
   // -------------------------------------------------------------------------
@@ -569,10 +576,19 @@ async function run() {
     assert.ok(!/gateway|createApplication|registerLegacyRoutes/.test(handleBody));
   });
 
-  await test('（延續守則）git diff：src/worker.js 在TASK1.26完全沒有異動', async () => {
-    const { execSync } = await import('node:child_process');
-    const diff = execSync('git diff --stat src/worker.js', { cwd: path.join(__dirname, '..', '..') }).toString();
-    assert.strictEqual(diff.trim(), '');
+  // 注意：這項斷言原本是「TASK1.26當下 src/worker.js 完全沒有異動」的
+  // 一次性快照檢查——這在TASK1.26當時是真的，但TASK1.29（Enable Guest
+  // Authentication API Route）已經合法修改了worker.js的入口區塊來啟用
+  // POST /auth/guest，導致這個快照式的斷言從此不再成立，不是回歸。
+  // 真正持久有效的守則是上面那項「handle(r,env)函式體本身完全沒有
+  // 變動」的原始碼掃描（仍然通過），這裡改成驗證同樣的持久性質，取代
+  // 已經被後續任務正常超越的git diff快照檢查。
+  await test('（延續守則，TASK1.29後更新）worker.js 的合法改動只會發生在 handle(r,env) 之前的入口區塊，handle本身永遠維持原樣', () => {
+    const src = fs.readFileSync(workerPath, 'utf8');
+    const handleBodyStart = src.indexOf('async function handle(r,env){');
+    assert.ok(handleBodyStart > 0, 'handle(r,env) 函式應該存在');
+    const handleBody = src.slice(handleBodyStart);
+    assert.ok(!/gateway|createApplication|registerLegacyRoutes|middleware|contract/i.test(handleBody));
   });
 
   // -------------------------------------------------------------------------
