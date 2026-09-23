@@ -166,15 +166,18 @@ async function run() {
     assert.strictEqual(loginGuestContract.request.metadata.type, 'object');
   });
 
-  await test('（3.auth contract）loginProviderContract.request 要求auth_provider/auth_provider_id為必填字串', () => {
-    assert.strictEqual(loginProviderContract.request.auth_provider.required, true);
-    assert.strictEqual(loginProviderContract.request.auth_provider.type, 'string');
-    assert.strictEqual(loginProviderContract.request.auth_provider_id.required, true);
+  // 注意：TASK1.32把loginProviderContract的欄位命名從
+  // auth_provider/auth_provider_id/display_name改成跟upgrade端點一致的
+  // provider/providerId/displayName，這裡的斷言已同步更新。
+  await test('（TASK1.32後更新）loginProviderContract.request 要求provider/providerId為必填字串', () => {
+    assert.strictEqual(loginProviderContract.request.provider.required, true);
+    assert.strictEqual(loginProviderContract.request.provider.type, 'string');
+    assert.strictEqual(loginProviderContract.request.providerId.required, true);
   });
 
-  await test('（3.auth contract）loginProviderContract.request 的email/display_name是選填', () => {
+  await test('（TASK1.32後更新）loginProviderContract.request 的email/displayName是選填', () => {
     assert.strictEqual(loginProviderContract.request.email.required, false);
-    assert.strictEqual(loginProviderContract.request.display_name.required, false);
+    assert.strictEqual(loginProviderContract.request.displayName.required, false);
   });
 
   await test('（3.auth contract）logoutContract/currentUserContract 的request schema皆為空物件（無body）', () => {
@@ -212,15 +215,15 @@ async function run() {
   // C. validator.js 新增能力（2.contract validation）
   // =========================================================================
 
-  await test('（2.contract validation）validateContract() 對合法資料回傳ok:true', () => {
-    const result = validateContract(loginProviderContract, { auth_provider: 'google', auth_provider_id: 'g1' });
+  await test('（TASK1.32後更新）validateContract() 對合法資料回傳ok:true', () => {
+    const result = validateContract(loginProviderContract, { provider: 'google', providerId: 'g1' });
     assert.strictEqual(result.ok, true);
   });
 
-  await test('（2.contract validation）validateContract() 對缺少必填欄位的資料回傳ok:false並列出錯誤', () => {
-    const result = validateContract(loginProviderContract, { auth_provider: 'google' });
+  await test('（TASK1.32後更新）validateContract() 對缺少必填欄位的資料回傳ok:false並列出錯誤', () => {
+    const result = validateContract(loginProviderContract, { provider: 'google' });
     assert.strictEqual(result.ok, false);
-    assert.ok(result.errors.some((e) => e.includes('auth_provider_id')));
+    assert.ok(result.errors.some((e) => e.includes('providerId')));
   });
 
   await test('（2.contract validation）validateContract() 對getUserByIdContract驗證userId', () => {
@@ -272,7 +275,7 @@ async function run() {
     const mw = createContractValidationMiddleware(loginProviderContract);
     const applyPipeline = createMiddlewarePipeline([mw]);
     const wrapped = applyPipeline(() => ({ ok: true, data: { handled: true } }));
-    const result = await wrapped({ req: { payload: { auth_provider: 'google', auth_provider_id: 'g1' } } });
+    const result = await wrapped({ req: { payload: { provider: 'google', providerId: 'g1' } } });
     assert.strictEqual(result.data.handled, true);
   });
 
@@ -422,18 +425,18 @@ async function run() {
     assert.ok(body.data.cookie);
   });
 
-  await test('（8.KV/R2正常）flag=true：POST /auth/provider 缺少必要欄位時，透過真正router+controller+application service回401，reason在contract描述清單內', async () => {
-    // 注意：真正的 Fetch Request 目前沒有任何地方會把 body 解析進
-    // ctx.req.payload（HTTP body 解析是尚未接線的未來工作，見TASK1.20/1.21
-    // 既有的已知限制），所以這裡用跟TASK1.25/1.26同樣的手法，直接用
-    // request-like物件帶上payload，才能真正測試到identity層的reason。
+  // 注意：TASK1.32已為POST /auth/provider掛上loginProviderContract的
+  // contract validation middleware，缺少必填的provider/providerId現在
+  // 會在contract validation階段就被擋下（400），不會走到controller/
+  // 識別層——這是TASK1.32的任務目標，不是回歸。
+  await test('（TASK1.32後更新）POST /auth/provider 缺少必要欄位時在contract validation階段被擋下，回400', async () => {
     const router = createAppRouter(async () => new Response('legacy', { status: 200 }));
     const db = makeMockDb();
     const res = await router.handle(
       { method: 'POST', pathname: '/auth/provider', payload: { email: 'x@example.com' } },
       { db }
     );
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 400);
     const body = await res.json();
     assert.ok(loginProviderContract.response.failureReasons.includes(body.reason), `reason=${body.reason}應在清單內`);
   });
@@ -514,7 +517,7 @@ async function run() {
   // -------------------------------------------------------------------------
 
   await test('（2.contract validation）validateContract() 對type不符的資料回傳ok:false', () => {
-    const result = validateContract(loginProviderContract, { auth_provider: 123, auth_provider_id: 'g1' });
+    const result = validateContract(loginProviderContract, { provider: 123, providerId: 'g1' });
     assert.strictEqual(result.ok, false);
   });
 
@@ -536,7 +539,7 @@ async function run() {
 
   await test('（5.controller整合）loginProviderController成功情境的回傳值仍是success()格式（含created欄位）', async () => {
     const db = makeMockDb();
-    const result = await loginProviderController(db, { auth_provider: 'google', auth_provider_id: 'g-99' });
+    const result = await loginProviderController(db, { provider: 'google', providerId: 'g-99' });
     assert.strictEqual(result.ok, true);
     assert.strictEqual(typeof result.data.created, 'boolean');
   });

@@ -106,9 +106,15 @@ async function test1_guestControllerSuccess() {
 }
 
 // ---- 2. provider controller 成功 ----
+// 注意：TASK1.32（Enable Provider Authentication API Route）正式啟用
+// POST /auth/provider 時，把 loginProviderController 的外部payload欄位
+// 命名從 {auth_provider, auth_provider_id, display_name} 改成跟TASK1.31
+// upgrade端點一致的 {provider, providerId, displayName}（controller內部
+// 才轉換成identity層慣用的snake_case）——這是TASK1.32明確的規格要求，
+// 不是回歸，這裡的呼叫方式已同步更新。
 async function test2_providerControllerSuccess() {
   const db = makeMockDb();
-  const result = await loginProviderController(db, { auth_provider: 'google', auth_provider_id: 'g-ctrl-test', display_name: 'Controller測試使用者' });
+  const result = await loginProviderController(db, { provider: 'google', providerId: 'g-ctrl-test', displayName: 'Controller測試使用者' });
 
   record('2. loginProviderController 成功回傳 {ok:true, data}', result.ok === true);
   record('2. data 內含新建立的user與session', !!result.data.user && !!result.data.session);
@@ -116,7 +122,7 @@ async function test2_providerControllerSuccess() {
   record('2. display_name正確帶入', result.data.user.display_name === 'Controller測試使用者');
 
   // 再次呼叫同一組provider identity應該回傳既有使用者（不重複建立）
-  const second = await loginProviderController(db, { auth_provider: 'google', auth_provider_id: 'g-ctrl-test' });
+  const second = await loginProviderController(db, { provider: 'google', providerId: 'g-ctrl-test' });
   record('2. 重複呼叫同一組provider identity回傳既有user（created:false）', second.ok === true && second.data.created === false && second.data.user.id === result.data.user.id);
 }
 
@@ -158,7 +164,7 @@ async function test4_currentUserController() {
 async function test5_applicationServiceErrorPropagation() {
   const db = makeMockDb({ users: [{ id: 'u-suspended-ctrl', is_guest: 0, auth_provider: 'google', auth_provider_id: 'g-suspended-ctrl', status: 'suspended' }] });
 
-  const suspendedResult = await loginProviderController(db, { auth_provider: 'google', auth_provider_id: 'g-suspended-ctrl' });
+  const suspendedResult = await loginProviderController(db, { provider: 'google', providerId: 'g-suspended-ctrl' });
   record('5. Application service的suspended拒絕正確傳遞到controller層', suspendedResult.ok === false && suspendedResult.reason === 'user_suspended');
   record('5. suspended情況下controller回傳status=401', suspendedResult.status === 401);
 

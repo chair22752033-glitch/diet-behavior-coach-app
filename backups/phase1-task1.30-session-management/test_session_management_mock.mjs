@@ -737,11 +737,13 @@ async function run() {
     assert.strictEqual(res.headers.get('content-type'), 'application/manifest+json');
   });
 
-  await test('（13.Legacy route不受影響）POST /auth/provider（仍未啟用）落到首頁catch-all', async () => {
+  // 注意：TASK1.32已將POST /auth/provider正式上線——這是TASK1.32的任務
+  // 目標，不是回歸，這裡改成驗證空body會在contract validation階段被
+  // 擋下（400 JSON），不再落到首頁catch-all。
+  await test('（TASK1.32起）POST /auth/provider 已正式上線，缺少必要欄位時回400 JSON（不再落到首頁catch-all）', async () => {
     const env = makeFreshEnv();
-    const res = await worker.fetch(new Request('https://example.com/auth/provider', { method: 'POST' }), env, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    const res = await worker.fetch(new Request('https://example.com/auth/provider', { method: 'POST', body: '{}' }), env, {});
+    assert.strictEqual(res.status, 400);
   });
 
   await test('（13.Legacy route不受影響）GET /users/999（仍未啟用）落到首頁catch-all', async () => {

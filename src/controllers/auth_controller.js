@@ -44,10 +44,19 @@ export async function loginGuestController(db, payload, options) {
 }
 
 /**
- * 對應未來的 POST /auth/provider
+ * 對應 TASK1.32 的 POST /auth/provider
+ *
+ * 本次不接 Google OAuth callback、不執行 Authorization Code Flow、
+ * 不呼叫任何 Google API、不儲存任何 token——payload 是「已經確認好的
+ * provider identity」（provider/providerId/email/displayName），跟
+ * TASK1.31 upgrade 端點同一種外部欄位命名慣例，這裡同樣轉換成
+ * identity 層慣用的 auth_provider/auth_provider_id/email/display_name
+ * 之後才交給 loginWithProvider()（TASK1.19，內部呼叫已測試過的
+ * resolveLoginIdentity()：provider identity 存在就回傳既有 user，不存在
+ * 就建立新的 provider user，兩種情況都不會建立 guest user）。
+ *
  * @param {object} db
- * @param {{auth_provider:string, auth_provider_id:string, email?:string, display_name?:string}} payload
- *   通常是 src/identity/provider_mapping.js 的 mapGoogleProfileToIdentity() 輸出
+ * @param {{provider:string, providerId:string, email?:string, displayName?:string}} payload
  * @param {object} [options] - {sessionOpts?, now?}
  */
 export async function loginProviderController(db, payload, options) {
@@ -55,7 +64,13 @@ export async function loginProviderController(db, payload, options) {
     if (!payload || typeof payload !== 'object') {
       return failure('invalid_payload', 400);
     }
-    const result = await loginWithProvider(db, payload, options);
+    const providerIdentity = {
+      auth_provider: payload.provider,
+      auth_provider_id: payload.providerId,
+      email: payload.email,
+      display_name: payload.displayName,
+    };
+    const result = await loginWithProvider(db, providerIdentity, options);
     if (!result.ok) {
       // suspended/deleted/invalid_identity 等識別層拒絕理由，視為未授權
       return failure(result.reason || result.error || 'provider_login_failed', 401);

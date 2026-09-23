@@ -236,11 +236,11 @@ async function run() {
   // 空陣列」，TASK1.30已依規格明確為logout/me掛上各自的contract
   // validation middleware（這是TASK1.30的任務目標，不是回歸），只有
   // provider仍未啟用。
-  await test('（TASK1.30後更新）POST /auth/provider middlewares仍是空陣列（尚未啟用），logout/me已各自掛上contract validation', () => {
+  // 注意：TASK1.32已為POST /auth/provider掛上contract validation
+  // middleware——這是TASK1.32的任務目標，不是回歸。
+  await test('（TASK1.32後更新）POST /auth/provider/logout/me皆已各自掛上contract validation', () => {
     const router = createAppRouter();
-    const providerRoute = router.routes.find((r) => r.method === 'POST' && r.path === '/auth/provider');
-    assert.strictEqual(providerRoute.middlewares.length, 0);
-    for (const p of [['POST', '/auth/logout'], ['GET', '/auth/me']]) {
+    for (const p of [['POST', '/auth/provider'], ['POST', '/auth/logout'], ['GET', '/auth/me']]) {
       const route = router.routes.find((r) => r.method === p[0] && r.path === p[1]);
       assert.strictEqual(route.middlewares.length, 1, `${p[0]} ${p[1]} 應該有1個middleware`);
     }
@@ -582,11 +582,13 @@ async function run() {
     assert.strictEqual(res.status, 401);
   });
 
-  await test('（10.Legacy route不受影響）POST /auth/provider（其餘auth route仍未啟用）落到首頁catch-all', async () => {
+  // 注意：TASK1.32已將POST /auth/provider正式上線（純payload登入，不接
+  // Google OAuth callback）——這是TASK1.32的任務目標，不是回歸。
+  await test('（TASK1.32起）POST /auth/provider 已正式上線，缺少必要欄位時回400 JSON（不再落到首頁catch-all）', async () => {
     const env = makeFreshEnv();
-    const res = await worker.fetch(new Request('https://example.com/auth/provider', { method: 'POST' }), env, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    const res = await worker.fetch(new Request('https://example.com/auth/provider', { method: 'POST', body: '{}' }), env, {});
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
   });
 
   // 注意：TASK1.30已將POST /auth/logout正式上線（見TASK1.30報告），這裡
@@ -628,10 +630,11 @@ async function run() {
   // POST /auth/logout也正式上線——這是TASK1.30的任務目標，不是回歸，
   // 已更新為排除這兩條路由，只保留「/auth/provider與/users/:id仍未
   // 啟用」這個依然成立的守則。
-  // 注意：TASK1.31已新增POST /auth/provider/upgrade（身份升級，非OAuth
-  // 登入）的特殊處理，這裡改成排除「精確等於/auth/provider」（純OAuth
-  // 登入，仍未啟用）而不是排除所有含有/auth/provider字樣的路徑。
-  await test('（TASK1.31後更新）原始碼掃描：worker.js 的實際程式碼對已上線的guest/me/logout/upgrade四條路由做特殊處理，不含純OAuth登入(/auth/provider)/users', () => {
+  // 注意：TASK1.32已將POST /auth/provider（純OAuth登入，不接Google
+  // callback）正式上線，worker.js現在確實含有`pathname === '/auth/provider'`
+  // 的特殊處理（與/auth/guest共用同一個if分支）——這是TASK1.32的任務
+  // 目標，不是回歸，這裡改成正向驗證五條已上線路由都存在特殊處理。
+  await test('（TASK1.32後更新）原始碼掃描：worker.js 的實際程式碼對已上線的guest/me/logout/upgrade/provider五條路由做特殊處理，不含/users', () => {
     const src = fs.readFileSync(workerPath, 'utf8');
     const exportStart = src.indexOf('export default {');
     const codeOnly = src.slice(exportStart);
@@ -639,24 +642,27 @@ async function run() {
     assert.ok(/\/auth\/me/.test(codeOnly));
     assert.ok(/\/auth\/logout/.test(codeOnly));
     assert.ok(/\/auth\/provider\/upgrade/.test(codeOnly));
-    assert.ok(!/pathname === '\/auth\/provider'/.test(codeOnly));
+    assert.ok(/pathname === '\/auth\/provider'/.test(codeOnly));
     assert.ok(!/\/users\//.test(codeOnly));
   });
 
-  await test('（TASK1.30後更新）原始碼掃描：auth_routes.js 已import guest/logout/currentUser三個contract，仍未import loginProviderContract', () => {
+  // 注意：TASK1.32已在auth_routes.js中import並使用loginProviderContract
+  // 為/auth/provider掛上contract validation——這是TASK1.32的任務目標，
+  // 不是回歸，這裡改成正向驗證四個contract都已import。
+  await test('（TASK1.32後更新）原始碼掃描：auth_routes.js 已import guest/logout/currentUser/loginProvider四個contract', () => {
     const src = stripComments(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'routes', 'auth_routes.js'), 'utf8'));
     assert.ok(/loginGuestContract/.test(src));
     assert.ok(/logoutContract/.test(src));
     assert.ok(/currentUserContract/.test(src));
-    assert.ok(!/loginProviderContract/.test(src));
+    assert.ok(/loginProviderContract/.test(src));
   });
 
-  // 注意：TASK1.31新增/auth/provider/upgrade也掛了middleware，這裡的
-  // 排除清單同步更新。
-  await test('（TASK1.31後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me/upgrade四條已啟用路由外其餘皆是空清單', () => {
+  // 注意：TASK1.32新增/auth/provider也掛了middleware，這裡的排除清單
+  // 同步更新。
+  await test('（TASK1.32後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me/upgrade/provider五條已啟用路由外其餘皆是空清單', () => {
     const router = createAppRouter();
     const legacyRouter = createAppRouter(async () => new Response('legacy'));
-    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade'];
+    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade', '/auth/provider'];
     for (const r of legacyRouter.routes) {
       if (!activatedPaths.includes(r.path)) {
         assert.strictEqual(r.middlewares.length, 0, `${r.method} ${r.path} 應該仍是空middlewares`);

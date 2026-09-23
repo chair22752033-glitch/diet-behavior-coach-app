@@ -2,7 +2,7 @@
  * Phase 1 TASK 1.21｜Auth Routes
  * （TASK1.29 起 POST /auth/guest 正式上線，TASK1.30 起 GET /auth/me、
  * POST /auth/logout 正式上線，TASK1.31 起 POST /auth/provider/upgrade
- * 正式上線）
+ * 正式上線，TASK1.32 起 POST /auth/provider 正式上線）
  *
  * 建立 method+path → controller 的 mapping。
  * handler 從 Router 補好的 context（{req, db, env, services, params}）取出
@@ -11,21 +11,25 @@
  * 這裡完全不直接呼叫 db.users/db.sessions，一律委派給 controller。
  *
  * req 是「已經解析好的請求描述物件」（method/pathname 之外還可能帶
- * payload/cookieHeader/options）——worker.js 對這四條已上線的路由都會
- * 把真正的 HTTP body/Cookie 標頭解析好傳進來。POST /auth/provider
- * （純Google OAuth登入，不是升級）維持TASK1.20原本的設計，尚未接上
- * 真正的HTTP request 解析，仍是「架構已備妥、尚未上線」狀態——本次
- * TASK1.31明確只啟用身份升級入口，不接Google OAuth callback。
+ * payload/cookieHeader/options）——worker.js 對這五條已上線的路由都會
+ * 把真正的 HTTP body/Cookie 標頭解析好傳進來。
  *
- * TASK1.29/1.30/1.31 已上線的四條路由都：
+ * TASK1.32：POST /auth/provider 正式上線，但這裡收到的 payload 是
+ * 「已經確認好的 provider identity」（provider/providerId/email/
+ * displayName），完全不接 Google OAuth callback、不執行 Authorization
+ * Code Flow、不呼叫任何 Google API——那些是真正要接上 Google 登入時
+ * 才會做的事，本次刻意排除在外。
+ *
+ * TASK1.29/1.30/1.31/1.32 已上線的五條路由都：
  * 1. 掛上 TASK1.28 對應的 contract validation middleware。
  * 2. controller 成功時，若 data.cookie 是字串，就把它實際附加到 HTTP
  *    回應的 Set-Cookie 標頭上（controller 本身刻意跟傳輸協定無關，只把
  *    cookie 字串放在 data 裡，「幫它變成真正的 Set-Cookie header」是
- *    路由層的責任）——guest login/身份升級 用它設定新session的cookie，
- *    logout 用它送出「清除cookie」的Set-Cookie（Max-Age=0）。GET
- *    /auth/me 是純讀取，controller 回傳值裡沒有 cookie 欄位，
- *    withSetCookie() 自然不會產生任何 Set-Cookie，不會意外建立新session。
+ *    路由層的責任）——guest login/provider login/身份升級 用它設定新
+ *    session的cookie，logout 用它送出「清除cookie」的Set-Cookie
+ *    （Max-Age=0）。GET /auth/me 是純讀取，controller 回傳值裡沒有
+ *    cookie 欄位，withSetCookie() 自然不會產生任何 Set-Cookie，不會
+ *    意外建立新session。
  */
 import {
   loginGuestController,
@@ -35,7 +39,13 @@ import {
   upgradeGuestController,
 } from '../controllers/auth_controller.js';
 import { createContractValidationMiddleware } from '../middleware/validator.js';
-import { loginGuestContract, logoutContract, currentUserContract, upgradeProviderContract } from '../contracts/auth_contract.js';
+import {
+  loginGuestContract,
+  loginProviderContract,
+  logoutContract,
+  currentUserContract,
+  upgradeProviderContract,
+} from '../contracts/auth_contract.js';
 
 function withSetCookie(result) {
   if (result && result.ok && result.data && typeof result.data.cookie === 'string') {
@@ -62,10 +72,16 @@ export function registerAuthRoutes(router) {
     { middlewares: [createContractValidationMiddleware(loginGuestContract)] }
   );
 
-  router.add('POST', '/auth/provider', async (ctx) => {
-    const req = ctx.req || {};
-    return loginProviderController(ctx.db, req.payload, req.options);
-  });
+  router.add(
+    'POST',
+    '/auth/provider',
+    async (ctx) => {
+      const req = ctx.req || {};
+      const result = await loginProviderController(ctx.db, req.payload, req.options);
+      return withSetCookie(result);
+    },
+    { middlewares: [createContractValidationMiddleware(loginProviderContract)] }
+  );
 
   router.add(
     'POST',

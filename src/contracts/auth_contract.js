@@ -28,18 +28,30 @@ export const loginGuestContract = {
 };
 
 /**
- * 對應 loginProviderController（POST /auth/provider）
- * payload: {auth_provider, auth_provider_id, email?, display_name?}
- *   通常是 src/identity/provider_mapping.js 的 mapGoogleProfileToIdentity() 輸出
+ * 對應 loginProviderController（POST /auth/provider）—— TASK1.32 起正式上線。
+ * payload: {provider, providerId, email?, displayName?}——跟TASK1.31
+ * upgradeProviderContract同一種外部欄位命名慣例，controller內部會轉換
+ * 成identity層慣用的auth_provider/auth_provider_id/display_name。
+ *
+ * 本次不接Google OAuth callback、不執行Authorization Code Flow、不呼叫
+ * Google API、不儲存任何token——payload是「已經確認好的provider
+ * identity」，通常未來會由真正接上OAuth callback的那個任務負責產生
+ * （例如呼叫src/identity/provider_mapping.js的
+ * mapGoogleProfileToIdentity()後再轉成這裡的欄位名稱），這裡只負責
+ * 「收到provider identity之後該怎麼登入」。
  */
 export const loginProviderContract = {
   request: {
-    auth_provider: { required: true, type: 'string' },
-    auth_provider_id: { required: true, type: 'string' },
+    provider: { required: true, type: 'string' },
+    providerId: { required: true, type: 'string' },
     email: { required: false, type: 'string' },
-    display_name: { required: false, type: 'string' },
+    displayName: { required: false, type: 'string' },
   },
   response: {
+    // 注意：resolveLoginIdentity()（src/identity/login_identity.js）只檢查
+    // auth_provider/auth_provider_id是否「存在」，不像upgradeGuestToProvider()
+    // 那樣額外驗證provider是否為支援的名稱——這是既有實作的既有行為，
+    // 這裡如實反映，不新增一個實際不會發生的invalid_provider reason。
     success: { user: 'object', session: 'object', cookie: 'string', created: 'boolean' },
     failureReasons: ['invalid_payload', 'invalid_identity', 'user_suspended', 'user_deleted', 'provider_login_failed'],
     failureStatus: [400, 401],

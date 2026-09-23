@@ -527,14 +527,20 @@ async function testRealControllersEndToEnd() {
     assert.strictEqual(res.status, 401);
   });
 
-  await test('（真實接線）POST /auth/provider payload 缺少必要欄位回 401（識別層拒絕）', async () => {
+  // 注意：這項斷言原本驗證「缺少必要欄位時識別層拒絕（401）」，這是
+  // TASK1.21當下（POST /auth/provider尚未掛任何contract validation）的
+  // 真實狀態。TASK1.32已依規格為這條路由掛上loginProviderContract的
+  // contract validation middleware，缺少必填的provider/providerId現在
+  // 會在更早的步驟被擋下（400），根本不會走到controller/識別層——這是
+  // TASK1.32的任務目標，不是回歸。
+  await test('（TASK1.32後更新）POST /auth/provider payload缺少必要欄位（provider/providerId）在contract validation階段就被擋下，回400', async () => {
     const router = createAppRouter();
     const db = buildMockDb();
     const res = await router.handle(
       { method: 'POST', pathname: '/auth/provider', payload: { email: 'x@example.com' } },
       { db }
     );
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 400);
   });
 
   await test('（真實接線）POST /auth/logout 沒有 cookie 時仍回 200（wasValid:false）', async () => {

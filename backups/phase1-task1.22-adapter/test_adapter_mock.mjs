@@ -264,11 +264,14 @@ async function run() {
     assert.strictEqual(res.status, 401);
   });
 
-  await test('（端對端）POST /auth/provider payload 缺欄位時回 401（識別層透過整條chain正確拒絕）', async () => {
+  // 注意：TASK1.32已為POST /auth/provider掛上contract validation，缺少
+  // 必填的provider/providerId現在在更早的步驟就被擋下（400），不再是
+  // 識別層的401——這是TASK1.32的任務目標，不是回歸。
+  await test('（TASK1.32後更新）POST /auth/provider payload缺欄位時在contract validation階段回400', async () => {
     const handler = createWorkerHandler();
     const env = makeEnv();
     const res = await handler({ method: 'POST', pathname: '/auth/provider', payload: { email: 'x@example.com' } }, env);
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 400);
   });
 
   await test('（端對端）POST /auth/logout 沒有 cookie 仍回 200（wasValid:false）', async () => {
