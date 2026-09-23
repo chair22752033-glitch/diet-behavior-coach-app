@@ -995,9 +995,11 @@ async function run() {
     assert.strictEqual(res.status, 200);
   });
 
-  await test('（延續守則）createAppRouter() 的 auth/user 路由總數在TASK1.30後仍是5條（沒有新增/刪除路由，只是啟用middleware）', () => {
+  // 注意：TASK1.31新增了POST /auth/provider/upgrade，路由總數從5條變成
+  // 6條，這是預期演進，不是回歸。
+  await test('（延續守則）createAppRouter() 的 auth/user 路由總數在TASK1.31後為6條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 5);
+    assert.strictEqual(router.routes.length, 6);
   });
 
   await test('（3.GET /auth/me過期session，端對端）直接在假D1插入一筆已過期的session，透過真正worker.fetch()驗證回401', async () => {

@@ -7,5 +7,6 @@ export {
   loginProviderContract,
   logoutContract,
   currentUserContract,
+  upgradeProviderContract,
 } from './auth_contract.js';
 export { getUserByIdContract } from './user_contract.js';

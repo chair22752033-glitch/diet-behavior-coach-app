@@ -71,3 +71,33 @@ export const currentUserContract = {
     failureStatus: [401],
   },
 };
+
+/**
+ * 對應 upgradeGuestController（POST /auth/provider/upgrade）—— TASK1.31 起正式上線。
+ * payload: {provider, providerId, email?, displayName?}——注意欄位命名跟
+ * loginProviderContract（auth_provider/auth_provider_id）不同，這是本次
+ * 任務規格明確指定的欄位名稱，controller內部會轉換成identity層慣用的
+ * auth_provider/auth_provider_id。
+ *
+ * 呼叫這個API的人必須是「目前透過cookie登入的訪客本人」——guestUserId
+ * 不是從payload來的（那樣任何人都能指定升級任意user_id，是安全漏洞），
+ * 而是從cookieHeader解析出目前的session歸屬。
+ */
+export const upgradeProviderContract = {
+  request: {
+    provider: { required: true, type: 'string' },
+    providerId: { required: true, type: 'string' },
+    email: { required: false, type: 'string' },
+    displayName: { required: false, type: 'string' },
+  },
+  response: {
+    success: { user: 'object', session: 'object', cookie: 'string' },
+    failureReasons: [
+      'no_cookie', 'not_found', 'revoked', 'expired',
+      'user_suspended', 'user_deleted', 'user_not_found', 'not_authenticated',
+      'invalid_payload', 'invalid_identity', 'invalid_provider', 'not_guest',
+      'provider_already_linked', 'upgrade_failed',
+    ],
+    failureStatus: [400, 401],
+  },
+};

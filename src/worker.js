@@ -16,16 +16,20 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 //
 // TASK1.29：正式啟用第一條 API route —— POST /auth/guest。TASK1.30
 // 接著啟用 GET /auth/me、POST /auth/logout（session 使用生命週期：
-// 查詢目前登入者、登出）。三條都刻意不透過上面的 feature flag（那是
-// all-or-nothing 的機制，打開會連帶啟用 /auth/provider、/users/:id
-// 這些還沒準備好正式上線的路由），改用最小、明確的判斷式只接上這三條
-// 路由：guest 解析真正的 HTTP body 成 payload，me/logout 讀取真正的
-// Cookie 標頭，交給 app.router.handle() 走完整的 Router → Contract
-// Validation → Controller → Application Service → Identity → Session
-// → D1 流程，回傳的 Response 已經在 auth_routes.js 附加了真正的
-// Set-Cookie 標頭（guest 設定新session、logout 清除cookie、me 因為是
-// 純讀取所以不會有 Set-Cookie）。其餘所有路徑（含這三條路由方法不符的
-// 情況）完全不受影響，一律照舊落到下面的 gateway/legacy 流程。
+// 查詢目前登入者、登出）。TASK1.31 接著啟用 POST /auth/provider/upgrade
+// （訪客 → 已驗證身份 的升級入口，不接 Google OAuth callback）。四條
+// 都刻意不透過上面的 feature flag（那是 all-or-nothing 的機制，打開會
+// 連帶啟用 /auth/provider（純OAuth登入）、/users/:id 這些還沒準備好
+// 正式上線的路由），改用最小、明確的判斷式只接上這四條路由：guest/
+// upgrade 解析真正的 HTTP body 成 payload，me/logout/upgrade 讀取真正的
+// Cookie 標頭（upgrade 兩者都需要——payload帶provider資訊、cookie用來
+// 識別「目前是哪個訪客」），交給 app.router.handle() 走完整的
+// Router → Contract Validation → Controller → Application Service →
+// Identity → Session → D1 流程，回傳的 Response 已經在 auth_routes.js
+// 附加了真正的 Set-Cookie 標頭（guest/upgrade 設定新session、logout
+// 清除cookie、me 因為是純讀取所以不會有 Set-Cookie）。其餘所有路徑
+// （含這四條路由方法不符的情況）完全不受影響，一律照舊落到下面的
+// gateway/legacy 流程。
 async function parseJsonBody(request) {
   try {
     const text = await request.text();
@@ -61,6 +65,15 @@ export default {
         const cookieHeader = request.headers.get('Cookie');
         return app.router.handle(
           { method, pathname, cookieHeader, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
+
+      if (method === 'POST' && pathname === '/auth/provider/upgrade') {
+        const payload = await parseJsonBody(request);
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle(
+          { method, pathname, payload, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
         );
       }

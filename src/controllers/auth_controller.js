@@ -20,7 +20,7 @@
  * Request、或未來換成別的框架，都只需要在 route 那一層做參數轉換，
  * controller 本身不用改。
  */
-import { createGuestLogin, loginWithProvider, logout, getCurrentUser } from '../services/auth_application_service.js';
+import { createGuestLogin, loginWithProvider, logout, getCurrentUser, upgradeGuestLogin } from '../services/auth_application_service.js';
 import { success, failure } from '../contracts/response_contract.js';
 
 /**
@@ -97,6 +97,47 @@ export async function currentUserController(db, cookieHeader, options) {
       return failure(result.reason || 'not_authenticated', 401);
     }
     return success({ user: result.user, userId: result.userId });
+  } catch (e) {
+    return failure(e && e.message ? e.message : String(e), 500);
+  }
+}
+
+/**
+ * 對應 TASK1.31 的 POST /auth/provider/upgrade
+ *
+ * 要升級的對象（guestUserId）不是從 payload 來的——那樣任何呼叫端都能
+ * 指定升級任意 user_id，是安全漏洞。而是先用 getCurrentUser()（跟
+ * currentUserController 同一個函式）從 cookieHeader 解析出「目前登入
+ * 的是誰」，再把那個 userId 交給 upgradeGuestLogin()。這也順便讓
+ * suspended/deleted 的訪客在這一步就被擋下（getCurrentUser() 內部的
+ * canLogIn() 檢查），upgradeGuestToProvider() 內部還有第二層一樣的
+ * 狀態檢查（見 src/identity/upgrade.js），兩層防禦不衝突。
+ *
+ * @param {object} db
+ * @param {string|null} cookieHeader - 目前這個訪客自己的session cookie
+ * @param {{provider:string, providerId:string, email?:string, displayName?:string}} payload
+ * @param {object} [options]
+ */
+export async function upgradeGuestController(db, cookieHeader, payload, options) {
+  try {
+    const currentUserResult = await getCurrentUser(db, cookieHeader, options);
+    if (!currentUserResult.ok) {
+      return failure(currentUserResult.reason || 'not_authenticated', 401);
+    }
+    if (!payload || typeof payload !== 'object') {
+      return failure('invalid_payload', 400);
+    }
+    const providerIdentity = {
+      auth_provider: payload.provider,
+      auth_provider_id: payload.providerId,
+      email: payload.email,
+      display_name: payload.displayName,
+    };
+    const result = await upgradeGuestLogin(db, currentUserResult.userId, providerIdentity, options);
+    if (!result.ok) {
+      return failure(result.reason || result.error || 'upgrade_failed', 401);
+    }
+    return success({ user: result.user, session: result.session, cookie: result.cookie });
   } catch (e) {
     return failure(e && e.message ? e.message : String(e), 500);
   }

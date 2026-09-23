@@ -1,7 +1,8 @@
 /*
  * Phase 1 TASK 1.21｜Auth Routes
  * （TASK1.29 起 POST /auth/guest 正式上線，TASK1.30 起 GET /auth/me、
- * POST /auth/logout 正式上線）
+ * POST /auth/logout 正式上線，TASK1.31 起 POST /auth/provider/upgrade
+ * 正式上線）
  *
  * 建立 method+path → controller 的 mapping。
  * handler 從 Router 補好的 context（{req, db, env, services, params}）取出
@@ -10,29 +11,31 @@
  * 這裡完全不直接呼叫 db.users/db.sessions，一律委派給 controller。
  *
  * req 是「已經解析好的請求描述物件」（method/pathname 之外還可能帶
- * payload/cookieHeader/options）——worker.js 對這三條已上線的路由都會
+ * payload/cookieHeader/options）——worker.js 對這四條已上線的路由都會
  * 把真正的 HTTP body/Cookie 標頭解析好傳進來。POST /auth/provider
- * 維持TASK1.20原本的設計，尚未接上真正的HTTP request 解析，仍是
- * 「架構已備妥、尚未上線」狀態。
+ * （純Google OAuth登入，不是升級）維持TASK1.20原本的設計，尚未接上
+ * 真正的HTTP request 解析，仍是「架構已備妥、尚未上線」狀態——本次
+ * TASK1.31明確只啟用身份升級入口，不接Google OAuth callback。
  *
- * TASK1.29/1.30 已上線的三條路由都：
+ * TASK1.29/1.30/1.31 已上線的四條路由都：
  * 1. 掛上 TASK1.28 對應的 contract validation middleware。
  * 2. controller 成功時，若 data.cookie 是字串，就把它實際附加到 HTTP
  *    回應的 Set-Cookie 標頭上（controller 本身刻意跟傳輸協定無關，只把
  *    cookie 字串放在 data 裡，「幫它變成真正的 Set-Cookie header」是
- *    路由層的責任）——guest login 用它設定新session的cookie，logout
- *    用它送出「清除cookie」的Set-Cookie（Max-Age=0）。GET /auth/me
- *    是純讀取，controller 回傳值裡沒有 cookie 欄位，withSetCookie()
- *    自然不會產生任何 Set-Cookie，不會意外建立新session。
+ *    路由層的責任）——guest login/身份升級 用它設定新session的cookie，
+ *    logout 用它送出「清除cookie」的Set-Cookie（Max-Age=0）。GET
+ *    /auth/me 是純讀取，controller 回傳值裡沒有 cookie 欄位，
+ *    withSetCookie() 自然不會產生任何 Set-Cookie，不會意外建立新session。
  */
 import {
   loginGuestController,
   loginProviderController,
   logoutController,
   currentUserController,
+  upgradeGuestController,
 } from '../controllers/auth_controller.js';
 import { createContractValidationMiddleware } from '../middleware/validator.js';
-import { loginGuestContract, logoutContract, currentUserContract } from '../contracts/auth_contract.js';
+import { loginGuestContract, logoutContract, currentUserContract, upgradeProviderContract } from '../contracts/auth_contract.js';
 
 function withSetCookie(result) {
   if (result && result.ok && result.data && typeof result.data.cookie === 'string') {
@@ -87,5 +90,19 @@ export function registerAuthRoutes(router) {
       return currentUserController(ctx.db, req.cookieHeader, req.options);
     },
     { middlewares: [createContractValidationMiddleware(currentUserContract)] }
+  );
+
+  router.add(
+    'POST',
+    '/auth/provider/upgrade',
+    async (ctx) => {
+      const req = ctx.req || {};
+      // 注意：guestUserId不是從payload來的，是upgradeGuestController內部
+      // 用cookieHeader解析出「目前登入的是誰」——這裡只負責把兩個原始
+      // 輸入原樣轉交，不做任何身份判斷。
+      const result = await upgradeGuestController(ctx.db, req.cookieHeader, req.payload, req.options);
+      return withSetCookie(result);
+    },
+    { middlewares: [createContractValidationMiddleware(upgradeProviderContract)] }
   );
 }

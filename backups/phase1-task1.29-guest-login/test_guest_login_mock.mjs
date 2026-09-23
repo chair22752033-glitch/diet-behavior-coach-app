@@ -628,14 +628,19 @@ async function run() {
   // POST /auth/logout也正式上線——這是TASK1.30的任務目標，不是回歸，
   // 已更新為排除這兩條路由，只保留「/auth/provider與/users/:id仍未
   // 啟用」這個依然成立的守則。
-  await test('（TASK1.30後更新）原始碼掃描：worker.js 的實際程式碼只對已上線的guest/me/logout三條路由做特殊處理，不含provider/users', () => {
+  // 注意：TASK1.31已新增POST /auth/provider/upgrade（身份升級，非OAuth
+  // 登入）的特殊處理，這裡改成排除「精確等於/auth/provider」（純OAuth
+  // 登入，仍未啟用）而不是排除所有含有/auth/provider字樣的路徑。
+  await test('（TASK1.31後更新）原始碼掃描：worker.js 的實際程式碼對已上線的guest/me/logout/upgrade四條路由做特殊處理，不含純OAuth登入(/auth/provider)/users', () => {
     const src = fs.readFileSync(workerPath, 'utf8');
     const exportStart = src.indexOf('export default {');
     const codeOnly = src.slice(exportStart);
     assert.ok(/\/auth\/guest/.test(codeOnly));
     assert.ok(/\/auth\/me/.test(codeOnly));
     assert.ok(/\/auth\/logout/.test(codeOnly));
-    assert.ok(!/\/auth\/provider|\/users\//.test(codeOnly));
+    assert.ok(/\/auth\/provider\/upgrade/.test(codeOnly));
+    assert.ok(!/pathname === '\/auth\/provider'/.test(codeOnly));
+    assert.ok(!/\/users\//.test(codeOnly));
   });
 
   await test('（TASK1.30後更新）原始碼掃描：auth_routes.js 已import guest/logout/currentUser三個contract，仍未import loginProviderContract', () => {
@@ -646,10 +651,12 @@ async function run() {
     assert.ok(!/loginProviderContract/.test(src));
   });
 
-  await test('（TASK1.30後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me三條已啟用路由外其餘皆是空清單', () => {
+  // 注意：TASK1.31新增/auth/provider/upgrade也掛了middleware，這裡的
+  // 排除清單同步更新。
+  await test('（TASK1.31後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me/upgrade四條已啟用路由外其餘皆是空清單', () => {
     const router = createAppRouter();
     const legacyRouter = createAppRouter(async () => new Response('legacy'));
-    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me'];
+    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade'];
     for (const r of legacyRouter.routes) {
       if (!activatedPaths.includes(r.path)) {
         assert.strictEqual(r.middlewares.length, 0, `${r.method} ${r.path} 應該仍是空middlewares`);
