@@ -43,6 +43,14 @@ async function readJson(response) {
 }
 
 // --- 假 app（純記憶體，不含真正的 db/router） ---
+// 注意（TASK1.26起）：route_gateway.js 現在會先用 app.router.routes 判斷
+// 「這個路徑router認不認得」，認得才會真的呼叫 app.router.handle()；也
+// 會在建構時嘗試呼叫 app.router.add() 掛載legacy路由（見
+// registerLegacyRoutes()）。這裡的假router用一個「比對任何路徑」的萬用
+// 規則預先塞進 routes，並提供一個no-op的add()（純粹讓掛載動作不拋錯），
+// 讓這些「測gateway本身該不該呼叫router」的單元測試不受TASK1.26新增的
+// 路徑比對前置檢查影響——真正的路徑比對邏輯已經在下面的「端對端」測試
+// 用真正的 router.js 驗證過了。
 function makeFakeApp(overrides) {
   const base = {
     config: { app: { features: { routeMigrationEnabled: false } } },
@@ -51,6 +59,8 @@ function makeFakeApp(overrides) {
     services: { marker: 'fake-services' },
     router: {
       calls: [],
+      routes: [{ method: 'ANY', regex: /^.*$/, paramNames: [] }],
+      add() { /* no-op：讓 registerLegacyRoutes() 掛載動作不拋錯 */ },
       async handle(request, context) {
         this.calls.push({ request, context });
         return new Response(JSON.stringify({ ok: true, data: { fromRouter: true } }), {
@@ -373,9 +383,19 @@ async function run() {
     assert.strictEqual(res.status, 401);
   });
 
-  await test('（端對端）flag=true：router不認識的路徑（例如 / 本身）改由router回應404（已知的粗粒度切換限制，非本任務要修復的行為）', async () => {
+  // 注意：這項斷言原本驗證「flag=true 時 GET / 這種尚未遷移的路徑會被
+  // router回應404」，這是TASK1.25當下的已知限制。TASK1.26的Legacy Route
+  // Adapter + Gateway「router優先、找不到才fallback legacy」正是為了
+  // 解決這個限制而存在——現在 GET / 已經是router認得的路徑（掛載了
+  // legacy_routes.js 的 delegate handler），行為改成「router認得這個
+  // 路徑 → 呼叫router.handle() → handler直接delegate給legacyHandler →
+  // 回傳真正的首頁HTML」，不再是404。這是TASK1.26明確要做到的效果，
+  // 不是回歸。
+  await test('（端對端）flag=true：GET /（TASK1.26起已由Legacy Route Adapter接管）回傳真正的首頁HTML，不再是404', async () => {
     const res = await workerDefault.fetch(new Request('https://example.com/'), envFlagTrue, {});
-    assert.strictEqual(res.status, 404);
+    const text = await res.text();
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
   });
 
   await test('（端對端）flag=true：createApplication失敗（缺少D1）時，自動安全退回legacy，首頁仍正常', async () => {
