@@ -1,0 +1,42 @@
+[
+  {
+    "name": "P6 現有UI - 首頁",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "P1 身份測驗 - 進入測驗畫面",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "P1 身份測驗 - 產生結果",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "P2 QUEST - 抽卡畫面正常",
+    "ok": true,
+    "note": ""
+  },
+  {
+    "name": "P3 五大系統互通 - 延伸連結存在",
+    "ok": true,
+    "note": "5 個連結"
+  },
+  {
+    "name": "P4 情境演練 - 情境庫完整",
+    "ok": true,
+    "note": "14 個情境"
+  },
+  {
+    "name": "P5 營養素資料 - 內容完整",
+    "ok": true,
+    "note": "67 項"
+  },
+  {
+    "name": "整體 - 無 console 錯誤",
+    "ok": true,
+    "note": ""
+  }
+]
