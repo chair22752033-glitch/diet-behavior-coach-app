@@ -25,3 +25,4 @@ export {
 } from './data_contract.js';
 export { dashboardContract } from './dashboard_contract.js';
 export { getProfileContract, updateProfileContract } from './profile_contract.js';
+export { timelineContract } from './timeline_contract.js';

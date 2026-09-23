@@ -57,7 +57,14 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // 完全被忽略，不會被讀取更不會被拿去更新——不修改identity欄位、不修改
 // session schema、不修改既有Domain Service。
 //
-// 其餘所有路徑（含以上十九條路由方法不符的情況）完全不受影響，一律照舊
+// TASK1.38：接著啟用 GET /api/timeline——把五大Domain Service
+// （exploration/food/emotion/behavior/report）的歷史紀錄依timestamp
+// 整合成單一時間軸。同樣經過 requireAuth() 驗證，userId同樣一律來自
+// ctx.user.id，這裡完全不會把query裡任何user_id欄位轉交過去。額外解析
+// 真正的 query string（limit/offset），不修改任何既有資料表schema、
+// 不新增AI分析邏輯（report只是原樣讀取既有內容）。
+//
+// 其餘所有路徑（含以上二十條路由方法不符的情況）完全不受影響，一律照舊
 // 落到下面的 gateway/legacy 流程。
 // TASK1.35：五個資源、共十條路徑（POST建立/GET查詢各一條）。
 // TASK1.36：新增GET /api/dashboard（聚合五大domain service的登入後首頁
@@ -179,6 +186,20 @@ export default {
             { db: app.db, env, services: app.services }
           );
         }
+      }
+
+      // TASK1.38：正式啟用 GET /api/timeline（登入後使用者歷史紀錄時間
+      // 軸查詢）。跟其餘API同一套安全模型：一律讀取真正的Cookie標頭交給
+      // requireAuth()驗證，userId一律來自ctx.user.id，這裡完全不會把
+      // query裡任何user_id欄位轉交過去（見
+      // src/controllers/timeline_controller.js的獨立userId參數設計）。
+      if (method === 'GET' && pathname === '/api/timeline') {
+        const cookieHeader = request.headers.get('Cookie');
+        const query = { limit: url.searchParams.get('limit'), offset: url.searchParams.get('offset') };
+        return app.router.handle(
+          { method, pathname, query, cookieHeader, options: {} },
+          { db: app.db, env, services: app.services }
+        );
       }
     }
 

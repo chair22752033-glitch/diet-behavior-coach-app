@@ -415,12 +415,12 @@ async function run() {
     assert.strictEqual(calls[0].request, request);
   });
 
-  // 注意：路由數量從18條變成20條是TASK1.37新增GET/PATCH /api/profile
+  // 注意：路由數量從20條變成21條是TASK1.38新增GET /api/timeline
   // 造成的預期演進，不是回歸；這裡驗證的核心事實（pipeline接入沒有讓
   // 路由數量無故增減）依然成立。
-  await test('（TASK1.37後更新）createAppRouter()：auth/user/data/dashboard/profile route數量在接入pipeline後為20條', () => {
+  await test('（TASK1.38後更新）createAppRouter()：auth/user/data/dashboard/profile/timeline route數量在接入pipeline後為21條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 20);
+    assert.strictEqual(router.routes.length, 21);
   });
 
   // =========================================================================

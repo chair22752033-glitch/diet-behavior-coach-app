@@ -14,6 +14,7 @@ import { registerUserRoutes } from './user_routes.js';
 import { registerDataRoutes } from './data_routes.js';
 import { registerDashboardRoutes } from './dashboard_routes.js';
 import { registerProfileRoutes } from './profile_routes.js';
+import { registerTimelineRoutes } from './timeline_routes.js';
 import { registerLegacyRoutes } from './legacy_routes.js';
 
 /**
@@ -29,6 +30,7 @@ export function createAppRouter(legacyHandler) {
   registerDataRoutes(router);
   registerDashboardRoutes(router);
   registerProfileRoutes(router);
+  registerTimelineRoutes(router);
   if (typeof legacyHandler === 'function') {
     registerLegacyRoutes(router, legacyHandler);
   }
@@ -41,4 +43,5 @@ export { registerUserRoutes } from './user_routes.js';
 export { registerDataRoutes } from './data_routes.js';
 export { registerDashboardRoutes } from './dashboard_routes.js';
 export { registerProfileRoutes } from './profile_routes.js';
+export { registerTimelineRoutes } from './timeline_routes.js';
 export { registerLegacyRoutes } from './legacy_routes.js';
