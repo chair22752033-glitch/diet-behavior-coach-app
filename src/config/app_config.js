@@ -11,6 +11,9 @@ const DEFAULT_FEATURES = {
   d1Enabled: false,
   authEnabled: false,
   legacyImportEnabled: false,
+  // TASK1.25：新舊架構路由切換閘道（src/bootstrap/route_gateway.js）的開關。
+  // 預設 false——請求一律走舊的 legacy handler，跟這個flag加入前行為完全一致。
+  routeMigrationEnabled: false,
 };
 
 const DEFAULT_VERSION = '1.0.0-phase1';
@@ -30,6 +33,9 @@ function readFeatureOverrides(env) {
   }
   if (typeof env.FEATURE_LEGACY_IMPORT_ENABLED !== 'undefined') {
     overrides.legacyImportEnabled = toBool(env.FEATURE_LEGACY_IMPORT_ENABLED);
+  }
+  if (typeof env.FEATURE_ROUTE_MIGRATION_ENABLED !== 'undefined') {
+    overrides.routeMigrationEnabled = toBool(env.FEATURE_ROUTE_MIGRATION_ENABLED);
   }
   return overrides;
 }
