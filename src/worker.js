@@ -14,16 +14,18 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // wrangler.toml 沒有加入任何 FEATURE_ROUTE_MIGRATION_ENABLED 變數，所以
 // 這個 flag 仍是關閉的。
 //
-// TASK1.29：正式啟用第一條、也是唯一一條真正上線的 API route——
-// POST /auth/guest。刻意不透過上面的 feature flag（那是 all-or-nothing
-// 的機制，打開會連帶啟用 /auth/provider、/auth/logout、/auth/me、
-// /users/:id 這些還沒準備好正式上線的路由），改用最小、明確的判斷式
-// 只接上這一條路由：解析真正的 HTTP body 成 payload，交給
-// app.router.handle() 走完整的 Router → Contract Validation →
-// Controller → Application Service → Identity → Session → D1 流程，
-// 回傳的 Response 已經在 auth_routes.js 附加了真正的 Set-Cookie 標頭。
-// 其餘所有路徑（含 GET /auth/guest 這種方法不符的情況）完全不受影響，
-// 一律照舊落到上面的 gateway/legacy 流程。
+// TASK1.29：正式啟用第一條 API route —— POST /auth/guest。TASK1.30
+// 接著啟用 GET /auth/me、POST /auth/logout（session 使用生命週期：
+// 查詢目前登入者、登出）。三條都刻意不透過上面的 feature flag（那是
+// all-or-nothing 的機制，打開會連帶啟用 /auth/provider、/users/:id
+// 這些還沒準備好正式上線的路由），改用最小、明確的判斷式只接上這三條
+// 路由：guest 解析真正的 HTTP body 成 payload，me/logout 讀取真正的
+// Cookie 標頭，交給 app.router.handle() 走完整的 Router → Contract
+// Validation → Controller → Application Service → Identity → Session
+// → D1 流程，回傳的 Response 已經在 auth_routes.js 附加了真正的
+// Set-Cookie 標頭（guest 設定新session、logout 清除cookie、me 因為是
+// 純讀取所以不會有 Set-Cookie）。其餘所有路徑（含這三條路由方法不符的
+// 情況）完全不受影響，一律照舊落到下面的 gateway/legacy 流程。
 async function parseJsonBody(request) {
   try {
     const text = await request.text();
@@ -43,12 +45,25 @@ export default {
       app = null;
     }
 
-    if (app && request.method === 'POST' && new URL(request.url).pathname === '/auth/guest') {
-      const payload = await parseJsonBody(request);
-      return app.router.handle(
-        { method: 'POST', pathname: '/auth/guest', payload, options: {} },
-        { db: app.db, env, services: app.services }
-      );
+    if (app) {
+      const method = request.method;
+      const pathname = new URL(request.url).pathname;
+
+      if (method === 'POST' && pathname === '/auth/guest') {
+        const payload = await parseJsonBody(request);
+        return app.router.handle(
+          { method, pathname, payload, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
+
+      if ((method === 'GET' && pathname === '/auth/me') || (method === 'POST' && pathname === '/auth/logout')) {
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle(
+          { method, pathname, cookieHeader, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
     }
 
     const gateway = createRouteGateway({ app, legacyHandler: handle });

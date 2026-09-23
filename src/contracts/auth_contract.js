@@ -47,7 +47,7 @@ export const loginProviderContract = {
 };
 
 /**
- * 對應 logoutController（POST /auth/logout）
+ * 對應 logoutController（POST /auth/logout）—— TASK1.30 起正式上線。
  * 沒有 body，靠 cookieHeader 判斷，request schema 為空物件。
  */
 export const logoutContract = {
@@ -60,7 +60,7 @@ export const logoutContract = {
 };
 
 /**
- * 對應 currentUserController（GET /auth/me）
+ * 對應 currentUserController（GET /auth/me）—— TASK1.30 起正式上線。
  * 沒有 body，靠 cookieHeader 判斷，request schema 為空物件。
  */
 export const currentUserContract = {

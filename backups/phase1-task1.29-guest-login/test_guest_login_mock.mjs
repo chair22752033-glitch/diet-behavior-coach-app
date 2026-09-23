@@ -232,11 +232,17 @@ async function run() {
     assert.strictEqual(route.middlewares.length, 1);
   });
 
-  await test('（2.Router routing）其餘auth路由（provider/logout/me）middlewares仍是空陣列（本次只啟用guest）', () => {
+  // 注意：這項斷言原本驗證「provider/logout/me三條路由middlewares都是
+  // 空陣列」，TASK1.30已依規格明確為logout/me掛上各自的contract
+  // validation middleware（這是TASK1.30的任務目標，不是回歸），只有
+  // provider仍未啟用。
+  await test('（TASK1.30後更新）POST /auth/provider middlewares仍是空陣列（尚未啟用），logout/me已各自掛上contract validation', () => {
     const router = createAppRouter();
-    for (const p of [['POST', '/auth/provider'], ['POST', '/auth/logout'], ['GET', '/auth/me']]) {
+    const providerRoute = router.routes.find((r) => r.method === 'POST' && r.path === '/auth/provider');
+    assert.strictEqual(providerRoute.middlewares.length, 0);
+    for (const p of [['POST', '/auth/logout'], ['GET', '/auth/me']]) {
       const route = router.routes.find((r) => r.method === p[0] && r.path === p[1]);
-      assert.strictEqual(route.middlewares.length, 0, `${p[0]} ${p[1]} 應該仍是空middlewares`);
+      assert.strictEqual(route.middlewares.length, 1, `${p[0]} ${p[1]} 應該有1個middleware`);
     }
   });
 
@@ -568,11 +574,12 @@ async function run() {
     assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
   });
 
-  await test('（10.Legacy route不受影響）GET /auth/me（其餘auth route仍未啟用）落到首頁catch-all', async () => {
+  // 注意：TASK1.30已將GET /auth/me正式上線（見TASK1.30報告），這裡改成
+  // 驗證新的正確行為。
+  await test('（TASK1.30起）GET /auth/me 已正式上線，沒有cookie時回401 JSON', async () => {
     const env = makeFreshEnv();
     const res = await worker.fetch(new Request('https://example.com/auth/me'), env, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    assert.strictEqual(res.status, 401);
   });
 
   await test('（10.Legacy route不受影響）POST /auth/provider（其餘auth route仍未啟用）落到首頁catch-all', async () => {
@@ -582,11 +589,14 @@ async function run() {
     assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
   });
 
-  await test('（10.Legacy route不受影響）POST /auth/logout（其餘auth route仍未啟用）落到首頁catch-all', async () => {
+  // 注意：TASK1.30已將POST /auth/logout正式上線（見TASK1.30報告），這裡
+  // 改成驗證新的正確行為。
+  await test('（TASK1.30起）POST /auth/logout 已正式上線，沒有cookie時仍回200（wasValid:false）', async () => {
     const env = makeFreshEnv();
     const res = await worker.fetch(new Request('https://example.com/auth/logout', { method: 'POST' }), env, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.data.wasValid, false);
   });
 
   await test('（10.Legacy route不受影響）FEATURE_ROUTE_MIGRATION_ENABLED=true 時，guest login依然正常（不依賴這個flag）', async () => {
@@ -613,28 +623,35 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（延續守則）原始碼掃描：worker.js 的實際程式碼（不含說明註解）只對 POST /auth/guest 做特殊處理', () => {
+  // 注意：以下三項斷言原本驗證「只有POST /auth/guest特殊處理/import
+  // contracts/有非空middlewares」，TASK1.30已依規格明確把GET /auth/me、
+  // POST /auth/logout也正式上線——這是TASK1.30的任務目標，不是回歸，
+  // 已更新為排除這兩條路由，只保留「/auth/provider與/users/:id仍未
+  // 啟用」這個依然成立的守則。
+  await test('（TASK1.30後更新）原始碼掃描：worker.js 的實際程式碼只對已上線的guest/me/logout三條路由做特殊處理，不含provider/users', () => {
     const src = fs.readFileSync(workerPath, 'utf8');
-    // 只看 export default {...} 這段真正會執行的程式碼，排除上方解釋
-    // 設計決策的註解（註解裡會提到/auth/provider等其他路由名稱來說明
-    // 「為什麼不用feature flag」，那不是程式邏輯）。
     const exportStart = src.indexOf('export default {');
     const codeOnly = src.slice(exportStart);
     assert.ok(/\/auth\/guest/.test(codeOnly));
-    assert.ok(!/\/auth\/provider|\/auth\/logout|\/auth\/me|\/users\//.test(codeOnly));
+    assert.ok(/\/auth\/me/.test(codeOnly));
+    assert.ok(/\/auth\/logout/.test(codeOnly));
+    assert.ok(!/\/auth\/provider|\/users\//.test(codeOnly));
   });
 
-  await test('（延續守則）原始碼掃描：auth_routes.js 只有 POST /auth/guest 這條路由import了contracts', () => {
+  await test('（TASK1.30後更新）原始碼掃描：auth_routes.js 已import guest/logout/currentUser三個contract，仍未import loginProviderContract', () => {
     const src = stripComments(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'routes', 'auth_routes.js'), 'utf8'));
     assert.ok(/loginGuestContract/.test(src));
-    assert.ok(!/loginProviderContract|logoutContract|currentUserContract/.test(src));
+    assert.ok(/logoutContract/.test(src));
+    assert.ok(/currentUserContract/.test(src));
+    assert.ok(!/loginProviderContract/.test(src));
   });
 
-  await test('（延續守則）原始碼掃描：router.js 支援每條路由各自middlewares，但既有legacy/user路由的options未被傳入時仍是空清單', () => {
+  await test('（TASK1.30後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me三條已啟用路由外其餘皆是空清單', () => {
     const router = createAppRouter();
     const legacyRouter = createAppRouter(async () => new Response('legacy'));
+    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me'];
     for (const r of legacyRouter.routes) {
-      if (r.path !== '/auth/guest') {
+      if (!activatedPaths.includes(r.path)) {
         assert.strictEqual(r.middlewares.length, 0, `${r.method} ${r.path} 應該仍是空middlewares`);
       }
     }

@@ -562,10 +562,16 @@ async function run() {
     assert.strictEqual(body.data.wasValid, false);
   });
 
-  await test('（7.legacy route不受影響）flag=false：POST /auth/logout 仍落到首頁catch-all（未受contract layer影響）', async () => {
-    const res = await worker.fetch(new Request('https://example.com/auth/logout', { method: 'POST' }), envFalse, {});
-    const text = await res.text();
-    assert.strictEqual(text.indexOf('<!DOCTYPE html>'), 0);
+  // 注意：這項斷言原本驗證「TASK1.28當下 POST /auth/logout 落到首頁
+  // catch-all」，TASK1.30已依規格明確把這條路由正式上線——這是TASK1.30
+  // 的任務目標，不是回歸。
+  await test('（TASK1.30起）POST /auth/logout 已正式上線，沒有cookie時仍回200（wasValid:false）且帶清除用的Set-Cookie', async () => {
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await worker.fetch(new Request('https://example.com/auth/logout', { method: 'POST' }), isolatedEnv, {});
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.data.wasValid, false);
+    assert.ok(res.headers.get('set-cookie'));
   });
 
   await test('（8.KV/R2正常）flag=true 與 flag=false 讀寫同一份KV資料，內容一致', async () => {

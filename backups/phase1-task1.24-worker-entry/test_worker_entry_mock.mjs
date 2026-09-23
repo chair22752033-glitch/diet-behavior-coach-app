@@ -376,10 +376,14 @@ async function run() {
     assert.ok(res.headers.get('set-cookie'));
   });
 
-  await test('（無auth啟用）GET /auth/me 透過真正的 worker.fetch() 也落到首頁catch-all（不是401 JSON）', async () => {
-    const res = await worker.fetch(new Request('https://example.com/auth/me'), fullEnv, {});
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual((res.headers.get('content-type') || '').indexOf('text/html'), 0);
+  // 注意：這項斷言原本驗證「TASK1.24當下 GET /auth/me 落到首頁catch-all」，
+  // TASK1.30（Enable Session Management API Route）已依規格明確把這條
+  // 路由正式上線——這是TASK1.30的任務目標，不是回歸。
+  await test('（TASK1.30起）GET /auth/me 透過真正的 worker.fetch() 已正式上線，沒有cookie時回401 JSON', async () => {
+    const isolatedEnv = { SYNC_KV, DIET_COACH_IMAGES, DIET_COACH_DB: makeFakeD1() };
+    const res = await worker.fetch(new Request('https://example.com/auth/me'), isolatedEnv, {});
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.headers.get('content-type'), 'application/json');
   });
 
   await test('（無auth啟用）GET /users/123 透過真正的 worker.fetch() 也落到首頁catch-all（不是JSON API）', async () => {
