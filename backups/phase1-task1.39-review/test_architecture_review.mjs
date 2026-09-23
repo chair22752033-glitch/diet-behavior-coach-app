@@ -514,33 +514,57 @@ async function run() {
   // =========================================================================
   console.log('--- J. regression check ---');
 
-  const allSuites = [];
-  function walk(dir) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile() && /^test_.*\.mjs$/.test(entry.name) && !full.includes('phase1-task1.39-review')) {
-        allSuites.push(full);
+  // TASK1.40後更新：這個章節會動態掃描並「用子行程執行」backups/底下
+  // 全部既有測試檔案，包括未來新增的、同樣會做「動態掃描backups/並
+  // spawn子行程」的其他架構審查任務（例如TASK1.40自己）。如果不做任何
+  // 防護，兩個這種「meta regression suite」互相掃到對方就會形成無限
+  // 遞迴（A spawn B、B又spawn A、A又spawn B...），這在TASK1.40新增
+  // backups/phase1-task1.40-intelligence-foundation/後被實際觸發過
+  // （執行這個檔案時卡死超過60秒逾時）。修正方式：用環境變數
+  // PHASE1_REVIEW_NESTED當作「遞迴深度防護旗標」——被當成子行程執行時
+  // （不論是被誰spawn），一律跳過「自己再往下spawn一層」這個動作，只
+  // 執行這個檔案其餘的直接斷言（見下面的if判斷），這樣不論未來新增
+  // 多少個同類型的meta suite，遞迴深度都固定被壓在1層，不會無限展開。
+  const isNestedRun = process.env.PHASE1_REVIEW_NESTED === '1';
+
+  if (isNestedRun) {
+    await test('（10.regression check）此檔案目前是被另一個meta regression suite以子行程spawn執行（PHASE1_REVIEW_NESTED=1），為避免互相遞迴spawn造成無限迴圈，這裡安全跳過「再往下spawn backups/底下全部測試檔案」這個動作，只執行本檔案其餘的直接斷言', () => {
+      assert.ok(true);
+    });
+  } else {
+    const allSuites = [];
+    function walk(dir) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.isFile() && /^test_.*\.mjs$/.test(entry.name) && !full.includes('phase1-task1.39-review')) {
+          allSuites.push(full);
+        }
       }
     }
-  }
-  walk(path.join(repoRoot, 'backups'));
-  allSuites.sort();
+    walk(path.join(repoRoot, 'backups'));
+    allSuites.sort();
 
-  await test(`（10.regression check）backups/ 目錄下共找到 ${allSuites.length} 個既有任務的測試檔案（動態掃描，含TASK1.1~1.38）`, () => {
-    assert.ok(allSuites.length >= 29, `預期至少29個既有測試檔案，實際 ${allSuites.length}`);
-  });
-
-  for (const suite of allSuites) {
-    const relName = path.relative(repoRoot, suite);
-    await test(`（10.regression check）${relName} 完整執行，exit code為0（無回歸）`, () => {
-      try {
-        execFileSync('node', [suite], { cwd: repoRoot, stdio: 'pipe', timeout: 60000 });
-      } catch (e) {
-        const output = (e.stdout ? e.stdout.toString() : '') + (e.stderr ? e.stderr.toString() : '');
-        throw new Error(`${relName} 執行失敗：${output.split('\n').filter((l) => l.includes('❌') || l.includes('FAIL')).slice(0, 5).join(' | ')}`);
-      }
+    await test(`（10.regression check）backups/ 目錄下共找到 ${allSuites.length} 個既有任務的測試檔案（動態掃描，含TASK1.1~1.38及之後新增的任務）`, () => {
+      assert.ok(allSuites.length >= 29, `預期至少29個既有測試檔案，實際 ${allSuites.length}`);
     });
+
+    for (const suite of allSuites) {
+      const relName = path.relative(repoRoot, suite);
+      await test(`（10.regression check）${relName} 完整執行，exit code為0（無回歸）`, () => {
+        try {
+          execFileSync('node', [suite], {
+            cwd: repoRoot,
+            stdio: 'pipe',
+            timeout: 60000,
+            env: Object.assign({}, process.env, { PHASE1_REVIEW_NESTED: '1' }),
+          });
+        } catch (e) {
+          const output = (e.stdout ? e.stdout.toString() : '') + (e.stderr ? e.stderr.toString() : '');
+          throw new Error(`${relName} 執行失敗：${output.split('\n').filter((l) => l.includes('❌') || l.includes('FAIL')).slice(0, 5).join(' | ')}`);
+        }
+      });
+    }
   }
 
   await test('（10.regression check，TASK1.39發現並修正的治具問題）backups/phase1-task1.38-timeline/test_timeline_mock.mjs 原本用「git diff --stat 整個src/identity/目錄」檢查，會被TASK1.39合法的README.md文件更新誤判為失敗；已修正為只檢查src/identity/*.js邏輯檔案，這裡確認修正後確實不再受文件異動影響', () => {

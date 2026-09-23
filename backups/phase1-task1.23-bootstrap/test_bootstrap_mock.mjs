@@ -248,12 +248,14 @@ async function run() {
   // ---------------------------------------------------------------------
 
   // 注意：TASK1.27 為 createApplication() 新增了 `middleware` 欄位
-  // （Middleware Pipeline 的組裝入口），這是明確要做的擴充，不是回歸，
-  // 這裡的預期key清單已同步更新。
-  await test('createApplication() 成功回傳 {config, db, services, router, middleware}', () => {
+  // （Middleware Pipeline 的組裝入口），TASK1.40 又新增了 `intelligence`
+  // 欄位（Phase 2 Intelligence Layer的extension point，見
+  // src/intelligence/），兩者都是明確要做的擴充，不是回歸，這裡的預期
+  // key清單已同步更新。
+  await test('（TASK1.40後更新）createApplication() 成功回傳 {config, db, services, router, middleware, intelligence}', () => {
     const env = makeFullEnv();
     const app = createApplication(env);
-    assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'middleware', 'router', 'services']);
+    assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'intelligence', 'middleware', 'router', 'services']);
   });
 
   await test('createApplication().config 包含 env/auth/app 三個子設定', () => {
