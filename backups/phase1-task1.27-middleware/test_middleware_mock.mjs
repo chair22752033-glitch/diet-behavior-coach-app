@@ -415,12 +415,12 @@ async function run() {
     assert.strictEqual(calls[0].request, request);
   });
 
-  // 注意：路由數量從6條變成7條是TASK1.33新增GET /auth/google/callback
+  // 注意：路由數量從7條變成17條是TASK1.35新增五個資源共10條User Data API
   // 造成的預期演進，不是回歸；這裡驗證的核心事實（pipeline接入沒有讓
   // 路由數量無故增減）依然成立。
-  await test('（TASK1.33後更新）createAppRouter()：auth/user route數量在接入pipeline後為7條', () => {
+  await test('（TASK1.35後更新）createAppRouter()：auth/user/data route數量在接入pipeline後為17條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 7);
+    assert.strictEqual(router.routes.length, 17);
   });
 
   // =========================================================================

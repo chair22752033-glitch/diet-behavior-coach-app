@@ -657,14 +657,17 @@ async function run() {
     assert.ok(/loginProviderContract/.test(src));
   });
 
-  // 注意：TASK1.32新增/auth/provider也掛了middleware，這裡的排除清單
-  // 同步更新。
-  // 注意：TASK1.33新增GET /auth/google/callback也掛了middleware，這裡的
-  // 排除清單同步更新。
-  await test('（TASK1.33後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了guest/logout/me/upgrade/provider/google-callback六條已啟用路由外其餘皆是空清單', () => {
+  // 注意：TASK1.32新增/auth/provider也掛了middleware；TASK1.33新增GET
+  // /auth/google/callback也掛了middleware；TASK1.35新增五個資源共10條
+  // User Data API也都各自掛了[requireAuth(), contractValidation]兩個
+  // middleware——這裡的排除清單同步更新。
+  await test('（TASK1.35後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了auth六條已啟用路由跟十條User Data API外其餘皆是空清單', () => {
     const router = createAppRouter();
     const legacyRouter = createAppRouter(async () => new Response('legacy'));
-    const activatedPaths = ['/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade', '/auth/provider', '/auth/google/callback'];
+    const activatedPaths = [
+      '/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade', '/auth/provider', '/auth/google/callback',
+      '/api/explorations', '/api/food-events', '/api/emotions', '/api/behaviors', '/api/reports',
+    ];
     for (const r of legacyRouter.routes) {
       if (!activatedPaths.includes(r.path)) {
         assert.strictEqual(r.middlewares.length, 0, `${r.method} ${r.path} 應該仍是空middlewares`);

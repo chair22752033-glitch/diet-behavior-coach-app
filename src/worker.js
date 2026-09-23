@@ -33,9 +33,27 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // 附加了真正的 Set-Cookie 標頭（guest/provider/upgrade/google-callback
 // 成功時設定新session、logout 清除cookie、me 因為是純讀取所以不會有
 // Set-Cookie）。google/callback 不論成功失敗一律是302 redirect（見
-// auth_routes.js 的 buildGoogleCallbackResponse()），不是JSON。其餘所有
-// 路徑（含這六條路由方法不符的情況）完全不受影響，一律照舊落到下面的
-// gateway/legacy 流程。
+// auth_routes.js 的 buildGoogleCallbackResponse()），不是JSON。
+//
+// TASK1.35：接著啟用五個資源（exploration/food-events/emotions/
+// behaviors/reports）各自的 POST（建立）/GET（查詢）共十條 User Data
+// API。這十條路由額外經過 requireAuth() middleware（TASK1.27既有邏輯，
+// 本次是第一次真的掛進route）驗證session，未登入直接401、不會呼叫
+// controller；userId一律來自ctx.user.id（requireAuth()驗證後放入），
+// 不接受payload/query指定user_id。全部委派給TASK1.15的Domain Service，
+// D1操作完全不在route/controller層出現。
+//
+// 其餘所有路徑（含以上十六條路由方法不符的情況）完全不受影響，一律照舊
+// 落到下面的 gateway/legacy 流程。
+// TASK1.35：五個資源、共十條路徑（POST建立/GET查詢各一條）。
+const DATA_API_PATHS = new Set([
+  '/api/explorations',
+  '/api/food-events',
+  '/api/emotions',
+  '/api/behaviors',
+  '/api/reports',
+]);
+
 async function parseJsonBody(request) {
   try {
     const text = await request.text();
@@ -92,6 +110,33 @@ export default {
           { method, pathname, payload, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
         );
+      }
+
+      // TASK1.35：正式啟用五個資源（exploration/food-events/emotions/
+      // behaviors/reports）各自的 POST（建立）/GET（查詢）共十條 API。
+      // 全部一律讀取真正的 Cookie 標頭（router 內建的 requireAuth()
+      // middleware 會驗證session、解析出目前登入的user，未登入直接
+      // 401短路，見 src/middleware/auth_middleware.js），POST額外解析
+      // 真正的 HTTP body 成 payload，GET額外解析真正的 query string
+      // （limit、behaviors多一個patternType）。userId一律由router→
+      // middleware→controller這條鏈路從session取得，這裡完全不會把
+      // payload/query裡任何user_id相關欄位轉交過去。
+      if (DATA_API_PATHS.has(pathname)) {
+        const cookieHeader = request.headers.get('Cookie');
+        if (method === 'POST') {
+          const payload = await parseJsonBody(request);
+          return app.router.handle(
+            { method, pathname, payload, cookieHeader, options: {} },
+            { db: app.db, env, services: app.services }
+          );
+        }
+        if (method === 'GET') {
+          const query = { limit: url.searchParams.get('limit'), patternType: url.searchParams.get('patternType') };
+          return app.router.handle(
+            { method, pathname, query, cookieHeader, options: {} },
+            { db: app.db, env, services: app.services }
+          );
+        }
       }
     }
 

@@ -11,3 +11,15 @@ export {
   googleCallbackContract,
 } from './auth_contract.js';
 export { getUserByIdContract } from './user_contract.js';
+export {
+  createExplorationContract,
+  listExplorationsContract,
+  createFoodEventContract,
+  listFoodEventsContract,
+  createEmotionContract,
+  listEmotionsContract,
+  createBehaviorContract,
+  listBehaviorsContract,
+  createReportContract,
+  listReportsContract,
+} from './data_contract.js';

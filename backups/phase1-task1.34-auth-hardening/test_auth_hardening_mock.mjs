@@ -1139,10 +1139,19 @@ async function run() {
     assert.ok(!/createApplication|router\.handle|session_cleanup|session_management|audit_log/i.test(handleBody));
   });
 
-  await test('（架構守則）原始碼掃描：worker.js 本身完全沒有異動（TASK1.34不修改worker.js任何一行）', async () => {
-    const { execSync } = await import('node:child_process');
-    const diff = execSync('git diff --stat src/worker.js', { cwd: repoRoot }).toString();
-    assert.strictEqual(diff.trim(), '', 'TASK1.34允許清單沒有"修改worker.js"，這裡確認完全沒有異動');
+  // 注意：這項測試原本用「git diff --stat src/worker.js相對於上一個
+  // commit為空」來確認TASK1.34沒有修改worker.js——但這個判斷方式只在
+  // TASK1.34自己的commit尚未產生、且沒有任何後續任務的情況下才成立，
+  // TASK1.35開始正式修改worker.js（新增User Data API的路由分派，這是
+  // TASK1.35任務範圍內合法的異動），用即時git diff判斷會對後續每個
+  // 有修改worker.js的任務都產生假失敗，不是可長期成立的檢查方式。改成
+  // 靜態原始碼掃描：確認worker.js裡沒有出現任何TASK1.34新增的三個
+  // dormant service名稱（跟前一項測試互相呼應，是這裡真正想驗證的
+  // 「TASK1.34沒有把worker.js接上這些新service」這個事實，且這個事實
+  // 不受後續任務是否修改worker.js其他部分而改變）。
+  await test('（TASK1.35後更新）原始碼掃描：worker.js 完全沒有引用TASK1.34新增的三個dormant service（session_cleanup/session_management/audit_log），不因後續任務修改worker.js而受影響', () => {
+    const src = fs.readFileSync(workerPath, 'utf8');
+    assert.ok(!/session_cleanup_service|session_management_service|audit_log_service/.test(src));
   });
 
   await test('（架構守則）git diff：wrangler.toml 在TASK1.34完全沒有異動', async () => {

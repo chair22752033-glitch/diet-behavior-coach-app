@@ -997,11 +997,11 @@ async function run() {
     assert.strictEqual(res.status, 200);
   });
 
-  // 注意：TASK1.33新增了GET /auth/google/callback，路由總數從6條變成
-  // 7條，這是預期演進，不是回歸。
-  await test('（TASK1.33後更新）createAppRouter() 的 auth/user 路由總數為7條', () => {
+  // 注意：TASK1.35新增了五個資源共10條User Data API，路由總數從7條變成
+  // 17條，這是預期演進，不是回歸。
+  await test('（TASK1.35後更新）createAppRouter() 的 auth/user/data 路由總數為17條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 7);
+    assert.strictEqual(router.routes.length, 17);
   });
 
   await test('（3.GET /auth/me過期session，端對端）直接在假D1插入一筆已過期的session，透過真正worker.fetch()驗證回401', async () => {

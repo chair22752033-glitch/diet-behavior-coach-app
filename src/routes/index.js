@@ -11,6 +11,7 @@
 import { createRouter } from './router.js';
 import { registerAuthRoutes } from './auth_routes.js';
 import { registerUserRoutes } from './user_routes.js';
+import { registerDataRoutes } from './data_routes.js';
 import { registerLegacyRoutes } from './legacy_routes.js';
 
 /**
@@ -23,6 +24,7 @@ export function createAppRouter(legacyHandler) {
   const router = createRouter();
   registerAuthRoutes(router);
   registerUserRoutes(router);
+  registerDataRoutes(router);
   if (typeof legacyHandler === 'function') {
     registerLegacyRoutes(router, legacyHandler);
   }
@@ -32,4 +34,5 @@ export function createAppRouter(legacyHandler) {
 export { createRouter } from './router.js';
 export { registerAuthRoutes } from './auth_routes.js';
 export { registerUserRoutes } from './user_routes.js';
+export { registerDataRoutes } from './data_routes.js';
 export { registerLegacyRoutes } from './legacy_routes.js';
