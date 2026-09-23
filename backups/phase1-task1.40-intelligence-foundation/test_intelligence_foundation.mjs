@@ -73,10 +73,20 @@ async function run() {
   });
 
   const EXPECTED_FILES = ['README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
-  const actualFiles = fs.readdirSync(intelDir).sort();
+  // TASK1.41後更新：src/intelligence/ 底下新增了 data_preparation/
+  // 子目錄（Intelligence Data Preparation Layer），這是明確要做的
+  // 擴充，不是回歸——這裡只檢查TASK1.40當時規格要求的6個「檔案」
+  // 是否還在（用isFile()排除目錄），不再假設目錄下只有這6個項目。
+  const actualEntries = fs.readdirSync(intelDir, { withFileTypes: true });
+  const actualFiles = actualEntries.filter((e) => e.isFile()).map((e) => e.name).sort();
+  const actualDirs = actualEntries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
 
-  await test(`（1.intelligence folder structure）src/intelligence/ 恰好包含規格要求的6個檔案`, () => {
+  await test(`（TASK1.41後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個`, () => {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
+  });
+
+  await test('（TASK1.41後更新）src/intelligence/ 底下新增的子目錄只有 data_preparation/ 一個', () => {
+    assert.deepStrictEqual(actualDirs, ['data_preparation']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -511,9 +521,13 @@ async function run() {
     assert.ok('intelligence' in app);
   });
 
-  await test('（12.bootstrap integration）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine 三個欄位', () => {
+  // 注意：TASK1.41 為 app.intelligence 新增了 `dataPreparation` 欄位
+  // （Intelligence Data Preparation Layer的extension point，見
+  // src/intelligence/data_preparation/），這是明確要做的擴充，不是
+  // 回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.41後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation 四個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'dataPreparation', 'insightService', 'recommendationEngine']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {

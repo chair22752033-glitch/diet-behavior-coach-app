@@ -34,6 +34,14 @@
  * 狀態。目前沒有任何route/controller讀取app.intelligence，純粹是組裝
  * 好放在那裡供Phase 2使用，本次任務明確禁止建立任何AI分析流程，這裡
  * 也完全沒有串接任何AI API。
+ *
+ * TASK1.41新增：`intelligence.dataPreparation`，組裝
+ * src/intelligence/data_preparation/ 的 createDataPreparationService()
+ * 實例——負責「從既有五大Domain Service蒐集使用者資料 + 轉成穩定的
+ * intelligence input格式」，一樣是每次createApplication(env)呼叫時
+ * 重新建立的獨立實例。`insightService`本次完全沒有被修改成會呼叫
+ * dataPreparation，兩者目前是各自獨立掛在intelligence namespace底下
+ * 的extension point，沒有任何route/controller讀取它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -61,7 +69,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -123,7 +131,8 @@ export function createApplication(env) {
   const analysisEngine = createAnalysisEngine();
   const recommendationEngine = createRecommendationEngine();
   const insightService = createInsightService({ analysisEngine, recommendationEngine });
-  const intelligence = { insightService, analysisEngine, recommendationEngine };
+  const dataPreparationService = dataPreparation.createDataPreparationService();
+  const intelligence = { insightService, analysisEngine, recommendationEngine, dataPreparation: dataPreparationService };
 
   return { config, db, services, router, middleware, intelligence };
 }
