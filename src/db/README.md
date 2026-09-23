@@ -1,5 +1,14 @@
 # D1 Database Access Layer（Phase 1 TASK 1.12）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：本文件下方「本次任務範圍內
+> worker.js 沒有 import 這裡任何檔案」的敘述是 TASK1.12 當時的真實
+> 狀態，現已過時——`src/worker.js` 自 TASK1.29 起，透過
+> `src/bootstrap/application.js` → `createDb(env)` 正式啟用這整層，
+> `/auth/*`、`/api/*` 全部路由的登入/資料存取都會呼叫這裡的方法讀寫
+> 真實 D1。`tables/` 目錄也已從當時的 6 張表擴充為 9 張（新增
+> `sessions.js`、`legacy_import_logs.js`、`auth_audit_logs.js`）。
+> 以下內容保留原始設計記錄，僅此處更正現況。
+
 這個目錄只是「基礎層」：把 D1 的原始 PreparedStatement API 包裝成好用、統一錯誤處理的介面，
 供未來 `src/worker.js` 準備好接入 D1 時直接呼叫。
 

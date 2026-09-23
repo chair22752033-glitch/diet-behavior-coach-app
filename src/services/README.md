@@ -1,5 +1,34 @@
 # Domain Service Layer（Phase 1 TASK 1.15）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「`src/worker.js` 沒有
+> 任何一行 import 這裡的任何檔案」與「檔案清單只有6個」的敘述已過時。
+> `src/worker.js` 自 TASK1.29 起透過 `src/bootstrap/application.js` →
+> `src/routes/*` 這條鏈路間接使用這整層（domain service 本身仍然不
+> 直接被 worker.js import，維持原本的分層設計，只是不再是「完全沒有
+> 被使用」）。目前 `src/services/` 實際共有 15 個檔案：
+>
+> | 檔案 | 建立於 | 用途 |
+> |---|---|---|
+> | `user_service.js` | TASK1.15 | 使用者查詢與狀態驗證（`requireActiveUser()`），是其他service共用的入口 |
+> | `exploration_service.js` | TASK1.15 | QUEST / 探索紀錄 |
+> | `food_service.js` | TASK1.15 | 飲食紀錄 |
+> | `emotion_service.js` | TASK1.15 | 情緒紀錄 |
+> | `behavior_service.js` | TASK1.15 | 行為模式資料存取（不含AI分析） |
+> | `report_service.js` | TASK1.15 | AI報告資料存取（不串接AI） |
+> | `auth_application_service.js` | TASK1.19 | guest/provider登入、登出、目前使用者查詢的應用層邏輯 |
+> | `auth_service.js` | TASK1.19 | 更底層的auth流程組裝 |
+> | `import_transaction.js` | TASK1.16 | Legacy import的補償式回滾交易 |
+> | `legacy_import_service.js` | TASK1.16 | Legacy KV資料遷移通道 |
+> | `auth_security_service.js` | TASK1.34 | Provider identity驗證強化 |
+> | `session_cleanup_service.js` | TASK1.34 | 過期session清理 |
+> | `session_management_service.js` | TASK1.34 | Session管理 |
+> | `audit_log_service.js` | TASK1.34 | 登入稽核紀錄 |
+> | `dashboard_service.js` | TASK1.36 | 五大domain service聚合 |
+> | `profile_service.js` | TASK1.37 | 使用者個人資料查詢/更新 |
+> | `timeline_service.js` | TASK1.38 | 五大domain service依時間整合 |
+>
+> 以下內容保留原始設計記錄（TASK1.15當時只涵蓋前6個），僅此處更正現況。
+
 未來業務邏輯層，目的是避免未來 UI 或 API 直接操作 D1。**本次任務不是新增功能**，
 `src/worker.js` 沒有任何一行 import 這裡的任何檔案，現有 App 行為完全不受影響。
 

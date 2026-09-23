@@ -1,5 +1,13 @@
 # Contract Layer（Phase 1 TASK 1.28）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「這條流程目前沒有被
+> 任何實際 route 使用」的敘述已過時——`createContractValidationMiddleware()`
+> 自 TASK1.29 起被所有 `/auth/*`、`/api/*` 路由使用。Contract 清單也
+> 已從當時的 5 個擴充為涵蓋 User Data API（TASK1.35）、Dashboard
+> （TASK1.36）、Profile（TASK1.37）、Timeline（TASK1.38），詳見
+> `src/contracts/index.js` 目前的完整匯出清單。以下內容保留原始設計
+> 記錄，僅此處更正現況。
+
 統一 request/response schema 的權威來源。**本次只建立規範與驗證能力，
 不啟用新功能**：目前沒有任何 route 的 middleware 清單實際套用 contract
 validation（見 `src/routes/router.js` 仍是空 middleware 清單，

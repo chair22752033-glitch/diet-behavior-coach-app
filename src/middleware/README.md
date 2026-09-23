@@ -1,5 +1,13 @@
 # Middleware Layer（Phase 1 TASK 1.27）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次只建立架構，不
+> 開啟正式功能」與「沒有任何route的middleware清單」的敘述已過時——
+> `requireAuth()` 與 `createContractValidationMiddleware()` 自
+> TASK1.29 起被所有 `/auth/*`、`/api/*` 路由的 `middlewares` 清單
+> 實際使用（見各 `src/routes/*_routes.js`），只有 Legacy Route
+> Adapter（TASK1.26）的路由仍維持空清單。以下內容保留原始設計記錄，
+> 僅此處更正現況。
+
 為未來登入、權限、資料驗證建立統一入口。**本次只建立架構，不開啟正式
 功能**：`router.js`（TASK1.21）接入時一律傳入空的 middleware 清單，
 所有既有路由（auth/user/legacy）的輸出與接入前完全一致。

@@ -1,7 +1,27 @@
 # Router Layer（Phase 1 TASK 1.21）
 
-`src/worker.js` 未來要接 API 時會用到的 method+path → controller 派發層。
-**本次不建立任何正式 API endpoint、不修改 `src/worker.js`、不接真實登入流程。**
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次不建立任何正式
+> API endpoint」「已註冊路由只有5條」「目前沒有任何地方import
+> `src/routes/`」的敘述已過時。`src/worker.js` 自 TASK1.29 起針對每一條
+> 已上線的路徑，直接解析真正的 HTTP body/Cookie/query string 後呼叫
+> `app.router.handle()`（`app` 來自 `createApplication(env)`）。目前
+> `createAppRouter()` 共註冊 21 條路由，認證邊界（authentication
+> boundary）完全一致：
+>
+> | 分類 | 路由 | Middleware |
+> |---|---|---|
+> | Auth入口（不需登入） | `POST /auth/guest`、`POST /auth/provider`、`POST /auth/logout`、`GET /auth/me`、`POST /auth/provider/upgrade`、`GET /auth/google/callback` | 只有 `createContractValidationMiddleware`（這些本身就是登入/身份切換的入口，不能要求先登入） |
+> | User Data API（TASK1.35） | `POST`+`GET /api/explorations`、`/api/food-events`、`/api/emotions`、`/api/behaviors`、`/api/reports`（共10條） | `[requireAuth(), createContractValidationMiddleware]` |
+> | Dashboard（TASK1.36） | `GET /api/dashboard` | `[requireAuth(), createContractValidationMiddleware]` |
+> | Profile（TASK1.37） | `GET`+`PATCH /api/profile` | `[requireAuth(), createContractValidationMiddleware]` |
+> | Timeline（TASK1.38） | `GET /api/timeline` | `[requireAuth(), createContractValidationMiddleware]` |
+> | 尚未啟用 | `GET /users/:id` | 無（TASK1.20建立的controller仍然存在，但從未被`worker.js`dispatch到，維持dormant狀態） |
+>
+> 即「凡是操作使用者自己資料的`/api/*`路由，一律要求`requireAuth()`；
+> 凡是登入/登出/身份切換的`/auth/*`路由，一律不要求`requireAuth()`」，
+> 這條規則在 TASK1.39 的架構審查中被逐條程式化驗證過（見
+> `backups/phase1-task1.39-review/test_architecture_review.mjs`）。
+> 以下內容保留原始設計記錄，僅此處更正現況。
 
 ## 目錄結構
 

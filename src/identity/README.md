@@ -1,5 +1,12 @@
 # User Identity 基礎架構（Phase 1 TASK 1.13B）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次任務刻意保持
+> 未啟用狀態」的敘述已過時——這個目錄自 TASK1.29～1.33 起正式啟用：
+> guest/provider 登入、帳號升級、Google OAuth callback、
+> `requireAuth()` 的 session+使用者狀態驗證，全部實際呼叫這裡的
+> `status.js`/`provider.js`/`guest.js`/`upgrade.js`/`session_rules.js`。
+> 以下內容保留原始設計記錄，僅此處更正現況。
+
 延續 TASK1.12（D1 Access Layer）與 TASK1.13A（Session 基礎架構），把 `users` 表
 「完整化」：訪客模型、provider 欄位規則、使用者狀態、以及 session 與使用者之間
 該遵守的關聯規則。

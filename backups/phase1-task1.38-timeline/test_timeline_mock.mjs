@@ -1435,9 +1435,18 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（架構守則）原始碼掃描：src/identity/ 底下OAuth/session相關檔案完全沒有被TASK1.38修改', async () => {
+  await test('（TASK1.39後更新）原始碼掃描：src/identity/ 底下OAuth/session相關的.js邏輯檔案完全沒有被TASK1.38修改', async () => {
+    // 注意：原本這裡用 `git diff --stat src/identity/` 檢查整個目錄，
+    // TASK1.39（架構一致性檢查）合法地只更新了
+    // src/identity/README.md（修正過時的文件敘述，不涉及任何邏輯），
+    // 導致這條斷言用「整個目錄零異動」的過嚴標準誤判成失敗——這是跟
+    // TASK1.34自我檢查曾經犯過的同一種「用live git diff檢查整個目錄」
+    // 的脆弱設計（見TASK1.35的修正紀錄），這裡比照辦理：把檢查範圍
+    // 限定在真正代表OAuth/session行為的.js檔案，不含README.md這類
+    // 文件檔案，之後任何一次任務即使合法更新這個目錄底下的文件，也不會
+    // 再讓這條斷言誤判。
     const { execSync } = await import('node:child_process');
-    const diff = execSync('git diff --stat src/identity/', { cwd: repoRoot }).toString();
+    const diff = execSync('git diff --stat -- src/identity/*.js', { cwd: repoRoot }).toString();
     assert.strictEqual(diff.trim(), '');
   });
 

@@ -108,7 +108,21 @@ async function testTableHelpers() {
   const uRes = await db.users.insert({ id: 'u-test-1', is_guest: true, legacy_sync_code: 'sync:TEST', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' });
   record('users.insert 成功', uRes.ok === true);
   const uCall = mockDb.calls.find((c) => c.type === 'run' && /INSERT INTO users/.test(c.sql));
-  record('users.insert 的SQL與參數正確（id/legacy_sync_code在對的位置）', !!uCall && uCall.params[0] === 'u-test-1' && uCall.params[5] === 'sync:TEST');
+  // TASK1.39架構一致性檢查修正：這項斷言原本寫在TASK1.12，當時INSERT
+  // INTO users的欄位順序是 (id, auth_provider, auth_provider_id,
+  // display_name, is_guest, legacy_sync_code, created_at, updated_at)
+  // ——auth_provider/auth_provider_id/display_name從TASK1.7建表時就
+  // 已經存在，所以legacy_sync_code原本的參數索引正確地是5。
+  // TASK1.13B（migrations/0004_phase1_task1_13b_users_identity.sql）
+  // 新增了 status 欄位，且 src/db/tables/users.js 的insert()把它插入在
+  // is_guest之後、legacy_sync_code之前（目前順序：id, auth_provider,
+  // auth_provider_id, display_name, is_guest, status, legacy_sync_code,
+  // created_at, updated_at），legacy_sync_code的參數索引因此從5正確地
+  // 位移到6——這是TASK1.13B合法的schema演進造成的前提改變，不是回歸，
+  // 這裡更新斷言反映目前正確的欄位順序（另外補上對新增的status欄位本身
+  // 的獨立斷言）。
+  record('users.insert 的SQL與參數正確（id在index 0、legacy_sync_code在TASK1.13B新增status欄位之後的index 6）', !!uCall && uCall.params[0] === 'u-test-1' && uCall.params[6] === 'sync:TEST');
+  record('（TASK1.39後更新）users.insert 的SQL與參數正確：is_guest在index 4正確轉型為1、TASK1.13B新增的status欄位在index 5正確預設為active', !!uCall && uCall.params[4] === 1 && uCall.params[5] === 'active');
 
   // exploration_records.insert（用RETURNING id）
   const eRes = await db.explorationRecords.insert({ user_id: 'u-test-1', draw_mode: 'single', card_category: 'T', occurred_at: '2026-01-01T00:00:00Z' });

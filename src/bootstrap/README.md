@@ -1,8 +1,22 @@
 # Bootstrap Layer（Phase 1 TASK 1.23）
 
-集中「應用程式該怎麼組裝起來」這件事。**本次不修改 `src/worker.js`、
-不修改 `wrangler.toml`、不建立正式 API endpoint、不 `export default`
-一個 worker。**
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次不修改
+> `src/worker.js`」「不建立正式API endpoint」的敘述已過時，且下方
+> 「目錄結構」缺少 TASK1.25 新增的 `route_gateway.js`。目前
+> `src/bootstrap/` 實際有兩個檔案：
+>
+> ```
+> src/bootstrap/
+> ├── README.md
+> ├── application.js       # createApplication(env)：組裝{config,db,services,router,middleware}
+> └── route_gateway.js       # createRouteGateway({app,legacyHandler})：TASK1.25起決定請求走Router還是legacy handler
+> ```
+>
+> `src/worker.js` 自 TASK1.24 起在每個請求開頭呼叫
+> `createApplication(env)`，並用其 `router`/`db` 服務 TASK1.29～1.38
+> 已上線的全部21條路由；`route_gateway.js` 則是 `/api/sync` 等 Legacy
+> 路徑與尚未遷移路徑的 fallback 判斷邏輯（見該檔案內部說明）。以下內容
+> 保留原始設計記錄，僅此處更正現況。
 
 ## 目錄結構
 

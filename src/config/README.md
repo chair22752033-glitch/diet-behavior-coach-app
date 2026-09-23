@@ -1,8 +1,18 @@
 # Configuration Layer（Phase 1 TASK 1.23）
 
-集中管理環境設定，避免未來各層各自散落地讀取 `env.XXX`。
-**本次不修改 `src/worker.js`、不修改 `wrangler.toml`、不建立正式 API
-endpoint、不接真實登入、不呼叫 Google。**
+> **更新記錄（TASK1.39 架構一致性檢查）**：`getEnvConfig()`/
+> `getAppConfig()` 自 TASK1.24／TASK1.25 起被 `src/bootstrap/
+> application.js` 每個請求呼叫一次（`getAppConfig()` 的
+> `features.routeMigrationEnabled` 由 `src/bootstrap/route_gateway.js`
+> 實際讀取來決定路由走向）。**唯一尚未閉環的一項**：`getAuthConfig()`
+> 回傳的 `google.{clientId,clientSecret,redirectUri,configured}` 目前
+> 沒有被任何呼叫端讀取——`src/routes/auth_routes.js` 的
+> `getGoogleProviderFromEnv()` 是直接讀取 `env.GOOGLE_CLIENT_ID` 等
+> 原始值（見該檔案），兩處各自獨立判斷「三個值是否齊全」，值語意完全
+> 相同、行為不衝突，只是尚未合併成單一來源。這是一項已知、低風險的
+> 架構待辦（不影響正確性），TASK1.39 明確禁止修改OAuth流程相關檔案，
+> 因此這裡只記錄觀察，不做程式碼變更，留給不涉及OAuth流程本身變更的
+> 未來任務決定是否合併。以下內容保留原始設計記錄，僅此處更正現況。
 
 ## 目錄結構
 

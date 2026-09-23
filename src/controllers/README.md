@@ -1,7 +1,23 @@
 # Controller Layer（Phase 1 TASK 1.20）
 
-`src/worker.js` 與 Application Service（TASK1.19）之間的隔離層。**本次不建立
-任何正式 API endpoint、不修改 `src/worker.js`、不接真實登入流程。**
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次不建立任何正式
+> API endpoint、不接真實登入流程」與「目錄結構只有4個檔案」的敘述已
+> 過時。目前 `src/controllers/` 實際共有 6 個 controller 檔案，全部
+> 都已被真實路由使用：
+>
+> | 檔案 | 建立於 | 服務的路由 |
+> |---|---|---|
+> | `auth_controller.js` | TASK1.20 | `/auth/guest`、`/auth/provider`、`/auth/logout`、`/auth/me`、`/auth/provider/upgrade`、`/auth/google/callback` |
+> | `user_controller.js` | TASK1.20 | 目前未掛任何route（見下方「User Controller」章節說明） |
+> | `data_controller.js` | TASK1.35 | 10條 `/api/explorations`、`/api/food-events`、`/api/emotions`、`/api/behaviors`、`/api/reports` |
+> | `dashboard_controller.js` | TASK1.36 | `GET /api/dashboard` |
+> | `profile_controller.js` | TASK1.37 | `GET`/`PATCH /api/profile` |
+> | `timeline_controller.js` | TASK1.38 | `GET /api/timeline` |
+>
+> 所有 `/api/*` controller 一律遵守同一套安全模型：`userId` 是獨立
+> 參數，一律來自 `requireAuth()` 驗證後放進 `ctx.user.id`，從不讀取
+> payload/query 裡的 `user_id`。以下內容保留原始設計記錄，僅此處
+> 更正現況。
 
 ## 目錄結構
 

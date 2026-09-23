@@ -1,5 +1,12 @@
 # Session 基礎架構（Phase 1 TASK 1.13A）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次任務刻意保持
+> 未啟用狀態」的敘述已過時——`src/auth/session.js` 自 TASK1.29 起
+> 透過 `src/identity/session_rules.js` 與 `requireAuth()` middleware
+> 被所有 `/auth/*`、`/api/*` 路由使用，真正的 guest/provider 登入會
+> 建立、驗證、撤銷真實 D1 裡的 session。以下內容保留原始設計記錄，
+> 僅此處更正現況。
+
 這個目錄是「未來身份系統」的基礎層：cookie session 的產生、驗證、撤銷邏輯。
 
 **本次任務刻意保持未啟用狀態**：`src/worker.js` 沒有任何一行 `import` 這裡的任何檔案，

@@ -1,5 +1,12 @@
 # OAuth Identity Provider Layer（Phase 1 TASK 1.17）
 
+> **更新記錄（TASK1.39 架構一致性檢查）**：下方「本次任務目的不是讓
+> 使用者登入」的敘述已過時——`GET /auth/google/callback`（TASK1.33）
+> 正式啟用這整層，走真正的 Google Authorization Code Flow（測試環境
+> 一律注入 mock fetch，never連線真正的Google伺服器；正式環境視
+> `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 是否設定決定能否真的完成
+> 換token）。以下內容保留原始設計記錄，僅此處更正現況。
+
 Google OAuth 的基礎建設層。**本次任務目的不是讓使用者登入**，而是建立
 「Google OAuth → Identity Mapping → 未來登入流程」中間所需要的可重用元件。
 
