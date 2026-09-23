@@ -1,7 +1,8 @@
 /*
  * Phase 1 TASK 1.40｜Phase 2 Intelligence Architecture Foundation
  * （TASK1.41 新增 dataPreparation namespace；TASK1.42 新增 context
- * namespace 與 insightContextContract）
+ * namespace 與 insightContextContract；TASK1.43 新增 analysis
+ * namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -13,8 +14,11 @@
  * Phase 2 extension point（見 src/bootstrap/application.js 的
  * `intelligence` namespace）。TASK1.41 新增的 dataPreparation 沒有被
  * insight_service.js 呼叫；TASK1.42 新增的 context/insightContextContract
- * 則正式被 insight_service.js 的 getInsightContext() 使用（透過依賴
- * 注入，insight_service.js 本身仍然不 import 這個目錄底下任何檔案）。
+ * 正式被 insight_service.js 的 getInsightContext() 使用（透過依賴
+ * 注入，insight_service.js 本身仍然不 import 這個目錄底下任何檔案）；
+ * TASK1.43 新增的 analysis 則跟 dataPreparation 一樣，本次沒有被
+ * insight_service.js 呼叫，純粹是extension point，留給未來任務決定
+ * 怎麼串接。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -23,3 +27,4 @@ export * as contracts from './contracts.js';
 export * as dataPreparation from './data_preparation/index.js';
 export * as context from './context/index.js';
 export { InsightContextContract as insightContextContract, validateInsightContext } from './contracts/insight_context_contract.js';
+export * as analysis from './analysis/index.js';

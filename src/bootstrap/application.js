@@ -57,6 +57,14 @@
  * `app.intelligence.context`跟注入進insightService的是同一個實例
  * （不是各自獨立建立兩份）。目前依然沒有任何route/controller讀取
  * app.intelligence，本次任務明確禁止串接任何AI API。
+ *
+ * TASK1.43新增：`intelligence.analysis`，組裝
+ * src/intelligence/analysis/ 的 createAnalysisRunner() 實例——負責
+ * 「接收驗證過的Insight Context、跑一組deterministic分析模組、組出
+ * Analysis Result」。跟dataPreparation當初一樣，`insightService`本次
+ * 完全沒有被修改成會呼叫它，兩者是各自獨立掛在intelligence namespace
+ * 底下的extension point，沒有任何route/controller讀取它，留給未來
+ * 任務決定怎麼串接。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -84,7 +92,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -153,12 +161,14 @@ export function createApplication(env) {
     dataPreparation: dataPreparationService,
     contextBuilder: insightContextBuilder,
   });
+  const analysisRunner = analysis.createAnalysisRunner();
   const intelligence = {
     insightService,
     analysisEngine,
     recommendationEngine,
     dataPreparation: dataPreparationService,
     context: insightContextBuilder,
+    analysis: analysisRunner,
   };
 
   return { config, db, services, router, middleware, intelligence };

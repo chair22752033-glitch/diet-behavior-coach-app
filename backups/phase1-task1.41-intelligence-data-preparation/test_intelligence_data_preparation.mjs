@@ -690,9 +690,11 @@ async function run() {
   // 注意：TASK1.42 又新增了 `context` 欄位（Insight Context Builder的
   // extension point），這是明確要做的擴充，不是回歸，這裡的預期key
   // 清單已同步更新。
-  await test('（TASK1.42後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation（沒有被TASK1.42取代或破壞）', () => {
+  // 注意：TASK1.43 又新增了 `analysis` 欄位，這是明確要做的擴充，不是
+  // 回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.43後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation跟TASK1.42既有的context（沒有被TASK1.43取代或破壞）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
   });
 
   await test('（10.bootstrap injection）透過app.intelligence.dataPreparation.prepare()呼叫，可以正確運作（端對端，含mock db）', async () => {

@@ -85,11 +85,12 @@ async function run() {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
   });
 
-  // 注意：TASK1.42 又新增了 contracts/（Insight Context Contract）跟
-  // context/（Insight Context Builder）兩個子目錄，這是明確要做的
-  // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.42後更新）src/intelligence/ 底下的子目錄依序是 context/contracts/data_preparation 三個', () => {
-    assert.deepStrictEqual(actualDirs, ['context', 'contracts', 'data_preparation']);
+  // 注意：TASK1.42 新增了 contracts/（Insight Context Contract）跟
+  // context/（Insight Context Builder）兩個子目錄，TASK1.43 又新增了
+  // analysis/（Analysis Framework），都是明確要做的擴充，不是回歸——
+  // 這裡的預期子目錄清單已同步更新。
+  await test('（TASK1.43後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation 四個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -525,12 +526,13 @@ async function run() {
   });
 
   // 注意：TASK1.41 為 app.intelligence 新增了 `dataPreparation` 欄位，
-  // TASK1.42 又新增了 `context` 欄位（Insight Context Builder的
-  // extension point，見src/intelligence/context/），兩者都是明確要做
-  // 的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.42後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context 五個欄位', () => {
+  // TASK1.42 又新增了 `context` 欄位，TASK1.43 再新增了 `analysis`
+  // 欄位（Analysis Framework的extension point，見
+  // src/intelligence/analysis/），都是明確要做的擴充，不是回歸，這裡
+  // 的預期key清單已同步更新。
+  await test('（TASK1.43後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis 六個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendationEngine']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {
