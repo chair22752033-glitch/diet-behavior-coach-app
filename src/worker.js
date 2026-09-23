@@ -1,4 +1,29 @@
-export default{fetch:function(r,env,ctx){return handle(r,env);}};
+import { createApplication } from './bootstrap/application.js';
+
+// Phase 1 TASK 1.24｜Worker Entry Integration
+//
+// 正式把 TASK1.23 的 Application Bootstrap 接進 Worker 入口：每個請求都會
+// 建立一次 app = createApplication(env)（含 config/db/services/router），
+// 但目前完全不用 app 來處理任何請求——所有既有路由（/、/manifest.json、
+// /icon.svg、/apple-touch-icon.png、/img/*、/api/sync、/api/qlive）
+// 仍然 100% 由下面完全沒有變動過的 handle(r, env) 處理，行為與接入前逐位元
+// 一致。app.router（TASK1.21 的 Router Layer）目前沒有被拿來處理任何真正
+// 進來的請求，也沒有開放 /auth/* 或 /users/* 這種新路徑——這裡只是先把
+// bootstrap 接上，確認 createApplication(env) 在真正的 Worker 環境裡可以
+// 成功建立，避免它出錯拖累整個 App（例如某個 binding 還沒設定時）用
+// try/catch 包起來，任何例外都不影響下面既有功能繼續運作。
+export default {
+  async fetch(request, env, ctx) {
+    let app;
+    try {
+      app = createApplication(env);
+    } catch (e) {
+      app = null;
+    }
+    return handle(request, env, app);
+  }
+};
+
 async function handle(r,env){
   var p=new URL(r.url).pathname;
   if(p==='/manifest.json')return new Response(getManifest(),{headers:{'Content-Type':'application/manifest+json','Cache-Control':'public,max-age=86400'}});

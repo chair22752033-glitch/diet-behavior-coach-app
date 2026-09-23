@@ -411,10 +411,16 @@ async function run() {
     assert.ok(!/export\s+default/.test(src));
   });
 
-  await test('原始碼掃描：src/worker.js 完全沒有 import src/config/ 或 src/bootstrap/', () => {
+  // 注意：這項斷言原本是「TASK1.23 當下 worker.js 完全不 import 這兩個
+  // 目錄」，但 TASK1.24（Worker Entry Integration）已依規格正式把
+  // createApplication()（src/bootstrap/application.js）接進 worker.js
+  // 的 fetch()——這是 TASK1.24 明確要做的事，不是意外的回歸。這裡改成
+  // 驗證「有接、但只接 bootstrap 這個單一入口，沒有繞過它直接 import
+  // src/config/ 底下的個別檔案」，繼續守住分層原則。
+  await test('原始碼掃描：src/worker.js 只透過 src/bootstrap/application.js 這個單一入口接入設定層，沒有直接 import src/config/ 底下的個別檔案（TASK1.24起）', () => {
     const workerSrc = readSource('src/worker.js');
-    assert.ok(!/config\//.test(workerSrc));
-    assert.ok(!/bootstrap\//.test(workerSrc));
+    assert.ok(/from\s*['"]\.\/bootstrap\/application\.js['"]/.test(workerSrc));
+    assert.ok(!/from\s*['"]\.\/config\//.test(workerSrc));
   });
 
   console.log('');
