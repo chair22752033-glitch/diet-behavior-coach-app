@@ -379,26 +379,32 @@ async function run() {
     assert.strictEqual(result.status, 400);
   });
 
-  await test('（loginProviderController）缺少provider欄位時回401（identity層拒絕，reason=invalid_identity）', async () => {
+  // 注意：TASK1.34新增了validateProviderIdentity()（Provider Validation
+  // Hardening），loginProviderController()現在在呼叫loginWithProvider()
+  // 之前就會先檢查provider/providerId是否成對存在，缺少任一項會在這一步
+  // 就被攔下（reason=invalid_provider），根本不會走到identity層的
+  // resolveLoginIdentity()——這是TASK1.34的任務目標，不是回歸，401狀態碼
+  // 本身沒有變。
+  await test('（TASK1.34後更新）缺少provider欄位時在Provider Validation Hardening階段就被擋下，回401 reason=invalid_provider', async () => {
     const db = makeMockDb();
     const result = await loginProviderController(db, { providerId: 'g-x' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.status, 401);
-    assert.strictEqual(result.reason, 'invalid_identity');
+    assert.strictEqual(result.reason, 'invalid_provider');
   });
 
-  await test('（loginProviderController）缺少providerId欄位時回401，reason=invalid_identity', async () => {
+  await test('（TASK1.34後更新）缺少providerId欄位時在Provider Validation Hardening階段就被擋下，回401 reason=invalid_provider', async () => {
     const db = makeMockDb();
     const result = await loginProviderController(db, { provider: 'google' });
     assert.strictEqual(result.ok, false);
-    assert.strictEqual(result.reason, 'invalid_identity');
+    assert.strictEqual(result.reason, 'invalid_provider');
   });
 
-  await test('（loginProviderController）providerId為空字串時視為缺少必要欄位，回401', async () => {
+  await test('（TASK1.34後更新）providerId為空字串時在Provider Validation Hardening階段就被擋下，回401 reason=invalid_provider', async () => {
     const db = makeMockDb();
     const result = await loginProviderController(db, loginPayload({ providerId: '' }));
     assert.strictEqual(result.ok, false);
-    assert.strictEqual(result.reason, 'invalid_identity');
+    assert.strictEqual(result.reason, 'invalid_provider');
   });
 
   // =========================================================================
@@ -414,11 +420,22 @@ async function run() {
     assert.strictEqual(matches.length, 1);
   });
 
-  await test('（5.duplicate provider拒絕）不同provider但相同providerId視為不同identity，各自建立獨立user', async () => {
+  // 注意：這項測試原本驗證「不同provider但相同providerId視為不同
+  // identity」，用google跟facebook兩個provider名稱比對——TASK1.34新增了
+  // Provider Validation Hardening（validateProviderIdentity()，統一使用
+  // SUPPORTED_PROVIDERS），而系統目前只支援'google'一種provider，
+  // facebook現在會在controller這一步就被拒絕，這個測試原本的比較前提
+  // 不再成立。改成驗證TASK1.34真正的目標：不支援的provider名稱會被
+  // Provider Validation Hardening擋下，不會建立任何user——這是比原本更
+  // 有價值的安全測試，不是回歸。
+  await test('（TASK1.34後更新）不支援的provider名稱（facebook）在Provider Validation Hardening階段被擋下，不會建立任何user', async () => {
     const db = makeMockDb();
     const googleResult = await loginProviderController(db, loginPayload({ provider: 'google', providerId: 'same-id' }));
     const otherResult = await loginProviderController(db, loginPayload({ provider: 'facebook', providerId: 'same-id' }));
-    assert.notStrictEqual(googleResult.data.user.id, otherResult.data.user.id);
+    assert.strictEqual(googleResult.ok, true);
+    assert.strictEqual(otherResult.ok, false);
+    assert.strictEqual(otherResult.reason, 'invalid_provider');
+    assert.strictEqual(db.calls.filter((c) => c.type === 'insert' && c.table === 'users').length, 1);
   });
 
   await test('（6.suspended拒絕）suspended狀態的既有provider user登入被拒絕，reason=user_suspended', async () => {
@@ -1051,8 +1068,13 @@ async function run() {
     assert.strictEqual(handlerRef1, handlerRef2);
   });
 
-  await test('（架構守則）loginProviderContract.response.failureReasons不含不會實際發生的invalid_provider（resolveLoginIdentity()只檢查存在性，不驗證是否為支援的provider）', () => {
-    assert.ok(!loginProviderContract.response.failureReasons.includes('invalid_provider'));
+  // 注意：TASK1.34新增了Provider Validation Hardening
+  // （loginProviderController()呼叫loginWithProvider()之前的
+  // validateProviderIdentity()檢查），invalid_provider現在是這條路由
+  // 真的會發生的失敗原因，這裡改成正向驗證它確實存在——這是TASK1.34的
+  // 任務目標，不是回歸。
+  await test('（TASK1.34後更新）loginProviderContract.response.failureReasons包含invalid_provider（Provider Validation Hardening新增的真實失敗原因）', () => {
+    assert.ok(loginProviderContract.response.failureReasons.includes('invalid_provider'));
   });
 
   console.log('');

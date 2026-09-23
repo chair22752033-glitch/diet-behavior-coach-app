@@ -53,6 +53,7 @@ import { parseCookies } from '../auth/cookie.js';
 import { validateOAuthState } from '../oauth/oauth_state.js';
 import { mapGoogleProfileToIdentity } from '../identity/provider_mapping.js';
 import { loginWithProvider } from './auth_service.js';
+import { validateProviderIdentity } from './auth_security_service.js';
 
 // TASK1.33：暫存「本次OAuth flow的state」用的cookie名稱。這個cookie預期由
 // 未來啟動 Google 登入流程的那一步（尚未在本次任務範圍內）寫入
@@ -193,6 +194,16 @@ export async function loginWithGoogleCallback(db, params, googleProvider, option
   const identityResult = mapGoogleProfileToIdentity(profileResult.profile);
   if (!identityResult.ok) {
     return { ok: false, reason: identityResult.error || 'invalid_profile' };
+  }
+
+  // TASK1.34：Provider Validation Hardening——跟loginProviderController()
+  // 用同一個 validateProviderIdentity()。mapGoogleProfileToIdentity() 目前
+  // 恆定回傳 auth_provider:'google'（SUPPORTED_PROVIDERS的成員），這裡
+  // 這個檢查在現況下永遠會通過，是防禦性設計：未來如果identity欄位來源
+  // 改變、或mapper本身有bug回傳了非google的provider名稱，這裡仍然能攔下。
+  const providerCheck = validateProviderIdentity(identityResult.identity.auth_provider, identityResult.identity.auth_provider_id);
+  if (!providerCheck.ok) {
+    return { ok: false, reason: providerCheck.reason };
   }
 
   return loginWithProvider(db, identityResult.identity, options);

@@ -48,12 +48,16 @@ export const loginProviderContract = {
     displayName: { required: false, type: 'string' },
   },
   response: {
-    // 注意：resolveLoginIdentity()（src/identity/login_identity.js）只檢查
-    // auth_provider/auth_provider_id是否「存在」，不像upgradeGuestToProvider()
-    // 那樣額外驗證provider是否為支援的名稱——這是既有實作的既有行為，
-    // 這裡如實反映，不新增一個實際不會發生的invalid_provider reason。
+    // 注意：resolveLoginIdentity()（src/identity/login_identity.js）本身
+    // 只檢查auth_provider/auth_provider_id是否「存在」，不驗證是否為
+    // 支援的provider名稱——這仍是既有實作的既有行為，TASK1.34沒有改動
+    // login_identity.js一行。但TASK1.34在loginProviderController()呼叫
+    // loginWithProvider()「之前」新增了validateProviderIdentity()檢查
+    // （src/services/auth_security_service.js，統一使用
+    // src/identity/provider.js的SUPPORTED_PROVIDERS），所以
+    // invalid_provider現在是這條路由真的會發生的失敗原因。
     success: { user: 'object', session: 'object', cookie: 'string', created: 'boolean' },
-    failureReasons: ['invalid_payload', 'invalid_identity', 'user_suspended', 'user_deleted', 'provider_login_failed'],
+    failureReasons: ['invalid_payload', 'invalid_provider', 'invalid_identity', 'user_suspended', 'user_deleted', 'provider_login_failed'],
     failureStatus: [400, 401],
   },
 };
@@ -133,10 +137,15 @@ export const googleCallbackContract = {
   },
   response: {
     success: { user: 'object', session: 'object', cookie: 'string', created: 'boolean' },
+    // TASK1.34：新增invalid_provider——loginWithGoogleCallback()在呼叫
+    // loginWithProvider()之前也加上了跟loginProviderController()同一份
+    // validateProviderIdentity()檢查（見src/services/auth_security_service.js），
+    // 目前mapGoogleProfileToIdentity()恆定回傳'google'，這是防禦性設計，
+    // 現況下實務上不會觸發，但如實列在這裡。
     failureReasons: [
       'oauth_not_configured', 'missing_state', 'state_mismatch', 'state_expired',
       'code_exchange_failed', 'profile_fetch_failed', 'invalid_profile', 'missing_provider_id',
-      'invalid_identity', 'user_suspended', 'user_deleted', 'user_status_unknown',
+      'invalid_provider', 'invalid_identity', 'user_suspended', 'user_deleted', 'user_status_unknown',
       'oauth_callback_failed',
     ],
     failureStatus: [401, 500, 502, 503],

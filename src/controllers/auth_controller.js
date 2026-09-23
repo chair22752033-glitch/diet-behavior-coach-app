@@ -24,8 +24,17 @@
  * 字串」這種與傳輸協定無關的參數，方便未來不論是接 Cloudflare Worker 的
  * Request、或未來換成別的框架，都只需要在 route 那一層做參數轉換，
  * controller 本身不用改。
+ *
+ * TASK1.34：loginProviderController() 在呼叫 loginWithProvider() 之前
+ * 新增 validateProviderIdentity()（src/services/auth_security_service.js）
+ * 檢查，統一provider驗證規則（見該檔案的說明）。這不是修改既有登入流程
+ * 行為——google（唯一目前支援的provider）登入路徑完全不受影響，只有
+ * 原本「識別層不會檢查、但也不該被允許」的不支援provider名稱，現在會在
+ * 呼叫loginWithProvider()之前就被攔截，屬於TASK1.34明確要求的新增安全
+ * 檢查。
  */
 import { createGuestLogin, loginWithProvider, logout, getCurrentUser, upgradeGuestLogin, loginWithGoogleCallback } from '../services/auth_application_service.js';
+import { validateProviderIdentity } from '../services/auth_security_service.js';
 import { success, failure } from '../contracts/response_contract.js';
 
 /**
@@ -68,6 +77,13 @@ export async function loginProviderController(db, payload, options) {
   try {
     if (!payload || typeof payload !== 'object') {
       return failure('invalid_payload', 400);
+    }
+    // TASK1.34：Provider Validation Hardening——在交給loginWithProvider()
+    // 之前先統一檢查provider是否為SUPPORTED_PROVIDERS支援的名稱，不合法
+    // 直接短路，不會呼叫任何db操作。
+    const providerCheck = validateProviderIdentity(payload.provider, payload.providerId);
+    if (!providerCheck.ok) {
+      return failure(providerCheck.reason, 401);
     }
     const providerIdentity = {
       auth_provider: payload.provider,
@@ -177,6 +193,7 @@ const GOOGLE_CALLBACK_FAILURE_STATUS = {
   profile_fetch_failed: 502,
   invalid_profile: 401,
   missing_provider_id: 401,
+  invalid_provider: 401,
   invalid_identity: 401,
   user_suspended: 401,
   user_deleted: 401,
