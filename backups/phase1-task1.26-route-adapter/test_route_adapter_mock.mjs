@@ -236,14 +236,14 @@ async function run() {
     assert.ok(paths.includes('/api/sync'));
   });
 
-  // 注意：auth路由數量從5條變成6條是TASK1.31新增POST /auth/provider/upgrade
+  // 注意：auth路由數量從6條變成7條是TASK1.33新增GET /auth/google/callback
   // 造成的，屬預期演進（不是回歸）；「不含legacy路由」這個核心行為不變。
-  await test('createAppRouter()（不傳參數）不含legacy路由（TASK1.31後auth/user路由共6條）', () => {
+  await test('（TASK1.33後更新）createAppRouter()（不傳參數）不含legacy路由（auth/user路由共7條）', () => {
     const router = createAppRouter();
     const paths = router.routes.map((r) => r.path);
     assert.ok(!paths.includes('/'));
     assert.ok(!paths.includes('/api/sync'));
-    assert.strictEqual(router.routes.length, 6); // 5個auth + 1個user
+    assert.strictEqual(router.routes.length, 7); // 6個auth + 1個user
   });
 
   // =========================================================================
@@ -613,11 +613,11 @@ async function run() {
     assert.strictEqual(captured, 'a b/c.jpg');
   });
 
-  // 注意：總數從14變成15是TASK1.31新增POST /auth/provider/upgrade造成的
+  // 注意：總數從15變成16是TASK1.33新增GET /auth/google/callback造成的
   // 預期演進，不是回歸。
-  await test('（延續auth/user route）createAppRouter(legacyHandler) 同時具備auth/user/legacy三種路由，總數為15', () => {
+  await test('（TASK1.33後更新）createAppRouter(legacyHandler) 同時具備auth/user/legacy三種路由，總數為16', () => {
     const router = createAppRouter(makeLegacyHandler());
-    assert.strictEqual(router.routes.length, 15);
+    assert.strictEqual(router.routes.length, 16);
   });
 
   await test('（延續守則）flag=true：DELETE /api/sync（不支援的方法）由router自行判斷回405（新架構自己的JSON 405，屬已知細節差異，不影響flag預設關閉時的正式環境）', async () => {

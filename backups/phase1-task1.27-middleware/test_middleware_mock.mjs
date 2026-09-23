@@ -415,12 +415,12 @@ async function run() {
     assert.strictEqual(calls[0].request, request);
   });
 
-  // 注意：路由數量從5條變成6條是TASK1.31新增POST /auth/provider/upgrade
+  // 注意：路由數量從6條變成7條是TASK1.33新增GET /auth/google/callback
   // 造成的預期演進，不是回歸；這裡驗證的核心事實（pipeline接入沒有讓
   // 路由數量無故增減）依然成立。
-  await test('createAppRouter()：auth/user route數量在接入pipeline後為6條（TASK1.31新增upgrade路由）', () => {
+  await test('（TASK1.33後更新）createAppRouter()：auth/user route數量在接入pipeline後為7條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 6);
+    assert.strictEqual(router.routes.length, 7);
   });
 
   // =========================================================================

@@ -113,3 +113,32 @@ export const upgradeProviderContract = {
     failureStatus: [400, 401],
   },
 };
+
+/**
+ * 對應 googleOAuthCallbackController（GET /auth/google/callback）—— TASK1.33
+ * 起正式上線。request是Google回呼URL上帶的query string參數
+ * {code, state}，兩者皆必填字串（contract validation只檢查「有沒有」，
+ * 真正的state正確性驗證發生在controller委派的
+ * auth_application_service.loginWithGoogleCallback()內部）。
+ *
+ * 這條路由的成功/失敗結果實際上都是302 redirect（見
+ * src/routes/auth_routes.js），這裡的success/failureStatus只是延續既有
+ * contract慣例、方便直接對controller本身做單元測試，不代表HTTP層真的會
+ * 回傳這些JSON/status。
+ */
+export const googleCallbackContract = {
+  request: {
+    code: { required: true, type: 'string' },
+    state: { required: true, type: 'string' },
+  },
+  response: {
+    success: { user: 'object', session: 'object', cookie: 'string', created: 'boolean' },
+    failureReasons: [
+      'oauth_not_configured', 'missing_state', 'state_mismatch', 'state_expired',
+      'code_exchange_failed', 'profile_fetch_failed', 'invalid_profile', 'missing_provider_id',
+      'invalid_identity', 'user_suspended', 'user_deleted', 'user_status_unknown',
+      'oauth_callback_failed',
+    ],
+    failureStatus: [401, 500, 502, 503],
+  },
+};

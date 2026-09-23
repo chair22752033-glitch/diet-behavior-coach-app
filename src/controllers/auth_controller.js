@@ -10,8 +10,13 @@
  * 完全沒有：
  * - SQL / db.prepare() / 任何 D1 操作（不 import src/db/ 底下任何檔案）
  * - KV 操作
- * - OAuth 流程本身（不 import src/oauth/ 底下任何檔案）
- * - session 邏輯本身（不 import src/auth/session.js 或 src/identity/session_rules.js）
+ * - OAuth 流程本身（不 import src/oauth/ 底下任何檔案——TASK1.33的
+ *   googleOAuthCallbackController也是委派給auth_application_service.js
+ *   的loginWithGoogleCallback()去呼叫真正的oauth_state/google provider，
+ *   這個檔案本身仍然沒有一行import src/oauth/）
+ * - session 邏輯本身（不 import src/auth/session.js 或 src/identity/session_rules.js，
+ *   也不 import src/auth/cookie.js——連 cookie 字串怎麼解析都委派給
+ *   application service）
  * 這些全部委派給 src/services/auth_application_service.js（TASK1.19）。
  *
  * 這裡的函式參數刻意不是 Fetch API 的 Request 物件——本次不建立正式 API
@@ -20,7 +25,7 @@
  * Request、或未來換成別的框架，都只需要在 route 那一層做參數轉換，
  * controller 本身不用改。
  */
-import { createGuestLogin, loginWithProvider, logout, getCurrentUser, upgradeGuestLogin } from '../services/auth_application_service.js';
+import { createGuestLogin, loginWithProvider, logout, getCurrentUser, upgradeGuestLogin, loginWithGoogleCallback } from '../services/auth_application_service.js';
 import { success, failure } from '../contracts/response_contract.js';
 
 /**
@@ -153,6 +158,55 @@ export async function upgradeGuestController(db, cookieHeader, payload, options)
       return failure(result.reason || result.error || 'upgrade_failed', 401);
     }
     return success({ user: result.user, session: result.session, cookie: result.cookie });
+  } catch (e) {
+    return failure(e && e.message ? e.message : String(e), 500);
+  }
+}
+
+// TASK1.33：Google callback失敗理由 → HTTP狀態碼的對照表。這裡只是
+// 「記錄意圖」用的分類，實際上route層（auth_routes.js）一律用302
+// redirect回首頁（成功時帶Set-Cookie，失敗時帶?oauth_error=<reason>），
+// 不會真的把這個status用在Response上——保留status欄位只是延續既有
+// controller的回傳形狀慣例，方便直接單元測試這個controller本身。
+const GOOGLE_CALLBACK_FAILURE_STATUS = {
+  oauth_not_configured: 503,
+  missing_state: 401,
+  state_mismatch: 401,
+  state_expired: 401,
+  code_exchange_failed: 502,
+  profile_fetch_failed: 502,
+  invalid_profile: 401,
+  missing_provider_id: 401,
+  invalid_identity: 401,
+  user_suspended: 401,
+  user_deleted: 401,
+  user_status_unknown: 401,
+};
+
+/**
+ * 對應 TASK1.33 的 GET /auth/google/callback
+ *
+ * 完全委派給 auth_application_service.js 的 loginWithGoogleCallback()：
+ * state驗證 → exchangeCode() → getUserProfile() →
+ * mapGoogleProfileToIdentity() → loginWithProvider() → session建立。
+ * 這個controller本身不 import 任何 src/oauth/ 底下的檔案，googleProvider
+ * 物件（含client_id/client_secret/redirect_uri）由呼叫端（route層，
+ * 從env讀取）注入，這裡完全看不到、也無法自己生出任何機密值。
+ *
+ * @param {object} db
+ * @param {{code?:string, state?:string, cookieHeader?:string|null}} params
+ * @param {object|null} googleProvider - null代表這個環境尚未設定Google
+ *   OAuth secret，會安全回傳oauth_not_configured
+ * @param {object} [options]
+ */
+export async function googleOAuthCallbackController(db, params, googleProvider, options) {
+  try {
+    const result = await loginWithGoogleCallback(db, params, googleProvider, options);
+    if (!result.ok) {
+      const reason = result.reason || result.error || 'oauth_callback_failed';
+      return failure(reason, GOOGLE_CALLBACK_FAILURE_STATUS[reason] || 401);
+    }
+    return success({ user: result.user, session: result.session, cookie: result.cookie, created: result.created });
   } catch (e) {
     return failure(e && e.message ? e.message : String(e), 500);
   }

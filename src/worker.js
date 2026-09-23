@@ -18,18 +18,24 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // 接著啟用 GET /auth/me、POST /auth/logout（session 使用生命週期：
 // 查詢目前登入者、登出）。TASK1.31 接著啟用 POST /auth/provider/upgrade
 // （訪客 → 已驗證身份 的升級入口）。TASK1.32 接著啟用 POST /auth/provider
-// （provider identity 登入入口，一樣不接 Google OAuth callback）。五條
-// 都刻意不透過上面的 feature flag（那是 all-or-nothing 的機制，打開會
-// 連帶啟用 /users/:id 這種還沒準備好正式上線的路由），改用最小、明確的
-// 判斷式只接上這五條路由：guest/provider/upgrade 解析真正的 HTTP body
-// 成 payload，me/logout/upgrade 讀取真正的 Cookie 標頭（upgrade 兩者都
-// 需要——payload帶provider資訊、cookie用來識別「目前是哪個訪客」），
-// 交給 app.router.handle() 走完整的 Router → Contract Validation →
-// Controller → Application Service → Identity → Session → D1 流程，
-// 回傳的 Response 已經在 auth_routes.js 附加了真正的 Set-Cookie 標頭
-// （guest/provider/upgrade 設定新session、logout 清除cookie、me 因為是
-// 純讀取所以不會有 Set-Cookie）。其餘所有路徑（含這五條路由方法不符的
-// 情況）完全不受影響，一律照舊落到下面的 gateway/legacy 流程。
+// （provider identity 登入入口，當時刻意不接 Google OAuth callback）。
+// TASK1.33 接著啟用 GET /auth/google/callback（真正接上 Google
+// Authorization Code Flow 的回呼端點）。六條都刻意不透過上面的
+// feature flag（那是 all-or-nothing 的機制，打開會連帶啟用 /users/:id
+// 這種還沒準備好正式上線的路由），改用最小、明確的判斷式只接上這六條
+// 路由：guest/provider/upgrade 解析真正的 HTTP body 成 payload，
+// me/logout/upgrade 讀取真正的 Cookie 標頭（upgrade 兩者都需要——
+// payload帶provider資訊、cookie用來識別「目前是哪個訪客」），
+// google/callback 讀取真正的 query string（code/state）與 Cookie 標頭
+// （讀取先前存放的 oauth state），交給 app.router.handle() 走完整的
+// Router → Contract Validation → Controller → Application Service →
+// Identity → Session → D1 流程，回傳的 Response 已經在 auth_routes.js
+// 附加了真正的 Set-Cookie 標頭（guest/provider/upgrade/google-callback
+// 成功時設定新session、logout 清除cookie、me 因為是純讀取所以不會有
+// Set-Cookie）。google/callback 不論成功失敗一律是302 redirect（見
+// auth_routes.js 的 buildGoogleCallbackResponse()），不是JSON。其餘所有
+// 路徑（含這六條路由方法不符的情況）完全不受影響，一律照舊落到下面的
+// gateway/legacy 流程。
 async function parseJsonBody(request) {
   try {
     const text = await request.text();
@@ -51,7 +57,17 @@ export default {
 
     if (app) {
       const method = request.method;
-      const pathname = new URL(request.url).pathname;
+      const url = new URL(request.url);
+      const pathname = url.pathname;
+
+      if (method === 'GET' && pathname === '/auth/google/callback') {
+        const query = { code: url.searchParams.get('code'), state: url.searchParams.get('state') };
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle(
+          { method, pathname, query, cookieHeader, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
 
       if (method === 'POST' && (pathname === '/auth/guest' || pathname === '/auth/provider')) {
         const payload = await parseJsonBody(request);

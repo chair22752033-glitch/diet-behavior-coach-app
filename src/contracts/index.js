@@ -8,5 +8,6 @@ export {
   logoutContract,
   currentUserContract,
   upgradeProviderContract,
+  googleCallbackContract,
 } from './auth_contract.js';
 export { getUserByIdContract } from './user_contract.js';
