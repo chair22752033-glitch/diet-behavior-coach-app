@@ -997,11 +997,11 @@ async function run() {
     assert.strictEqual(res.status, 200);
   });
 
-  // 注意：TASK1.36新增了GET /api/dashboard，路由總數從17條變成18條，
+  // 注意：TASK1.37新增了GET/PATCH /api/profile，路由總數從18條變成20條，
   // 這是預期演進，不是回歸。
-  await test('（TASK1.36後更新）createAppRouter() 的 auth/user/data/dashboard 路由總數為18條', () => {
+  await test('（TASK1.37後更新）createAppRouter() 的 auth/user/data/dashboard/profile 路由總數為20條', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 18);
+    assert.strictEqual(router.routes.length, 20);
   });
 
   await test('（3.GET /auth/me過期session，端對端）直接在假D1插入一筆已過期的session，透過真正worker.fetch()驗證回401', async () => {

@@ -660,14 +660,15 @@ async function run() {
   // 注意：TASK1.32新增/auth/provider也掛了middleware；TASK1.33新增GET
   // /auth/google/callback也掛了middleware；TASK1.35新增五個資源共10條
   // User Data API也都各自掛了[requireAuth(), contractValidation]兩個
-  // middleware；TASK1.36新增GET /api/dashboard同樣掛了這兩個
-  // middleware——這裡的排除清單同步更新。
-  await test('（TASK1.36後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了auth六條已啟用路由跟十條User Data API跟dashboard外其餘皆是空清單', () => {
+  // middleware；TASK1.36新增GET /api/dashboard同樣掛了這兩個middleware；
+  // TASK1.37新增GET/PATCH /api/profile同樣掛了這兩個middleware——這裡的
+  // 排除清單同步更新。
+  await test('（TASK1.37後更新）原始碼掃描：router.js 支援每條路由各自middlewares，除了auth六條已啟用路由跟十條User Data API跟dashboard跟profile外其餘皆是空清單', () => {
     const router = createAppRouter();
     const legacyRouter = createAppRouter(async () => new Response('legacy'));
     const activatedPaths = [
       '/auth/guest', '/auth/logout', '/auth/me', '/auth/provider/upgrade', '/auth/provider', '/auth/google/callback',
-      '/api/explorations', '/api/food-events', '/api/emotions', '/api/behaviors', '/api/reports', '/api/dashboard',
+      '/api/explorations', '/api/food-events', '/api/emotions', '/api/behaviors', '/api/reports', '/api/dashboard', '/api/profile',
     ];
     for (const r of legacyRouter.routes) {
       if (!activatedPaths.includes(r.path)) {

@@ -49,7 +49,15 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // Domain Service查詢函式，組合成單一回應，不重新實作任何查詢邏輯、
 // 不修改任何既有資料表。
 //
-// 其餘所有路徑（含以上十七條路由方法不符的情況）完全不受影響，一律照舊
+// TASK1.37：接著啟用 GET /api/profile（取得目前登入使用者基本資料）與
+// PATCH /api/profile（更新display_name）。同樣經過 requireAuth() 驗證，
+// userId同樣一律來自ctx.user.id。Profile Controller只會把payload裡的
+// displayName欄位轉交給Profile Service，其餘任何欄位（含
+// auth_provider/is_guest/status/id/created_at/last_login_at/user_id）
+// 完全被忽略，不會被讀取更不會被拿去更新——不修改identity欄位、不修改
+// session schema、不修改既有Domain Service。
+//
+// 其餘所有路徑（含以上十九條路由方法不符的情況）完全不受影響，一律照舊
 // 落到下面的 gateway/legacy 流程。
 // TASK1.35：五個資源、共十條路徑（POST建立/GET查詢各一條）。
 // TASK1.36：新增GET /api/dashboard（聚合五大domain service的登入後首頁
@@ -145,6 +153,29 @@ export default {
           const query = { limit: url.searchParams.get('limit'), patternType: url.searchParams.get('patternType') };
           return app.router.handle(
             { method, pathname, query, cookieHeader, options: {} },
+            { db: app.db, env, services: app.services }
+          );
+        }
+      }
+
+      // TASK1.37：正式啟用 GET /api/profile（取得目前登入使用者基本
+      // 資料）與 PATCH /api/profile（更新display_name）。跟其餘API同一套
+      // 安全模型：一律讀取真正的Cookie標頭交給requireAuth()驗證，
+      // userId一律來自ctx.user.id，這裡完全不會把payload裡任何
+      // user_id/identity/system欄位轉交過去（見
+      // src/controllers/profile_controller.js的白名單設計）。
+      if (pathname === '/api/profile') {
+        const cookieHeader = request.headers.get('Cookie');
+        if (method === 'GET') {
+          return app.router.handle(
+            { method, pathname, query: {}, cookieHeader, options: {} },
+            { db: app.db, env, services: app.services }
+          );
+        }
+        if (method === 'PATCH') {
+          const payload = await parseJsonBody(request);
+          return app.router.handle(
+            { method, pathname, payload, cookieHeader, options: {} },
             { db: app.db, env, services: app.services }
           );
         }

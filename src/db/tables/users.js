@@ -56,5 +56,16 @@ export function bind(db) {
     async touchLogin(id, lastLoginAt) {
       return run(db, 'UPDATE users SET last_login_at = ? WHERE id = ?', [lastLoginAt, id]);
     },
+    /**
+     * TASK1.37｜使用者自行修改個人資料——目前唯一開放修改的欄位是
+     * display_name。刻意只更新這一欄+updated_at，不觸碰
+     * auth_provider/auth_provider_id/is_guest/status/created_at/
+     * last_login_at 這些identity/system欄位（那些一律由既有的
+     * upgradeToProvider()/updateStatus()/touchLogin()負責，這個方法
+     * 完全不會、也不能碰到它們）。
+     */
+    async updateDisplayName(id, displayName, updatedAt) {
+      return run(db, 'UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?', [displayName, updatedAt, id]);
+    },
   };
 }
