@@ -49,9 +49,12 @@ import { success, failure } from '../contracts/response_contract.js';
 // 使用者狀態層的拒絕理由（requireActiveUser()內部canLogIn()回傳的reason）
 // 一律視為401（未授權使用），真正的db層錯誤（result.error）才視為500——
 // 這個對照表跟其他controller（例如auth_controller.js）的既有慣例一致。
-const USER_CHECK_REASONS = new Set(['user_not_found', 'user_suspended', 'user_deleted', 'user_status_unknown']);
+// TASK1.36：匯出這個常數跟下面兩個輔助函式，讓
+// src/controllers/dashboard_controller.js 可以重用同一套判斷規則，
+// 不需要重新定義一份。
+export const USER_CHECK_REASONS = new Set(['user_not_found', 'user_suspended', 'user_deleted', 'user_status_unknown']);
 
-function failureFromServiceResult(result, fallbackReason) {
+export function failureFromServiceResult(result, fallbackReason) {
   if (result.reason && USER_CHECK_REASONS.has(result.reason)) {
     return failure(result.reason, 401);
   }
@@ -63,7 +66,7 @@ function failureFromServiceResult(result, fallbackReason) {
  * undefined，讓service套用它自己原本的預設值，不會因為一個不合法的
  * limit值就讓整個查詢失敗。
  */
-function parseLimit(rawLimit) {
+export function parseLimit(rawLimit) {
   if (rawLimit === undefined || rawLimit === null || rawLimit === '') return undefined;
   const n = Number(rawLimit);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;

@@ -236,14 +236,14 @@ async function run() {
     assert.ok(paths.includes('/api/sync'));
   });
 
-  // 注意：路由數量從7條變成17條是TASK1.35新增五個資源共10條User Data API
-  // 造成的，屬預期演進（不是回歸）；「不含legacy路由」這個核心行為不變。
-  await test('（TASK1.35後更新）createAppRouter()（不傳參數）不含legacy路由（auth/user/data路由共17條）', () => {
+  // 注意：路由數量從17條變成18條是TASK1.36新增GET /api/dashboard造成的，
+  // 屬預期演進（不是回歸）；「不含legacy路由」這個核心行為不變。
+  await test('（TASK1.36後更新）createAppRouter()（不傳參數）不含legacy路由（auth/user/data/dashboard路由共18條）', () => {
     const router = createAppRouter();
     const paths = router.routes.map((r) => r.path);
     assert.ok(!paths.includes('/'));
     assert.ok(!paths.includes('/api/sync'));
-    assert.strictEqual(router.routes.length, 17); // 6個auth + 1個user + 10個data
+    assert.strictEqual(router.routes.length, 18); // 6個auth + 1個user + 10個data + 1個dashboard
   });
 
   // =========================================================================
@@ -613,11 +613,11 @@ async function run() {
     assert.strictEqual(captured, 'a b/c.jpg');
   });
 
-  // 注意：總數從16變成26是TASK1.35新增五個資源共10條User Data API造成的
-  // 預期演進，不是回歸。
-  await test('（TASK1.35後更新）createAppRouter(legacyHandler) 同時具備auth/user/data/legacy四種路由，總數為26', () => {
+  // 注意：總數從26變成27是TASK1.36新增GET /api/dashboard造成的預期演進，
+  // 不是回歸。
+  await test('（TASK1.36後更新）createAppRouter(legacyHandler) 同時具備auth/user/data/dashboard/legacy五種路由，總數為27', () => {
     const router = createAppRouter(makeLegacyHandler());
-    assert.strictEqual(router.routes.length, 26);
+    assert.strictEqual(router.routes.length, 27);
   });
 
   await test('（延續守則）flag=true：DELETE /api/sync（不支援的方法）由router自行判斷回405（新架構自己的JSON 405，屬已知細節差異，不影響flag預設關閉時的正式環境）', async () => {

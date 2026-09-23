@@ -23,3 +23,4 @@ export {
   createReportContract,
   listReportsContract,
 } from './data_contract.js';
+export { dashboardContract } from './dashboard_contract.js';

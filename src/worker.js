@@ -43,15 +43,26 @@ import { createRouteGateway } from './bootstrap/route_gateway.js';
 // 不接受payload/query指定user_id。全部委派給TASK1.15的Domain Service，
 // D1操作完全不在route/controller層出現。
 //
-// 其餘所有路徑（含以上十六條路由方法不符的情況）完全不受影響，一律照舊
+// TASK1.36：接著啟用 GET /api/dashboard——登入後首頁的資料聚合API，
+// 同樣經過 requireAuth() 驗證，userId同樣一律來自ctx.user.id。
+// Dashboard Controller → Dashboard Service 平行呼叫TASK1.35既有的五個
+// Domain Service查詢函式，組合成單一回應，不重新實作任何查詢邏輯、
+// 不修改任何既有資料表。
+//
+// 其餘所有路徑（含以上十七條路由方法不符的情況）完全不受影響，一律照舊
 // 落到下面的 gateway/legacy 流程。
 // TASK1.35：五個資源、共十條路徑（POST建立/GET查詢各一條）。
+// TASK1.36：新增GET /api/dashboard（聚合五大domain service的登入後首頁
+// API，只有GET，沒有POST）——加進同一個Set沿用下面既有的判斷式，POST
+// 到這個路徑時router會因為只註冊了GET而回405，行為正確、不需要額外
+// 判斷式。
 const DATA_API_PATHS = new Set([
   '/api/explorations',
   '/api/food-events',
   '/api/emotions',
   '/api/behaviors',
   '/api/reports',
+  '/api/dashboard',
 ]);
 
 async function parseJsonBody(request) {
