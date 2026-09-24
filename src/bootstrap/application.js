@@ -165,6 +165,20 @@
  * Facade/Runtime Context/Contracts/Execution Manager八者的原始碼
  * 依然完全沒有被修改，本次任務明確禁止串接任何route/controller/
  * worker.js，也明確禁止新增任何D1/SQL/migration/UI。
+ *
+ * TASK1.54新增：`intelligence.metrics`，組裝
+ * src/intelligence/metrics/ 的 createExecutionMetrics() 實例——
+ * 獨立的統計/量測邊界（跨執行的次數/平均耗時/成功率），注入的是跟
+ * `intelligence.history`/`intelligence.events`完全相同的
+ * `intelligenceHistoryStore`/`intelligenceEventDispatcher`實例（不
+ * 是各自建立第二份）。這次同樣是純粹的依賴注入組裝，**不影響**
+ * `intelligence.execution`/`intelligence.monitoring`的任何行為——
+ * `execution_manager.js`本身這次同樣完全沒有被修改，Metrics完全
+ * 透過既有的historyStore/eventDispatcher做唯讀觀察與統計累積。
+ * `intelligence_service.js`/Orchestrator/Analysis/Recommendation/
+ * Facade/Runtime Context/Contracts/Execution Manager八者的原始碼
+ * 依然完全沒有被修改，本次任務明確禁止串接任何route/controller/
+ * worker.js，也明確禁止新增任何D1/SQL/migration/UI。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -192,7 +206,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace, history as intelligenceHistoryNamespace, monitoring as intelligenceMonitoringNamespace } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace, history as intelligenceHistoryNamespace, monitoring as intelligenceMonitoringNamespace, metrics as intelligenceMetricsNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -286,6 +300,10 @@ export function createApplication(env) {
     historyStore: intelligenceHistoryStore,
     eventDispatcher: intelligenceEventDispatcher,
   });
+  const intelligenceExecutionMetrics = intelligenceMetricsNamespace.createExecutionMetrics({
+    historyStore: intelligenceHistoryStore,
+    eventDispatcher: intelligenceEventDispatcher,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -300,6 +318,7 @@ export function createApplication(env) {
     events: intelligenceEventDispatcher,
     history: intelligenceHistoryStore,
     monitoring: intelligenceExecutionMonitor,
+    metrics: intelligenceExecutionMetrics,
     facade: intelligenceFacade,
   };
 

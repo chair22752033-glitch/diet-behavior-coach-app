@@ -7,7 +7,8 @@
  * 新增 executionContracts namespace；TASK1.48 新增 facade namespace；
  * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
  * namespace；TASK1.51 新增 events namespace；TASK1.52 新增 history
- * namespace；TASK1.53 新增 monitoring namespace）
+ * namespace；TASK1.53 新增 monitoring namespace；TASK1.54 新增
+ * metrics namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -60,7 +61,14 @@
  * `intelligence.events`完全相同的historyStore/eventDispatcher
  * 實例，只讀取History Record、訂閱Execution Event，完全不修改
  * 任何狀態，也完全不需要Execution Manager提供任何新的依賴注入
- * 掛勾，execution_manager.js本身這次完全沒有被修改。
+ * 掛勾，execution_manager.js本身這次完全沒有被修改。TASK1.54新增
+ * 的metrics namespace跟monitoring是同一種角色（同樣需要在
+ * bootstrap組裝的獨立子層實例，因為createExecutionMetrics()內部
+ * 持有一份透過訂閱Event Dispatcher累積的統計Map狀態），差別在於
+ * monitoring著重「查詢單次執行的狀態/歷史」，metrics著重「跨執行
+ * 的彙總統計數字（次數/平均耗時/成功率）」，兩者各自獨立訂閱同一個
+ * Event Dispatcher實例，互不影響，execution_manager.js本身這次
+ * 同樣完全沒有被修改。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -80,3 +88,4 @@ export * as execution from './execution/index.js';
 export * as events from './events/index.js';
 export * as history from './history/index.js';
 export * as monitoring from './monitoring/index.js';
+export * as metrics from './metrics/index.js';

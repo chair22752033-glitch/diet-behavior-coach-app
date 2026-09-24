@@ -759,9 +759,9 @@ async function run() {
   // Manager）新增了`execution`欄位，TASK1.51（Intelligence Execution
   // Event Layer）又新增了`events`欄位，都是明確要做的擴充，不是回歸，
   // 這裡的預期key清單已同步更新。
-  await test('（TASK1.53後更新）app.intelligence 恰好具備TASK1.46既有九個欄位加上TASK1.48新增的facade、TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history、TASK1.53新增的monitoring，共十四個欄位', () => {
+  await test('（TASK1.54後更新）app.intelligence 恰好具備TASK1.46既有九個欄位加上TASK1.48新增的facade、TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history、TASK1.53新增的monitoring、TASK1.54新增的metrics，共十五個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（13.bootstrap compatibility）app.intelligence.service.getIntelligence() 透過bootstrap建立的實例依然正確使用新的execution contract驗證（缺少userId時回傳invalid_user_id）', async () => {
