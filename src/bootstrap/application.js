@@ -194,6 +194,21 @@
  * Facade/Runtime Context/Contracts/Execution Manager八者的原始碼
  * 依然完全沒有被修改，本次任務明確禁止串接任何route/controller/
  * worker.js，也明確禁止啟用任何AI API。
+ *
+ * Phase 3 TASK1.60新增：`intelligence.application`，組裝
+ * src/intelligence/application/ 的 createApplicationService()
+ * 實例——Phase 3第一個真正的實作層，是TASK1.59規劃裡「User
+ * Application只透過Facade使用Intelligence」這條規則的具體落地。
+ * 注入的是跟`intelligence.facade`完全相同的`intelligenceFacade`
+ * 實例（不是各自建立第二份）。Application Service完全不能直接
+ * 呼叫Execution Manager/History Store/Metrics Store/Event
+ * Dispatcher/Database/AI Provider（規格明確禁止的捷徑），唯一
+ * 認識的下一層是Facade。這是純粹的依賴注入組裝，`intelligence.
+ * facade`/`intelligence.execution`/其餘既有欄位完全沒有被重新
+ * 注入任何新依賴，`intelligence_facade.js`/`execution_manager.js`
+ * 本身也完全沒有被修改。本次任務明確禁止新增任何API route，
+ * `intelligence.application`目前是純粹的Phase 3 extension
+ * point，還沒有任何真實的User Application呼叫它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -221,7 +236,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace, history as intelligenceHistoryNamespace, monitoring as intelligenceMonitoringNamespace, metrics as intelligenceMetricsNamespace, governance as intelligenceGovernanceNamespace } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace, history as intelligenceHistoryNamespace, monitoring as intelligenceMonitoringNamespace, metrics as intelligenceMetricsNamespace, governance as intelligenceGovernanceNamespace, application as intelligenceApplicationNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -320,6 +335,9 @@ export function createApplication(env) {
     eventDispatcher: intelligenceEventDispatcher,
   });
   const intelligenceGovernanceService = intelligenceGovernanceNamespace.createGovernanceService();
+  const intelligenceApplicationService = intelligenceApplicationNamespace.createApplicationService({
+    facade: intelligenceFacade,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -336,6 +354,7 @@ export function createApplication(env) {
     monitoring: intelligenceExecutionMonitor,
     metrics: intelligenceExecutionMetrics,
     governance: intelligenceGovernanceService,
+    application: intelligenceApplicationService,
     facade: intelligenceFacade,
   };
 

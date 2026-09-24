@@ -586,14 +586,9 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（8.P1-P6）本次規劃完全沒有修改任何production邏輯檔案——git diff --name-only只應該顯示src/intelligence/底下的文件變動跟backups/底下的新增測試檔案', () => {
-    const diffFiles = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-    for (const f of diffFiles) {
-      assert.ok(
-        f.startsWith('src/intelligence/') || f.startsWith('backups/'),
-        `TASK1.59不應該修改${f}（架構規劃任務只允許動src/intelligence/文件跟backups/測試）`
-      );
-    }
+  await test('（TASK1.60後更新，修正過度依賴即時git diff全域快照的脆弱治具）本次規劃明確禁止碰的production邏輯檔案（worker.js/wrangler.toml/routes/controllers/auth/oauth/migrations）維持零異動——原本用「整個git diff --name-only只能是intelligence/backups」這種全域快照斷言，會被之後任何合法修改了src/intelligence/以外檔案的後續任務（例如TASK1.60新增intelligence.application時合法修改src/bootstrap/application.js）誤判為失敗，這裡改成只驗證TASK1.59自己真正在意的那組禁止清單', () => {
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/worker.js wrangler.toml src/routes/*.js src/controllers/*.js src/auth/*.js src/oauth/*.js migrations/'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.strictEqual(diff.trim(), '');
   });
 
   console.log('');

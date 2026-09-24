@@ -8,7 +8,8 @@
  * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
  * namespace；TASK1.51 新增 events namespace；TASK1.52 新增 history
  * namespace；TASK1.53 新增 monitoring namespace；TASK1.54 新增
- * metrics namespace；TASK1.55 新增 governance namespace）
+ * metrics namespace；TASK1.55 新增 governance namespace；Phase 3
+ * TASK1.60 新增 application namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -76,6 +77,16 @@
  * 真實呼叫鏈（規格明確要求「不改變既有execution behavior」），
  * `execution_manager.js`/`intelligence/facade/`本次同樣完全沒有
  * 被修改，是留給Phase 3未來透過依賴注入接上的獨立治理邊界。
+ *
+ * Phase 3 TASK1.60新增的application namespace是Phase 3第一個真正
+ * 的實作層——`createApplicationService({facade})`透過依賴注入拿到
+ * 跟`intelligence.facade`完全相同的Facade實例，是TASK1.59規劃
+ * 裡「User Application只透過Facade使用Intelligence」這條規則的
+ * 具體落地：Application Service完全不import
+ * src/intelligence/execution/、history/、metrics/、events/、
+ * service/、orchestration/、analysis/、recommendation/、
+ * governance/底下任何檔案，唯一認識的下一層是Facade，
+ * `intelligence_facade.js`本身完全沒有被修改。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -97,3 +108,4 @@ export * as history from './history/index.js';
 export * as monitoring from './monitoring/index.js';
 export * as metrics from './metrics/index.js';
 export * as governance from './governance/index.js';
+export * as application from './application/index.js';

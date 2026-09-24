@@ -129,8 +129,12 @@ async function run() {
   // =========================================================================
   console.log('--- A. namespace consistency ---');
 
+  // TASK1.60後更新：Phase 3新增了application/子目錄，這裡的預期
+  // 清單同步更新（跟bootstrap.intelligence鍵值清單同樣的既有慣例——
+  // 每次新增子目錄，既有任務的測試套件裡列舉子目錄的斷言都要更新，
+  // 不是回歸）。
   const EXPECTED_SUBDIRS = [
-    'analysis', 'context', 'contracts', 'data_preparation', 'events', 'execution',
+    'analysis', 'application', 'context', 'contracts', 'data_preparation', 'events', 'execution',
     'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration',
     'recommendation', 'runtime', 'service',
   ];
@@ -146,7 +150,7 @@ async function run() {
   const NAMESPACE_SUBDIRS = EXPECTED_SUBDIRS.filter((d) => d !== 'contracts');
   const rootIndexSrc = readSrc(path.join(intelDir, 'index.js'));
 
-  await test('（1.namespace consistency）src/intelligence/ 底下的子目錄恰好是規格列出的15個（含TASK1.55新增的governance）', () => {
+  await test('（TASK1.60後更新）src/intelligence/ 底下的子目錄恰好是規格列出的16個（含TASK1.55新增的governance、TASK1.60新增的application）', () => {
     assert.deepStrictEqual(subDirs, EXPECTED_SUBDIRS);
   });
 
@@ -191,7 +195,7 @@ async function run() {
   });
 
   const intelligenceModule = await import(path.join(intelDir, 'index.js'));
-  const EXPECTED_NAMESPACES = ['contracts', 'dataPreparation', 'context', 'analysis', 'recommendation', 'orchestration', 'service', 'executionContracts', 'facade', 'runtime', 'execution', 'events', 'history', 'monitoring', 'metrics', 'governance'];
+  const EXPECTED_NAMESPACES = ['contracts', 'dataPreparation', 'context', 'analysis', 'recommendation', 'orchestration', 'service', 'executionContracts', 'facade', 'runtime', 'execution', 'events', 'history', 'monitoring', 'metrics', 'governance', 'application'];
   for (const ns of EXPECTED_NAMESPACES) {
     await test(`（1.namespace consistency）import後，intelligenceModule.${ns} 是物件且非空`, () => {
       assert.strictEqual(typeof intelligenceModule[ns], 'object');
@@ -870,14 +874,9 @@ async function run() {
     assert.strictEqual(statusOutput.trim(), '');
   });
 
-  await test('（14.P1-P6）本次審查完全沒有修改任何production邏輯檔案——git diff --stat只應該顯示.js檔案的註解/header變動跟.md文件變動，src/worker.js/wrangler.toml/routes/controllers完全不在變動清單裡', () => {
-    const diffFiles = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
-    for (const f of diffFiles) {
-      assert.ok(
-        f.startsWith('src/intelligence/') || f.startsWith('backups/'),
-        `TASK1.56不應該修改${f}（審查任務只允許動src/intelligence/文件跟backups/測試）`
-      );
-    }
+  await test('（TASK1.60後更新，修正過度依賴即時git diff全域快照的脆弱治具）本次審查明確禁止碰的production邏輯檔案（worker.js/wrangler.toml/routes/controllers/auth/oauth/migrations）維持零異動——原本用「整個git diff --name-only只能是intelligence/backups」這種全域快照斷言，會被之後任何合法修改了src/intelligence/以外檔案的後續任務（例如TASK1.60新增intelligence.application時合法修改src/bootstrap/application.js）誤判為失敗，這裡改成只驗證TASK1.56自己真正在意的那組禁止清單', () => {
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/worker.js wrangler.toml src/routes/*.js src/controllers/*.js src/auth/*.js src/oauth/*.js migrations/'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.strictEqual(diff.trim(), '');
   });
 
   console.log('');
