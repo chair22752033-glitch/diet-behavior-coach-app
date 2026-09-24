@@ -346,6 +346,41 @@
  * 禁止新增任何API route，`intelligence.insightExecutionFlow`目前是
  * 純粹的Phase 3 extension point，還沒有任何真實的User Application
  * 呼叫它。
+ *
+ * Phase 3 TASK1.72新增：`intelligence.behaviorFeature`，組裝
+ * src/intelligence/application/features/behavior/ 的
+ * createBehaviorFeature({workflow})實例——這是Phase 3第二個
+ * Intelligence Application Feature domain（"behavior"），驗證
+ * TASK1.71 Extension Pattern Review的結論可以真正落地：Application
+ * Service（`intelligenceApplicationService`）是完全domain-agnostic
+ * 的共用實例，Behavior重複使用它不代表依賴Insight Feature；但
+ * Workflow（`application_workflow.js`）預期注入的capability依賴
+ * 一定要提供`requestInsightCapability()`這個方法名稱（既有介面
+ * 字面要求），如果Behavior重複使用`intelligence.workflow`（已經
+ * 注入Insight Capability/Use Case的既有實例）就會拿到Insight的
+ * 業務結果，因此這裡為Behavior domain**另外呼叫一次**
+ * `intelligenceApplicationNamespace.workflows.
+ * createApplicationWorkflow({capability, contractValidator})`，
+ * 建立一個完全獨立的新Workflow實例
+ * （`intelligenceBehaviorWorkflow`，注入的`contractValidator`是
+ * 跟Insight共用的既有`intelligenceContractValidator`，因為Contract
+ * Layer本身也完全domain-agnostic）。`intelligenceBehaviorCapability`/
+ * `intelligenceBehaviorUseCase`則是全新建立、只服務Behavior
+ * domain的實例（`createBehaviorCapability()`/
+ * `createBehaviorUseCase({applicationService})`），跟
+ * `intelligence.capabilities`/`intelligence.useCases`
+ * （Insight專屬）完全獨立、互不共用。這是純粹的依賴注入組裝，
+ * `intelligence.workflow`/`intelligence.insightFeature`/
+ * `intelligence.insightExecutionFlow`/`intelligence.capabilities`/
+ * `intelligence.useCases`/`intelligence.application`/其餘既有欄位
+ * 完全沒有被重新注入任何新依賴，`application_workflow.js`/
+ * `insight_capability.js`（位於capabilities/與features/insight/
+ * 兩處）/`insight_use_case.js`/`insight_feature.js`/
+ * `application_service.js`本身也完全沒有被修改——本次任務明確
+ * 禁止修改Insight Feature/Insight Domain Logic。本次任務明確禁止
+ * 新增任何API route，`intelligence.behaviorFeature`目前是純粹的
+ * Phase 3 extension point，還沒有任何真實的User Application呼叫
+ * 它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -499,6 +534,19 @@ export function createApplication(env) {
     contextMapper: intelligenceInsightContextMapperForFlow,
     outputMapper: intelligenceInsightOutputMapperForFlow,
   });
+  const intelligenceBehaviorUseCase = intelligenceApplicationNamespace.features.behavior.createBehaviorUseCase({
+    applicationService: intelligenceApplicationService,
+  });
+  const intelligenceBehaviorCapability = intelligenceApplicationNamespace.features.behavior.createBehaviorCapability({
+    useCase: intelligenceBehaviorUseCase,
+  });
+  const intelligenceBehaviorWorkflow = intelligenceApplicationNamespace.workflows.createApplicationWorkflow({
+    capability: intelligenceBehaviorCapability,
+    contractValidator: intelligenceContractValidator,
+  });
+  const intelligenceBehaviorFeature = intelligenceApplicationNamespace.features.behavior.createBehaviorFeature({
+    workflow: intelligenceBehaviorWorkflow,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -522,6 +570,7 @@ export function createApplication(env) {
     features: intelligenceInsightFeature,
     insightFeature: intelligenceInsightFeatureCapability,
     insightExecutionFlow: intelligenceInsightExecutionFlow,
+    behaviorFeature: intelligenceBehaviorFeature,
     facade: intelligenceFacade,
   };
 

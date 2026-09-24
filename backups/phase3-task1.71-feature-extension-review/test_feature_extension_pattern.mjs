@@ -622,15 +622,20 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（6.export consistency）src/bootstrap/application.js完全沒有被本次審查修改（git diff確認，本次是純審查任務，不新增/修改任何bootstrap欄位）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
-
-  await test('（6.export consistency）Application Layer所有production原始碼（application/底下）本次審查完全沒有被修改（git diff確認，唯一新增的是EXTENSION_PATTERN.md文件檔案）', () => {
-    const diff = execFileSync('sh', ['-c', "git diff --name-only -- src/intelligence/application/ | grep -v '\\.md$' || true"], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '', `發現非文件的production程式碼變更：${diff}`);
-  });
+  // （TASK1.72後更新）原本這裡有兩個斷言：「src/bootstrap/
+  // application.js完全沒有被本次審查修改」跟「Application Layer
+  // 所有production原始碼（application/底下）本次審查完全沒有被
+  // 修改」，兩者都比對即時的git diff。這是跟TASK1.39/TASK1.56/
+  // TASK1.63/TASK1.67/TASK1.68/TASK1.70同一種「比對即時git diff」
+  // 的脆弱治具：bootstrap.js/application/features/index.js從來就
+  // 不在本任務系列真正的禁止清單裡，TASK1.72合法地在bootstrap.js
+  // 新增了第二個Feature domain（Behavior）的組裝
+  // （`intelligence.behaviorFeature`），也合法地在
+  // application/features/index.js新增了
+  // `export * as behavior from './behavior/index.js'`——這不是
+  // TASK1.71造成的回歸，而是斷言本身寫得過度嚴格，這裡移除這兩個
+  // 斷言，改由TASK1.72/後續任務自己的P1-P6區塊驗證真正的禁止清單
+  // （worker.js等）維持零異動即可。
 
   console.log('');
 

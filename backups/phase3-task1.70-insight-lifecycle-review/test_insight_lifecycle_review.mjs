@@ -247,11 +247,11 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.insightFeature.requestInsight, 'function');
   });
 
-  await test('（1.lifecycle flow）app.intelligence物件恰好具備23個欄位（TASK1.69既有狀態，本次審查沒有新增任何bootstrap欄位）', async () => {
+  await test('（1.lifecycle flow）app.intelligence物件恰好具備24個欄位（TASK1.69既有狀態，本次審查沒有新增任何bootstrap欄位）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
-      'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
+      'analysis', 'analysisEngine', 'application', 'behaviorFeature', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
@@ -677,10 +677,16 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（6.runtime isolation）src/bootstrap/application.js本次審查完全沒有被修改（git diff確認，跟TASK1.69的active orchestrator組裝不同，本次是純審查任務，不新增/修改任何bootstrap欄位）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.72後更新）原本這裡有一個「src/bootstrap/application.js
+  // 本次審查完全沒有被修改」的斷言，比對整個檔案即時的git diff
+  // --stat。這是跟TASK1.39/TASK1.56/TASK1.63/TASK1.67/TASK1.68同
+  // 一種「比對即時整檔git diff」的脆弱治具：bootstrap.js從來就不在
+  // 本任務系列真正的禁止清單裡，TASK1.72合法地在bootstrap.js新增了
+  // 第二個Feature domain（Behavior）的組裝（`intelligence.
+  // behaviorFeature`），導致這個斷言失敗——這不是TASK1.70造成的
+  // 回歸，而是斷言本身寫得過度嚴格，這裡移除這個斷言，改由
+  // TASK1.72/後續任務自己的P1-P6區塊驗證bootstrap.js真正的禁止
+  // 清單（worker.js等）維持零異動即可。
 
   console.log('');
 

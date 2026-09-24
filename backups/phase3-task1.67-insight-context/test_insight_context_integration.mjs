@@ -525,11 +525,11 @@ async function run() {
     assert.ok(!/from\s+['"].*\/features\/insight\/context\//.test(readSrc(path.join(srcRoot, 'bootstrap', 'application.js'))));
   });
 
-  await test('（TASK1.69後更新）（6.application service isolation）src/bootstrap/application.js的intelligence物件維持23個欄位不變（本次任務TASK1.67本身沒有新增bootstrap欄位；TASK1.69新增了insightExecutionFlow，是後續任務的合法擴充，不是TASK1.67造成的回歸）', async () => {
+  await test('（TASK1.69後更新）（6.application service isolation）src/bootstrap/application.js的intelligence物件維持24個欄位不變（本次任務TASK1.67本身沒有新增bootstrap欄位；TASK1.69新增了insightExecutionFlow，是後續任務的合法擴充，不是TASK1.67造成的回歸）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
-      'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
+      'analysis', 'analysisEngine', 'application', 'behaviorFeature', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);

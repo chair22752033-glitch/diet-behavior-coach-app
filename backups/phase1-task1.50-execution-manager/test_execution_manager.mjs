@@ -826,9 +826,9 @@ async function run() {
   // 注意：TASK1.51為app.intelligence新增了`events`欄位（Execution
   // Event Layer的extension point），這是明確要做的擴充，不是回歸，
   // 這裡的預期key清單已同步更新。
-  await test('（TASK1.69後更新）app.intelligence 恰好具備二十三個欄位（TASK1.48既有十個加上TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history、TASK1.53新增的monitoring、TASK1.54新增的metrics、TASK1.55新增的governance、TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities、TASK1.64新增的workflow、TASK1.65新增的features、TASK1.66新增的insightFeature、TASK1.69新增的insightExecutionFlow）', () => {
+  await test('（TASK1.69後更新）app.intelligence 恰好具備二十四個欄位（TASK1.48既有十個加上TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history、TASK1.53新增的monitoring、TASK1.54新增的metrics、TASK1.55新增的governance、TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities、TASK1.64新增的workflow、TASK1.65新增的features、TASK1.66新增的insightFeature、TASK1.69新增的insightExecutionFlow）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'behaviorFeature', 'capabilities', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow']);
   });
 
   await test('（14.bootstrap compatibility）app.intelligence.execution內部注入的service跟app.intelligence.service是同一個實例（用spy覆寫getIntelligence()驗證兩者共用同一個物件參考）', async () => {

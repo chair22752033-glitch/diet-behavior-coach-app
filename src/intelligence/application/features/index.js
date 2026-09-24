@@ -33,7 +33,19 @@
  * Entry骨架）並存、互不覆蓋。這個nested子目錄同樣只透過依賴注入拿到
  * 跟`intelligence.workflow`完全相同的Application Workflow實例，
  * 唯一的相對路徑import是它自己底下的`./insight_result_mapper.js`。
+ *
+ * Phase 3 TASK1.72新增：`behavior` namespace，re-export
+ * ./behavior/index.js——Phase 3第二個Intelligence Application
+ * Feature domain（"behavior"），驗證Application Pattern
+ * （Feature→Workflow→Capability→Use Case→Application Service→
+ * Runtime）可以支援不同domain。跟`insight`namespace同一種性質
+ * （nested子目錄自成一個domain），差別是Behavior domain注入的
+ * `workflow`是**另外建立的獨立Workflow實例**（不是跟
+ * `intelligence.workflow`共用同一份），確保Behavior完全不依賴
+ * Insight Feature（見`./behavior/README.md`跟
+ * `../EXTENSION_PATTERN.md`第3節說明）。
  */
 export { createInsightFeature } from './insight_feature.js';
 export { createFeatureResultBuilder } from './feature_result_builder.js';
 export * as insight from './insight/index.js';
+export * as behavior from './behavior/index.js';

@@ -564,11 +564,11 @@ async function run() {
     assert.strictEqual(typeof intelligenceModule.application.createApplicationResultBuilder, 'function');
   });
 
-  await test('（TASK1.69後更新）（8.export consistency）app.intelligence（bootstrap組裝結果）恰好具備23個欄位（TASK1.55既有16個加上TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities、TASK1.64新增的workflow、TASK1.65新增的features、TASK1.66新增的insightFeature、TASK1.69新增的insightExecutionFlow）', async () => {
+  await test('（TASK1.69後更新）（8.export consistency）app.intelligence（bootstrap組裝結果）恰好具備24個欄位（TASK1.55既有16個加上TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities、TASK1.64新增的workflow、TASK1.65新增的features、TASK1.66新增的insightFeature、TASK1.69新增的insightExecutionFlow）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
-      'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
+      'analysis', 'analysisEngine', 'application', 'behaviorFeature', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
