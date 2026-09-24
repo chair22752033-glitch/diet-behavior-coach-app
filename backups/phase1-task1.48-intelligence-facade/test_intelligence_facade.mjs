@@ -154,7 +154,13 @@ async function run() {
   // =========================================================================
   console.log('--- B. service integration ---');
 
-  await test('（2.service integration）db/userId/options 都原樣轉交給service.getIntelligence()', async () => {
+  // 注意：TASK1.49（Intelligence Runtime Context Layer）明確要求
+  // Facade建立Runtime Context後要「跟service request一起傳遞」——
+  // 這裡改成把Runtime Context合併進options.runtimeContext欄位，所以
+  // options不再是原始物件的同一個參考（會是重新合併過的新物件），這是
+  // 規格明確要求的架構調整，不是回歸。db跟userId依然原樣轉交，這裡
+  // 改成驗證這兩者不變、options的既有欄位值也都保留。
+  await test('（TASK1.49後更新）db/userId原樣轉交給service.getIntelligence()，options的既有欄位值也都保留（只是被合併進一個帶有runtimeContext的新物件，不再是同一個參考）', async () => {
     const { service, calls } = makeSpyService();
     const facade = createIntelligenceFacade({ service });
     const db = { marker: 'the-db' };
@@ -162,14 +168,20 @@ async function run() {
     await facade.executeIntelligence(db, { userId: 'u1', options });
     assert.strictEqual(calls[0].db, db);
     assert.strictEqual(calls[0].request.userId, 'u1');
-    assert.strictEqual(calls[0].request.options, options);
+    assert.strictEqual(calls[0].request.options.includeContext, true);
+    assert.ok('runtimeContext' in calls[0].request.options);
   });
 
-  await test('（2.service integration）request.options未提供時，service.getIntelligence()收到的options是undefined', async () => {
+  // 注意：TASK1.49之後，Facade一律會建立Runtime Context並合併進
+  // options.runtimeContext欄位，所以options不再會是undefined——即使
+  // request.options完全沒有提供，options仍然是一個至少帶有
+  // runtimeContext欄位的物件。這是規格明確要求的架構調整，不是回歸。
+  await test('（TASK1.49後更新）request.options未提供時，service.getIntelligence()收到的options不再是undefined，而是只帶有runtimeContext欄位的物件', async () => {
     const { service, calls } = makeSpyService();
     const facade = createIntelligenceFacade({ service });
     await facade.executeIntelligence({}, { userId: 'u1' });
-    assert.strictEqual(calls[0].request.options, undefined);
+    assert.notStrictEqual(calls[0].request.options, undefined);
+    assert.deepStrictEqual(Object.keys(calls[0].request.options), ['runtimeContext']);
   });
 
   await test('（2.service integration）service恰好只被呼叫一次', async () => {
@@ -713,10 +725,16 @@ async function run() {
     assert.ok(!/from\s+['"].*\/contracts\/execution\//.test(src));
   });
 
-  await test('（12.pipeline isolation）intelligence_facade.js 只 import ./facade_result_builder.js（唯一允許的相依，加上未來依賴注入的service）', () => {
+  // 注意：TASK1.49（Intelligence Runtime Context Layer）明確要求
+  // Facade「may create runtime context」，新增了對
+  // ../runtime/index.js的import——這是規格明確要求的合法擴充，不是
+  // 回歸。這裡改成驗證intelligence_facade.js的import清單恰好是這
+  // 兩個檔案（依然不允許import Orchestrator/Analysis/Recommendation/
+  // Data Preparation/Domain Service/Database/Execution Contract）。
+  await test('（TASK1.49後更新）intelligence_facade.js 恰好只 import ./facade_result_builder.js 跟 ../runtime/index.js 兩個相依（加上未來依賴注入的service）', () => {
     const src = readSrc(path.join(facadeDir, 'intelligence_facade.js'));
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    assert.deepStrictEqual(imports, ['./facade_result_builder.js']);
+    assert.deepStrictEqual(imports.sort(), ['../runtime/index.js', './facade_result_builder.js']);
   });
 
   await test('（12.pipeline isolation）facade_result_builder.js 完全不 import任何intelligence子模組（純粹的資料重新排列，不依賴任何業務邏輯）', () => {

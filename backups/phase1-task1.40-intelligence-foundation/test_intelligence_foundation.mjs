@@ -90,11 +90,12 @@ async function run() {
   // analysis/（Analysis Framework），TASK1.44 新增了
   // recommendation/（Recommendation Framework），TASK1.45 新增了
   // orchestration/（Intelligence Orchestrator），TASK1.46 新增了
-  // service/（Intelligence Application Service），TASK1.48 又新增了
-  // facade/（Intelligence Application Facade），都是明確要做的
-  // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.48後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/facade/orchestration/recommendation/service 八個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'facade', 'orchestration', 'recommendation', 'service']);
+  // service/（Intelligence Application Service），TASK1.48 新增了
+  // facade/（Intelligence Application Facade），TASK1.49 又新增了
+  // runtime/（Intelligence Runtime Context），都是明確要做的擴充，
+  // 不是回歸——這裡的預期子目錄清單已同步更新。
+  await test('（TASK1.49後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/facade/orchestration/recommendation/runtime/service 九個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'facade', 'orchestration', 'recommendation', 'runtime', 'service']);
   });
 
   for (const f of EXPECTED_FILES) {
