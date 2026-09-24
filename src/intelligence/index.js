@@ -6,7 +6,8 @@
  * orchestration namespace；TASK1.46 新增 service namespace；TASK1.47
  * 新增 executionContracts namespace；TASK1.48 新增 facade namespace；
  * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
- * namespace；TASK1.51 新增 events namespace）
+ * namespace；TASK1.51 新增 events namespace；TASK1.52 新增 history
+ * namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -46,6 +47,12 @@
  * dispatcher實例透過依賴注入傳給execution namespace組裝出來的
  * Execution Manager，讓生命週期狀態轉換可以額外emit事件，但
  * execution_manager.js本身完全不import events目錄底下任何檔案。
+ * TASK1.52新增的history namespace跟events一樣，是需要在bootstrap
+ * 組裝的獨立子層實例（因為createHistoryStore()內部持有一份歷史紀錄
+ * 的Map狀態），組裝出來的store實例透過依賴注入傳給execution
+ * namespace組裝出來的Execution Manager，讓生命週期狀態轉換可以額外
+ * 建立/更新Execution History Record，但execution_manager.js本身
+ * 完全不import history目錄底下任何檔案。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -63,3 +70,4 @@ export * as facade from './facade/index.js';
 export * as runtime from './runtime/index.js';
 export * as execution from './execution/index.js';
 export * as events from './events/index.js';
+export * as history from './history/index.js';

@@ -138,6 +138,20 @@
  * Runtime Context/Execution Contract六者的原始碼依然完全沒有被修改，
  * 本次任務明確禁止串接任何route/controller/worker.js，也明確禁止
  * 新增任何資料庫logging。
+ *
+ * TASK1.52新增：`intelligence.history`，組裝
+ * src/intelligence/history/ 的 createHistoryStore() 實例——純記憶體
+ * 的Execution History紀錄集合，不做任何持久化。注入進
+ * `intelligence.execution`（`createExecutionManager({service,
+ * eventDispatcher, historyStore})`）——Execution Manager在每次
+ * 生命週期狀態轉換時額外建立/更新對應的Execution History Record
+ * （見src/intelligence/execution/execution_manager.js的Lifecycle
+ * Mapping），這是純粹新增的旁路行為，`intelligence.execution`原本
+ * 對外的執行邏輯/回傳格式完全沒有改變。
+ * `intelligence_service.js`/Orchestrator/Analysis/Recommendation/
+ * Facade/Runtime Context/Contracts七者的原始碼依然完全沒有被修改，
+ * 本次任務明確禁止串接任何route/controller/worker.js，也明確禁止
+ * 新增任何D1/SQL/migration。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -165,7 +179,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace, events as intelligenceEventsNamespace, history as intelligenceHistoryNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -246,9 +260,11 @@ export function createApplication(env) {
     orchestrator: intelligenceOrchestrator,
   });
   const intelligenceEventDispatcher = intelligenceEventsNamespace.createEventDispatcher();
+  const intelligenceHistoryStore = intelligenceHistoryNamespace.createHistoryStore();
   const intelligenceExecutionManager = intelligenceExecutionNamespace.createExecutionManager({
     service: intelligenceService,
     eventDispatcher: intelligenceEventDispatcher,
+    historyStore: intelligenceHistoryStore,
   });
   const intelligenceFacade = intelligenceFacadeNamespace.createIntelligenceFacade({
     executionManager: intelligenceExecutionManager,
@@ -265,6 +281,7 @@ export function createApplication(env) {
     service: intelligenceService,
     execution: intelligenceExecutionManager,
     events: intelligenceEventDispatcher,
+    history: intelligenceHistoryStore,
     facade: intelligenceFacade,
   };
 

@@ -1,7 +1,9 @@
 /*
  * Phase 1 TASK 1.50｜Intelligence Execution Lifecycle Manager Foundation
  * （TASK1.51 起額外支援選填的eventDispatcher依賴，狀態轉換時額外
- * emit對應的Execution Event，不改變原本的執行邏輯）
+ * emit對應的Execution Event；TASK1.52 起額外支援選填的historyStore
+ * 依賴，狀態轉換時額外記錄/更新對應的Execution History Record，
+ * 皆不改變原本的執行邏輯）
  * - Intelligence Execution Manager
  *
  * 責任：在 Intelligence Facade（TASK1.48）跟 Intelligence Service
@@ -72,6 +74,29 @@
  * 拋出例外也完全不影響execute()的回傳結果（見
  * event_dispatcher.js的emit()實作），確保「事件處理跟執行邏輯完全
  * independent」。
+ *
+ * TASK1.52新增：額外支援選填的`dependencies.historyStore`——每次
+ * 狀態轉換除了既有的`onStateChange(state)`/`eventDispatcher.emit()`
+ * 之外，如果有提供historyStore，還會額外呼叫其`add()`/`get()`建立/
+ * 更新一筆以`executionId`為key的Execution History Record（見
+ * src/intelligence/history/）。Lifecycle Mapping（規格原文，寫死在
+ * 這個檔案自己的`updateHistory()`函式，完全不import
+ * src/intelligence/history/底下任何檔案）：
+ *
+ *   "initialized" → 建立新的history record
+ *   "running"     → 更新既有record的startedAt
+ *   "completed"   → 更新既有record的completedAt
+ *   "failed"      → 更新既有record的status為failed
+ *
+ * 每次狀態轉換都會把當下（跟eventDispatcher送出的）同一份Execution
+ * Event形狀的物件附加進record.events陣列，讓History Record的events
+ * 欄位跟Execution Event（TASK1.51）保持結構相容，但這裡完全不import
+ * execution_event.js，這個形狀物件是這個檔案自己組出來的字面值。
+ * `historyStore`是選填依賴，不提供時、或執行過程中沒有可用的
+ * executionId時，完全不影響`execute()`的行為；就算提供了，
+ * add()/get()呼叫失敗也完全不影響execute()的回傳結果——跟
+ * eventDispatcher一樣用try/catch隔絕，確保「歷史記錄跟執行邏輯完全
+ * independent」。
  */
 import { createExecutionResultBuilder } from './execution_result_builder.js';
 
@@ -138,12 +163,71 @@ function validateExecuteInput(input) {
  *   Execution Event Dispatcher（TASK1.51，見
  *   src/intelligence/events/event_dispatcher.js），每次狀態轉換時
  *   額外emit對應的Execution Event；不提供時完全不影響行為
+ * @param {{add: (record:object) => {ok:boolean, reason?:string}, get: (executionId:string) => {ok:boolean, record?:object, reason?:string}}} [dependencies.historyStore] - 選填的
+ *   Execution History Store（TASK1.52，見
+ *   src/intelligence/history/history_store.js），每次狀態轉換時
+ *   額外建立/更新對應的Execution History Record；不提供時完全不影響
+ *   行為
  * @returns {{execute: (db:object, input:{request:{userId:string, options?:object}, runtimeContext?:object}) => Promise<{ok:true, state:"completed", data:{status:*, result:object}}|{ok:false, state:"failed", reason:string}>}}
  */
 export function createExecutionManager(dependencies) {
   dependencies = dependencies || {};
-  const { service, onStateChange, eventDispatcher } = dependencies;
+  const { service, onStateChange, eventDispatcher, historyStore } = dependencies;
   const resultBuilder = dependencies.resultBuilder || createExecutionResultBuilder();
+
+  /**
+   * 建立/更新一筆以`meta.executionId`為key的Execution History
+   * Record。跟`setState()`的eventDispatcher呼叫一樣，完全不影響
+   * `execute()`的回傳值——任何例外都被吞掉，`historyStore`不可用或
+   * `meta.executionId`不是非空字串時安全跳過整個記錄行為。
+   *
+   * @param {string} state - 目標狀態（initialized/running/completed/failed）
+   * @param {{executionId:string|null, timestamp:string|null}} meta
+   * @param {object} event - 跟eventDispatcher送出的同一份Execution
+   *   Event形狀物件，附加進record.events陣列
+   */
+  function updateHistory(state, meta, event) {
+    if (!historyStore || typeof historyStore.add !== 'function' || typeof historyStore.get !== 'function') {
+      return;
+    }
+    if (!meta || typeof meta.executionId !== 'string' || meta.executionId.length === 0) {
+      return;
+    }
+    try {
+      if (state === 'initialized') {
+        historyStore.add({
+          executionId: meta.executionId,
+          status: 'initialized',
+          startedAt: null,
+          completedAt: null,
+          events: [event],
+          metadata: {},
+        });
+        return;
+      }
+      const existingResult = historyStore.get(meta.executionId);
+      if (!existingResult || !existingResult.ok) {
+        return;
+      }
+      const existing = existingResult.record;
+      const events = Array.isArray(existing.events) ? existing.events.concat([event]) : [event];
+      let record;
+      if (state === 'running') {
+        record = Object.assign({}, existing, { status: 'running', startedAt: meta.timestamp, events });
+      } else if (state === 'completed') {
+        record = Object.assign({}, existing, { status: 'completed', completedAt: meta.timestamp, events });
+      } else if (state === 'failed') {
+        record = Object.assign({}, existing, { status: 'failed', events });
+      } else {
+        return;
+      }
+      historyStore.add(record);
+    } catch (_error) {
+      // 歷史記錄失敗（或store實作拋出例外）完全不應該影響Execution
+      // Manager本身的執行邏輯，這裡刻意用try/catch隔絕，維持「歷史
+      // 記錄跟執行邏輯完全independent」。
+    }
+  }
 
   /**
    * @param {string} next - 目標狀態（initialized/running/completed/failed）
@@ -155,14 +239,15 @@ export function createExecutionManager(dependencies) {
     if (typeof onStateChange === 'function') {
       onStateChange(next);
     }
+    const event = {
+      type: STATE_TO_EVENT_TYPE[next],
+      timestamp: meta ? meta.timestamp : null,
+      executionId: meta ? meta.executionId : null,
+      payload: payload !== undefined ? payload : null,
+    };
     if (eventDispatcher && typeof eventDispatcher.emit === 'function') {
       try {
-        eventDispatcher.emit({
-          type: STATE_TO_EVENT_TYPE[next],
-          timestamp: meta ? meta.timestamp : null,
-          executionId: meta ? meta.executionId : null,
-          payload: payload !== undefined ? payload : null,
-        });
+        eventDispatcher.emit(event);
       } catch (_error) {
         // 事件發送失敗（或訂閱者拋出未被event_dispatcher.js吞掉的
         // 例外）完全不應該影響Execution Manager本身的執行邏輯，這裡
@@ -170,6 +255,7 @@ export function createExecutionManager(dependencies) {
         // independent」。
       }
     }
+    updateHistory(next, meta, event);
     return next;
   }
 

@@ -94,10 +94,11 @@ async function run() {
   // facade/（Intelligence Application Facade），TASK1.49 新增了
   // runtime/（Intelligence Runtime Context），TASK1.50 新增了
   // execution/（Intelligence Execution Manager），TASK1.51 又新增了
-  // events/（Intelligence Execution Event Layer），都是明確要做的
+  // events/（Intelligence Execution Event Layer），TASK1.52 再新增了
+  // history/（Intelligence Execution History Layer），都是明確要做的
   // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.51後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/events/execution/facade/orchestration/recommendation/runtime/service 十一個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'orchestration', 'recommendation', 'runtime', 'service']);
+  await test('（TASK1.52後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/events/execution/facade/history/orchestration/recommendation/runtime/service 十二個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'history', 'orchestration', 'recommendation', 'runtime', 'service']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -544,9 +545,9 @@ async function run() {
   // 注意：TASK1.50 又新增了 `execution` 欄位（Intelligence Execution
   // Manager的extension point，見src/intelligence/execution/），這是
   // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.51後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events 十二個欄位', () => {
+  await test('（TASK1.52後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history 十三個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {
