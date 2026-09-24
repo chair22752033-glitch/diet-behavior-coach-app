@@ -38,8 +38,18 @@
  * application_result_builder.js），只透過依賴注入拿到跟
  * `intelligence.useCases`完全相同的Insight Use Case實例，維持
  * 「每一層只認識自己呼叫的下一層」的既有慣例，再往上疊一層。
+ *
+ * Phase 3 TASK1.63新增：`contracts` namespace，re-export
+ * ./contracts/index.js——定義Capability/Use Case/Application
+ * Service三層共用的Request/Response Contract
+ * （`createContractValidator()`），純函式驗證工具，跟TASK1.47
+ * src/intelligence/contracts/execution/同樣的角色。這個namespace
+ * 目前**沒有被**application_service.js/./use_cases/./capabilities/
+ * 底下任何檔案import——三層各自內建的validateXxxRequest()保持不變，
+ * 這裡是獨立、可驗證的規格，用測試證明三層事實上遵守同一份規則。
  */
 export { createApplicationService } from './application_service.js';
 export { createApplicationResultBuilder } from './application_result_builder.js';
 export * as useCases from './use_cases/index.js';
 export * as capabilities from './capabilities/index.js';
+export * as contracts from './contracts/index.js';

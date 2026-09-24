@@ -118,6 +118,21 @@
  * 被修改。這個統一輸出入口（src/intelligence/index.js）本身沒有
  * 變化——capabilities是nested在application namespace底下，不是
  * 新的頂層namespace。
+ *
+ * Phase 3 TASK1.63新增的application namespace底下的contracts
+ * 子namespace（`application.contracts`，re-export自
+ * ./application/contracts/index.js）定義Capability/Use Case/
+ * Application Service三層共用的Request/Response
+ * Contract——`createContractValidator()`是純函式驗證工具，跟
+ * TASK1.47 executionContracts namespace同樣的角色。這個namespace
+ * 目前**沒有被**application_service.js/./use_cases/./capabilities/
+ * 底下任何檔案import，三層各自內建的validateXxxRequest()保持完全
+ * 不變，維持TASK1.55 Governance Layer同樣的「建立但不改變既有
+ * execution behavior」邊界決策。這個統一輸出入口
+ * （src/intelligence/index.js）本身沒有變化——contracts是nested在
+ * application namespace底下，不是新的頂層namespace（跟頂層既有的
+ * `contracts`/`executionContracts`namespace是完全不同的東西，
+ * 不會互相覆蓋）。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
