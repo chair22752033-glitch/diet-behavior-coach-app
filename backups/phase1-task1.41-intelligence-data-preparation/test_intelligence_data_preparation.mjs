@@ -696,9 +696,11 @@ async function run() {
   // 擴充，不是回歸，這裡的預期key清單已同步更新。
   // 注意：TASK1.45 又新增了 `orchestration` 欄位，這是明確要做的
   // 擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.45後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation跟TASK1.42既有的context跟TASK1.43既有的analysis跟TASK1.44既有的recommendation（沒有被TASK1.45取代或破壞）', () => {
+  // 注意：TASK1.46 又新增了 `service` 欄位，這是明確要做的擴充，不是
+  // 回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.46後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation跟TASK1.42既有的context跟TASK1.43既有的analysis跟TASK1.44既有的recommendation跟TASK1.45既有的orchestration（沒有被TASK1.46取代或破壞）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（10.bootstrap injection）透過app.intelligence.dataPreparation.prepare()呼叫，可以正確運作（端對端，含mock db）', async () => {

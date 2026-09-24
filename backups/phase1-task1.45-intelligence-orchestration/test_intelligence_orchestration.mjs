@@ -896,9 +896,11 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.orchestration.runIntelligencePipeline, 'function');
   });
 
-  await test('（13.bootstrap injection）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration 八個欄位', () => {
+  // 注意：TASK1.46 為 app.intelligence 新增了 `service` 欄位，這是
+  // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.46後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service 九個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（13.bootstrap injection）app.intelligence.orchestration內部注入的dataPreparation跟app.intelligence.dataPreparation是同一個實例（用spy覆寫prepare()驗證兩者共用同一個物件參考）', async () => {

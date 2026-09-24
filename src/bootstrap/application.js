@@ -84,6 +84,16 @@
  * 直接個別呼叫這幾層是一致的。`insightService`本次依然完全沒有被
  * 修改成會呼叫orchestrator，兩者是各自獨立掛在intelligence
  * namespace底下的extension point，沒有任何route/controller讀取它。
+ *
+ * TASK1.46新增：`intelligence.service`，組裝
+ * src/intelligence/service/ 的 createIntelligenceService() 實例——
+ * 負責「在未來的Application/API Layer跟Orchestrator之間建立穩定應用
+ * 邊界」，對外只暴露`getIntelligence(db, request)`一個介面，隱藏底下
+ * Orchestrator的協調細節。注入的是跟`intelligence.orchestration`
+ * 完全相同的`intelligenceOrchestrator`實例（不是各自建立第二份）。
+ * `insightService`本次依然完全沒有被修改成會呼叫這個service，兩者是
+ * 各自獨立掛在intelligence namespace底下的extension point，本次任務
+ * 明確禁止串接任何route/controller/worker.js。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -111,7 +121,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -188,6 +198,9 @@ export function createApplication(env) {
     analysisRunner,
     recommendationRunner,
   });
+  const intelligenceService = intelligenceServiceNamespace.createIntelligenceService({
+    orchestrator: intelligenceOrchestrator,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -197,6 +210,7 @@ export function createApplication(env) {
     analysis: analysisRunner,
     recommendation: recommendationRunner,
     orchestration: intelligenceOrchestrator,
+    service: intelligenceService,
   };
 
   return { config, db, services, router, middleware, intelligence };
