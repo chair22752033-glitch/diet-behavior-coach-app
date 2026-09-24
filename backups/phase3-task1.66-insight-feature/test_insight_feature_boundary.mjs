@@ -481,8 +481,14 @@ async function run() {
     await test(`（7.runtime isolation）insight/${file} 完全不import src/intelligence/facade/`, () => {
       assert.ok(!/from\s+['"].*\/facade\//.test(readSrc(path.join(insightDir, file))));
     });
-    await test(`（7.runtime isolation）insight/${file} 完全不import src/intelligence/execution/（不得直接操作Execution Manager，規格明確禁止「Insight Feature → Execution Runtime」）`, () => {
-      assert.ok(!/from\s+['"].*\/execution\//.test(readSrc(path.join(insightDir, file))));
+    await test(`（TASK1.69後更新）（7.runtime isolation）insight/${file} 完全不import src/intelligence/execution/（Execution Manager，不得直接操作，規格明確禁止「Insight Feature → Execution Runtime」——原本用單純字串比對「/execution/」子字串，TASK1.69新增了insight/execution/（Insight Execution Flow，insight/底下平行於context/、output/的nested子目錄）後，這個字串比對法會把合法的相對路徑./execution/index.js也誤判成違規，這裡改成用path.resolve()精準比對「解析後的目錄是否真的是src/intelligence/execution/（Execution Manager）」）`, () => {
+      const src = readSrc(path.join(insightDir, file));
+      const imports = [...src.matchAll(/from\s+['"](\.[^'"]+)['"]/g)].map((m) => m[1]);
+      const executionManagerDir = path.join(intelDir, 'execution');
+      for (const imp of imports) {
+        const resolved = path.normalize(path.join(insightDir, imp));
+        assert.notStrictEqual(path.dirname(resolved), executionManagerDir, `insight/${file}意外import了Execution Manager目錄下的檔案：${imp}`);
+      }
     });
     await test(`（7.runtime isolation）insight/${file} 完全不import src/intelligence/service/、orchestration/、analysis/、recommendation/、data_preparation/`, () => {
       const src = readSrc(path.join(insightDir, file));
@@ -590,12 +596,12 @@ async function run() {
     }
   });
 
-  await test('（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備22個欄位（TASK1.65既有21個加上TASK1.66新增的insightFeature）', async () => {
+  await test('（TASK1.69後更新）（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備23個欄位（TASK1.65既有21個加上TASK1.66新增的insightFeature、TASK1.69新增的insightExecutionFlow）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
-      'facade', 'features', 'governance', 'history', 'insightFeature', 'insightService', 'metrics', 'monitoring',
+      'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });

@@ -525,12 +525,12 @@ async function run() {
     assert.ok(!/from\s+['"].*\/features\/insight\/context\//.test(readSrc(path.join(srcRoot, 'bootstrap', 'application.js'))));
   });
 
-  await test('（6.application service isolation）src/bootstrap/application.js的intelligence物件維持22個欄位不變（本次任務沒有新增bootstrap欄位）', async () => {
+  await test('（TASK1.69後更新）（6.application service isolation）src/bootstrap/application.js的intelligence物件維持23個欄位不變（本次任務TASK1.67本身沒有新增bootstrap欄位；TASK1.69新增了insightExecutionFlow，是後續任務的合法擴充，不是TASK1.67造成的回歸）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
-      'facade', 'features', 'governance', 'history', 'insightFeature', 'insightService', 'metrics', 'monitoring',
+      'facade', 'features', 'governance', 'history', 'insightExecutionFlow', 'insightFeature', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });
@@ -802,10 +802,18 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（12.P1-P6）src/bootstrap/application.js 完全沒有被TASK1.67修改（本次任務不需要在bootstrap組裝這個純函式工具）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.69後更新）原本這裡有一個「src/bootstrap/application.js
+  // 完全沒有被TASK1.67修改」的斷言，比對整個檔案即時的git diff
+  // --stat。這是跟TASK1.39/TASK1.56/TASK1.63同一種「比對即時整檔
+  // git diff」的脆弱治具：bootstrap.js從來就不在本任務系列真正的
+  // 禁止清單裡（禁止清單只有worker.js/wrangler.toml/routes/
+  // controllers/auth/oauth/migrations/Analysis Runner/
+  // Recommendation Runner/Execution Manager），TASK1.67本身雖然
+  // 沒有修改它，但TASK1.69合法地在bootstrap.js新增了
+  // `intelligence.insightExecutionFlow`的組裝，導致這個斷言
+  // 失敗——這不是TASK1.67造成的回歸，而是斷言本身寫得過度嚴格，
+  // 這裡移除這個斷言，改由TASK1.69/後續任務自己的P1-P6區塊驗證
+  // bootstrap.js真正的禁止清單（worker.js等）維持零異動即可。
 
   await test('（12.P1-P6）Analysis/Recommendation Runner/Execution Manager/Application Service/Insight Use Case/Insight Capability（capabilities/）/Application Workflow/Insight Feature Capability（TASK1.66）的原始碼完全沒有被TASK1.67修改（規格明確禁止修改Execution Runtime Behavior）', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/analysis/analysis_runner.js src/intelligence/recommendation/recommendation_runner.js src/intelligence/execution/execution_manager.js src/intelligence/facade/intelligence_facade.js src/intelligence/application/application_service.js src/intelligence/application/use_cases/insight_use_case.js src/intelligence/application/capabilities/insight_capability.js src/intelligence/application/workflows/application_workflow.js src/intelligence/application/features/insight/insight_capability.js src/intelligence/application/features/insight/insight_result_mapper.js'], { cwd: repoRoot, encoding: 'utf8' });

@@ -43,8 +43,21 @@
  * `createInsightOutputMapper()`），同樣是「建立但不改變既有
  * execution behavior」的extension point，目前沒有被
  * insight_capability.js/insight_context_mapper.js import。
+ *
+ * Phase 3 TASK1.69新增：`execution` namespace，re-export
+ * ./execution/index.js——跟TASK1.67/1.68不同，這是Phase 3第一個真正
+ * 把Context Mapper跟Output Mapper接上真實呼叫鏈的Insight Feature
+ * 層（`createInsightExecutionFlow()`主動呼叫`workflow.
+ * executeApplicationRequest()` → `contextMapper.
+ * mapRuntimeContextToInsightDomain()` → `outputMapper.
+ * mapToInsightOutput()`，屬於「active orchestrator，寫入bootstrap」
+ * 模式，見src/bootstrap/application.js的
+ * `intelligence.insightExecutionFlow`）。`insight_capability.js`
+ * （TASK1.66）本身完全沒有被修改——兩者是並存的兩個Insight Feature
+ * entry point。
  */
 export { createInsightFeatureCapability } from './insight_capability.js';
 export { createInsightResultMapper } from './insight_result_mapper.js';
 export * as context from './context/index.js';
 export * as output from './output/index.js';
+export * as execution from './execution/index.js';

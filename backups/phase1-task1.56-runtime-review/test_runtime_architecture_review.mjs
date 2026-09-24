@@ -302,7 +302,7 @@ async function run() {
     assert.strictEqual(cycleEdge, null, `發現循環依賴：${cycleEdge}`);
   });
 
-  await test('（TASK1.68後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有12組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features、application/features→application/features/insight、application/features/insight→application/features/insight/context、application/features/insight→application/features/insight/output），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
+  await test('（TASK1.69後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有13組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features、application/features→application/features/insight、application/features/insight→application/features/insight/context、application/features/insight→application/features/insight/output、application/features/insight→application/features/insight/execution），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
     const crossDirImports = [];
     for (const f of allFiles) {
       const fDir = path.relative(intelDir, path.dirname(f));
@@ -349,6 +349,11 @@ async function run() {
     // Output Model Layer統一輸出入口re-export自己nested子目錄的
     // 合法邊界，同一種性質（insight/底下這次是output/這個兄弟
     // 子目錄，跟context/平行並存）。
+    // TASK1.69新增：application/features/insight/index.js ->
+    // application/features/insight/execution/index.js——Insight
+    // Execution Flow Layer統一輸出入口re-export自己nested子目錄的
+    // 合法邊界，同一種性質（insight/底下這次是execution/這個兄弟
+    // 子目錄，跟context/、output/平行並存）。
     const allowed = crossDirImports.every((edge) => {
       return (
         edge.includes('facade/intelligence_facade.js -> runtime/index.js') ||
@@ -362,7 +367,8 @@ async function run() {
         edge.includes('application/index.js -> application/features/index.js') ||
         edge.includes('application/features/index.js -> application/features/insight/index.js') ||
         edge.includes('application/features/insight/index.js -> application/features/insight/context/index.js') ||
-        edge.includes('application/features/insight/index.js -> application/features/insight/output/index.js')
+        edge.includes('application/features/insight/index.js -> application/features/insight/output/index.js') ||
+        edge.includes('application/features/insight/index.js -> application/features/insight/execution/index.js')
       );
     });
     assert.ok(allowed, `發現未預期的跨目錄import：${JSON.stringify(crossDirImports)}`);

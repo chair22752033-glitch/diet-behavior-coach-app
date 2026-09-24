@@ -314,6 +314,38 @@
  * 明確禁止新增任何API route，`intelligence.insightFeature`目前是
  * 純粹的Phase 3 extension point，還沒有任何真實的User Application
  * 呼叫它。
+ *
+ * Phase 3 TASK1.69新增：`intelligence.insightExecutionFlow`，組裝
+ * src/intelligence/application/features/insight/execution/ 的
+ * createInsightExecutionFlow({workflow, contextMapper, outputMapper})
+ * 實例——跟TASK1.67（Insight Context Mapper）/TASK1.68（Insight
+ * Output Mapper）維持「建立但不改變既有execution behavior」的被動
+ * extension point不同，這是Phase 3第一次把這兩個純函式工具真正接上
+ * 真實呼叫鏈：注入的`workflow`是跟`intelligence.workflow`完全相同的
+ * `intelligenceApplicationWorkflow`實例（不是各自建立第二份），
+ * `contextMapper`/`outputMapper`則是分別呼叫
+ * `intelligenceApplicationNamespace.features.insight.context.
+ * createInsightContextMapper()`/
+ * `intelligenceApplicationNamespace.features.insight.output.
+ * createInsightOutputMapper()`新建立的、只給這條Execution Flow使用
+ * 的獨立實例（`intelligenceInsightContextMapperForFlow`/
+ * `intelligenceInsightOutputMapperForFlow`，不影響TASK1.67/1.68本身
+ * 的測試邊界）。Insight Execution Flow完全不能直接呼叫Capability/
+ * Use Case/Application Service/Facade/Execution Manager/History
+ * Store/Metrics Store/Event Dispatcher/Database/AI Provider（規格
+ * 明確禁止的捷徑），唯一認識的下一層是Workflow Layer。這是純粹的
+ * 依賴注入組裝，`intelligence.workflow`/`intelligence.features`/
+ * `intelligence.insightFeature`/`intelligence.capabilities`/
+ * `intelligence.useCases`/`intelligence.application`/
+ * `intelligence.facade`/其餘既有欄位完全沒有被重新注入任何新依賴，
+ * `application_workflow.js`/`insight_capability.js`（位於
+ * capabilities/與features/insight/兩處）/`insight_use_case.js`/
+ * `application_service.js`/`intelligence_facade.js`/
+ * `execution_manager.js`/`insight_context_mapper.js`/
+ * `insight_output_mapper.js`本身也完全沒有被修改。本次任務明確
+ * 禁止新增任何API route，`intelligence.insightExecutionFlow`目前是
+ * 純粹的Phase 3 extension point，還沒有任何真實的User Application
+ * 呼叫它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -460,6 +492,13 @@ export function createApplication(env) {
   const intelligenceInsightFeatureCapability = intelligenceApplicationNamespace.features.insight.createInsightFeatureCapability({
     workflow: intelligenceApplicationWorkflow,
   });
+  const intelligenceInsightContextMapperForFlow = intelligenceApplicationNamespace.features.insight.context.createInsightContextMapper();
+  const intelligenceInsightOutputMapperForFlow = intelligenceApplicationNamespace.features.insight.output.createInsightOutputMapper();
+  const intelligenceInsightExecutionFlow = intelligenceApplicationNamespace.features.insight.execution.createInsightExecutionFlow({
+    workflow: intelligenceApplicationWorkflow,
+    contextMapper: intelligenceInsightContextMapperForFlow,
+    outputMapper: intelligenceInsightOutputMapperForFlow,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -482,6 +521,7 @@ export function createApplication(env) {
     workflow: intelligenceApplicationWorkflow,
     features: intelligenceInsightFeature,
     insightFeature: intelligenceInsightFeatureCapability,
+    insightExecutionFlow: intelligenceInsightExecutionFlow,
     facade: intelligenceFacade,
   };
 
