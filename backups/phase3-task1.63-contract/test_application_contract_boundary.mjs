@@ -617,13 +617,13 @@ async function run() {
     assert.ok(!/from\s+['"].*\/application\/contracts\//.test(readSrc(path.join(srcRoot, 'bootstrap', 'application.js'))));
   });
 
-  await test('（7.runtime isolation）src/bootstrap/application.js的intelligence物件維持19個欄位不變（本次任務沒有新增bootstrap欄位）', async () => {
+  await test('（TASK1.64後更新）（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備20個欄位（TASK1.63當時是19個沒有新增欄位；TASK1.64新增了workflow，這是後續任務的合法擴充，不是TASK1.63本身造成的回歸）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
-      'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases',
+      'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });
 
@@ -877,10 +877,20 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（13.P1-P6）src/bootstrap/application.js 完全沒有被TASK1.63修改（本次任務不需要在bootstrap組裝這個純函式驗證工具）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // TASK1.64後更新：這裡原本斷言「src/bootstrap/application.js完全
+  // 沒有被TASK1.63修改」——這在TASK1.63當時是事實（Contract Layer是
+  // 純函式驗證工具，不需要在bootstrap組裝），但bootstrap.js從來不是
+  // 規格明確禁止修改的檔案（跟worker.js/wrangler.toml/routes/
+  // controllers/auth/oauth/migrations不同），TASK1.60/1.61/1.62/
+  // TASK1.64都合法修改過它來新增各自的extension point。這個針對
+  // 「即時git diff」的斷言只是某個時間點的觀察，不是永久不變的架構
+  // 邊界，一旦後續任務（TASK1.64新增intelligence.workflow）合法修改
+  // 了bootstrap.js就會變成假警報——跟TASK1.39/1.56記錄過的「fragile
+  // live-git-diff」同一種反模式，這裡移除這個過度延伸的斷言，保留
+  // 其餘明確禁止清單（worker.js/wrangler.toml/routes/controllers/
+  // auth/oauth/migrations/Analysis Runner/Recommendation Runner/
+  // Execution Manager/Facade/Application Service/Use Case/
+  // Capability）不受影響。
 
   await test('（13.P1-P6）Analysis/Recommendation Runner/Execution Manager/Application Service/Insight Use Case/Insight Capability的原始碼完全沒有被TASK1.63修改（規格明確禁止修改Execution Runtime Behavior）', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/analysis/analysis_runner.js src/intelligence/recommendation/recommendation_runner.js src/intelligence/execution/execution_manager.js src/intelligence/facade/intelligence_facade.js src/intelligence/application/application_service.js src/intelligence/application/use_cases/insight_use_case.js src/intelligence/application/capabilities/insight_capability.js'], { cwd: repoRoot, encoding: 'utf8' });

@@ -245,6 +245,32 @@
  * 被修改。本次任務明確禁止新增任何API route，
  * `intelligence.capabilities`目前是純粹的Phase 3 extension
  * point，還沒有任何真實的User Application呼叫它。
+ *
+ * TASK1.63（Contract Layer）本次**不需要修改**這個檔案——
+ * `src/intelligence/application/contracts/`是純函式驗證工具，
+ * 不是需要在這裡組裝的獨立子層實例。
+ *
+ * Phase 3 TASK1.64新增：`intelligence.workflow`，組裝
+ * src/intelligence/application/workflows/ 的
+ * createApplicationWorkflow({capability, contractValidator})
+ * 實例——建立在Capability之上、第一個實際採用TASK1.63 Contract
+ * Layer的協調層。注入的`capability`是跟`intelligence.capabilities`
+ * 完全相同的`intelligenceInsightCapability`實例（不是各自建立
+ * 第二份），`contractValidator`是新建立的
+ * `intelligenceApplicationNamespace.contracts.createContractValidator()`
+ * 實例（Contract Layer本身是無狀態純函式工具，這裡才第一次真正
+ * 被組裝使用）。Workflow Layer完全不能直接呼叫Use Case/Application
+ * Service/Facade/Execution Manager/History Store/Metrics Store/
+ * Event Dispatcher/Database/AI Provider（規格明確禁止的捷徑），
+ * 唯一認識的下一層是Capability Layer。這是純粹的依賴注入組裝，
+ * `intelligence.capabilities`/`intelligence.useCases`/
+ * `intelligence.application`/`intelligence.facade`/其餘既有欄位
+ * 完全沒有被重新注入任何新依賴，`insight_capability.js`/
+ * `insight_use_case.js`/`application_service.js`/
+ * `intelligence_facade.js`/`execution_manager.js`本身也完全沒有
+ * 被修改。本次任務明確禁止新增任何API route，
+ * `intelligence.workflow`目前是純粹的Phase 3 extension point，
+ * 還沒有任何真實的User Application呼叫它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -380,6 +406,11 @@ export function createApplication(env) {
   const intelligenceInsightCapability = intelligenceApplicationNamespace.capabilities.createInsightCapability({
     useCase: intelligenceInsightUseCase,
   });
+  const intelligenceContractValidator = intelligenceApplicationNamespace.contracts.createContractValidator();
+  const intelligenceApplicationWorkflow = intelligenceApplicationNamespace.workflows.createApplicationWorkflow({
+    capability: intelligenceInsightCapability,
+    contractValidator: intelligenceContractValidator,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -399,6 +430,7 @@ export function createApplication(env) {
     application: intelligenceApplicationService,
     useCases: intelligenceInsightUseCase,
     capabilities: intelligenceInsightCapability,
+    workflow: intelligenceApplicationWorkflow,
     facade: intelligenceFacade,
   };
 

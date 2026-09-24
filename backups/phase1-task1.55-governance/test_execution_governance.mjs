@@ -644,12 +644,12 @@ async function run() {
     assert.strictEqual(app.router.routes.length, 21);
   });
 
-  await test('（TASK1.62後更新）app.intelligence 恰好具備19個欄位（TASK1.54既有15個加上TASK1.55新增的governance、TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities）', () => {
+  await test('（TASK1.64後更新）app.intelligence 恰好具備20個欄位（TASK1.54既有15個加上TASK1.55新增的governance、TASK1.60新增的application、TASK1.61新增的useCases、TASK1.62新增的capabilities、TASK1.64新增的workflow）', () => {
     const app = createApplication(makeFullEnv());
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
-      'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases',
+      'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });
 

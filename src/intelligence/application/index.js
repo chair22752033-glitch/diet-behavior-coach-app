@@ -47,9 +47,21 @@
  * 目前**沒有被**application_service.js/./use_cases/./capabilities/
  * 底下任何檔案import——三層各自內建的validateXxxRequest()保持不變，
  * 這裡是獨立、可驗證的規格，用測試證明三層事實上遵守同一份規則。
+ *
+ * Phase 3 TASK1.64新增：`workflows` namespace，re-export
+ * ./workflows/index.js——建立在Capability之上、實際採用Contract
+ * Layer的Workflow Layer（`createApplicationWorkflow({capability,
+ * contractValidator})`）。這是第一個實際串接TASK1.63 Contract
+ * Layer的層：`application_workflow.js`完全沒有自己內建
+ * validateXxxRequest()，input驗證完全委派給注入的
+ * `contractValidator.validateRequest()`。只透過依賴注入拿到跟
+ * `intelligence.capabilities`完全相同的Insight Capability實例，
+ * 不直接import./use_cases/或./application_service.js，維持「每一層
+ * 只認識自己呼叫的下一層」的既有慣例。
  */
 export { createApplicationService } from './application_service.js';
 export { createApplicationResultBuilder } from './application_result_builder.js';
 export * as useCases from './use_cases/index.js';
 export * as capabilities from './capabilities/index.js';
 export * as contracts from './contracts/index.js';
+export * as workflows from './workflows/index.js';
