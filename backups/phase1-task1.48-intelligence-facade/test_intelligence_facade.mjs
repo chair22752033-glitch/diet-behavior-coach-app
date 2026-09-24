@@ -866,9 +866,9 @@ async function run() {
   // Manager的extension point），TASK1.51又新增了`events`欄位
   // （Execution Event Layer的extension point），都是明確要做的擴充，
   // 不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.52後更新）app.intelligence 恰好具備十三個欄位（TASK1.46既有九個加上TASK1.48新增的facade、TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history）', () => {
+  await test('（TASK1.53後更新）app.intelligence 恰好具備十四個欄位（TASK1.46既有九個加上TASK1.48新增的facade、TASK1.50新增的execution、TASK1.51新增的events、TASK1.52新增的history、TASK1.53新增的monitoring）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（14.bootstrap compatibility）app.intelligence.facade內部注入的service跟app.intelligence.service是同一個實例（用spy覆寫getIntelligence()驗證兩者共用同一個物件參考）', async () => {

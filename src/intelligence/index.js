@@ -7,7 +7,7 @@
  * 新增 executionContracts namespace；TASK1.48 新增 facade namespace；
  * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
  * namespace；TASK1.51 新增 events namespace；TASK1.52 新增 history
- * namespace）
+ * namespace；TASK1.53 新增 monitoring namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -52,7 +52,15 @@
  * 的Map狀態），組裝出來的store實例透過依賴注入傳給execution
  * namespace組裝出來的Execution Manager，讓生命週期狀態轉換可以額外
  * 建立/更新Execution History Record，但execution_manager.js本身
- * 完全不import history目錄底下任何檔案。
+ * 完全不import history目錄底下任何檔案。TASK1.53新增的monitoring
+ * namespace同樣是需要在bootstrap組裝的獨立子層實例（因為
+ * createExecutionMonitor()內部持有一份透過訂閱Event Dispatcher累積
+ * 的觀察紀錄Map狀態），但這次是純粹的唯讀觀察者——組裝出來的
+ * Execution Monitor實例注入的是跟`intelligence.history`/
+ * `intelligence.events`完全相同的historyStore/eventDispatcher
+ * 實例，只讀取History Record、訂閱Execution Event，完全不修改
+ * 任何狀態，也完全不需要Execution Manager提供任何新的依賴注入
+ * 掛勾，execution_manager.js本身這次完全沒有被修改。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -71,3 +79,4 @@ export * as runtime from './runtime/index.js';
 export * as execution from './execution/index.js';
 export * as events from './events/index.js';
 export * as history from './history/index.js';
+export * as monitoring from './monitoring/index.js';
