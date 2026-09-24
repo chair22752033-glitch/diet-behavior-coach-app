@@ -879,11 +879,17 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（10.P1-P6）本次審查唯一的production/文件變更是src/intelligence/application/features/insight/README.md新增一段「完整生命週期」章節（純文件補充），沒有任何production邏輯檔案被修改——本次任務屬於「只有docs/tests」的Rollback情境，不需要額外的git revert程式碼變更', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --name-only -- src/'], { cwd: repoRoot, encoding: 'utf8' });
-    const changedFiles = diff.trim().split('\n').filter(Boolean);
-    assert.deepStrictEqual(changedFiles, ['src/intelligence/application/features/insight/README.md']);
-  });
+  // （TASK1.71後更新）原本這裡有一個「git diff --name-only -- src/
+  // 恰好只有README.md這一個檔案」的斷言，比對整個src/樹即時的git
+  // diff --name-only。這是跟TASK1.39/TASK1.56/TASK1.63/TASK1.67/
+  // TASK1.68同一種「比對即時整樹git diff」的脆弱治具：一旦TASK1.70
+  // 自己的commit真正落地，「相對於working tree的live diff」就會
+  // 自然變成空字串（因為README.md的變更已經是HEAD的一部分，不再是
+  // 未commit的working tree diff），這個斷言會恆定失敗，不是任何
+  // 後續任務造成的回歸。src/intelligence/application/features/
+  // insight/README.md本身的存在與內容已經在（1.lifecycle flow）
+  // 分類獨立驗證過，這裡移除這個過度依賴「未commit即時diff」的
+  // 斷言，不需要額外補一個新的檢查。
 
   console.log('');
   console.log(`合計：${passed} passed, ${failed} failed`);
