@@ -204,6 +204,36 @@ Intelligence Layer的存在完全不知情（`src/routes/`/`src/controllers/`/
 一個組裝點），Phase 3必須維持這個邊界，不能為了接AI Provider而讓
 Controller或Domain Service反過來認識Intelligence Layer的存在。
 
+**TASK1.58補充（兩層Extension Point的精確定位）**：上面四點回答的是
+「Phase 3的變更該從哪個既有邊界`接進呼叫鏈`」，這是給**執行流程控制**
+（前處理/後處理/生命週期/政策）用的邊界。但**AI Provider/Model
+本身的推論邏輯要塞在哪一個具體檔案**，答案更精確、範圍更小，只有
+兩個地方：
+
+1. **Analysis Extension Point**——`src/intelligence/analysis/
+   analysis_runner.js`的`createAnalysisRunner(dependencies)`接受
+   選填的`dependencies.modules`，覆蓋預設的
+   `DEFAULT_ANALYSIS_MODULES`（六個純函式，各自把Insight Context
+   裡既有的count欄位原樣包成一筆insight）。真正的AI分析邏輯應該
+   實作成同樣簽章的模組函式（`(insightContext) => {type,value,
+   source}|null`），透過`src/bootstrap/application.js`重新組裝
+   `analysis.createAnalysisRunner({modules:[...]})`時注入，不需要
+   修改`analysis_runner.js`本身一行程式碼。
+2. **Recommendation Extension Point**——
+   `src/intelligence/recommendation/recommendation_runner.js`的
+   `createRecommendationRunner(dependencies)`是同樣的`modules`
+   注入機制，覆蓋`DEFAULT_RECOMMENDATION_MODULES`。
+
+這兩個Extension Point**不得**進入的地方（TASK1.58明確重申）：
+`src/controllers/`、`src/routes/`、`src/worker.js`、
+`src/auth/`/`src/oauth/`（Authentication）、`src/services/`
+（既有Domain Service）——跟上面四點的禁止範圍一致，只是這裡額外
+明確排除了Authentication，強調AI Provider/Model Integration
+即使接進Analysis/Recommendation，也完全不需要、不應該知道使用者
+是誰、有沒有登入，那些資訊在更早的Data Preparation階段就已經被
+轉換成匿名的count/context數字，Analysis/Recommendation拿到的
+輸入裡沒有任何身份相關欄位。
+
 ## Data Flow（單向資料流，TASK1.57確認）
 
 ```
@@ -246,6 +276,91 @@ Preparation），這個順序自TASK1.45建立以來沒有被任何後續任務�
 - Phase 2 Intelligence Runtime Foundation**已具備進入Ending
   Review的條件**。
 
+## Phase 2 Ending Documentation（TASK1.58——Final Validation & Ending
+Review正式產出）
+
+這是Phase 2的正式結案文件，總結「Phase 2做了什麼、邊界在哪裡、
+Phase 3該從哪裡接」，供未來任何人（包含未來的Phase 3任務）不需要
+重新爬梳TASK1.40~1.57全部commit history就能理解目前狀態。
+
+### Completed Layers（14個，依建立順序）
+
+| # | Layer | 目錄 | 建立於 | 對外唯一入口 |
+|---|-------|------|--------|-------------|
+| 1 | Data Preparation | `data_preparation/` | TASK1.41 | `createDataPreparationService().prepare()` |
+| 2 | Context | `context/` | TASK1.42 | `createInsightContextBuilder().buildInsightContext()` |
+| 3 | Analysis | `analysis/` | TASK1.43 | `createAnalysisRunner().runAnalysis()` |
+| 4 | Recommendation | `recommendation/` | TASK1.44 | `createRecommendationRunner().runRecommendation()` |
+| 5 | Orchestration | `orchestration/` | TASK1.45 | `createIntelligenceOrchestrator().runIntelligencePipeline()` |
+| 6 | Service | `service/` | TASK1.46 | `createIntelligenceService().getIntelligence()` |
+| 7 | （Execution Contract，非獨立layer，是Service的驗證工具） | `contracts/execution/` | TASK1.47 | 三個`validateXxx()`純函式 |
+| 8 | Facade | `facade/` | TASK1.48 | `createIntelligenceFacade().executeIntelligence()` |
+| 9 | Runtime（Context） | `runtime/` | TASK1.49 | `createRuntimeContext()` |
+| 10 | Execution（Manager） | `execution/` | TASK1.50 | `createExecutionManager().execute()` |
+| 11 | Events | `events/` | TASK1.51 | `createEventDispatcher()` |
+| 12 | History | `history/` | TASK1.52 | `createHistoryStore()` |
+| 13 | Monitoring | `monitoring/` | TASK1.53 | `createExecutionMonitor()`（唯讀） |
+| 14 | Metrics | `metrics/` | TASK1.54 | `createExecutionMetrics()`（唯讀） |
+| 15 | Governance | `governance/` | TASK1.55 | `createGovernanceService().validateExecution()`（未接入真實呼叫鏈） |
+
+（表格列了15列是因為Execution Contract不算獨立layer；規格列出的
+14個Layer是扣掉Execution Contract後的計數。）
+
+### Dependency Direction（總結）
+
+```
+Facade → Execution Manager → Service → Orchestrator
+                                          ↓
+                        [Data Preparation → Context → Analysis → Recommendation]
+
+Execution Manager ──(DI，選填)──→ Events / History
+Events / History ──(DI，唯讀)──→ Monitoring、Metrics
+Governance：完全獨立，未被任何上述箭頭指向或指出
+```
+
+嚴格單向、零循環依賴（TASK1.56/1.57已程式化驗證）。`src/bootstrap/
+application.js`是唯一的組裝點，`src/controllers/`/`src/routes/`/
+`src/worker.js`/`src/services/`零個檔案認識`src/intelligence/`
+的存在。
+
+### Phase 3 Extension Point（總結，完整說明見上方兩個章節）
+
+- **執行流程控制**（前處理/後處理/生命週期/政策）：Facade/Service/
+  Execution Manager/Governance四個既有DI組裝點。
+- **AI Provider/Model推論邏輯本身**：只有Analysis Extension Point
+  （`analysis_runner.js`的`dependencies.modules`）跟Recommendation
+  Extension Point（`recommendation_runner.js`的
+  `dependencies.modules`）兩個精確位置。
+- 兩者都**不得**進入Controller/Route/Worker/Authentication/Domain
+  Service。
+
+### Known Limitations（Phase 2刻意未做、留給Phase 3的事）
+
+- `analysisEngine`/`recommendationEngine`/`insightService`（TASK1.40
+  建立的最早期占位物件）**沒有**被接進TASK1.45起建立的真實呼叫鏈
+  （Facade→ExecutionManager→Service→Orchestrator），兩條路徑目前
+  是平行、互不相干的——`app.intelligence.insightService`
+  `.getUserInsight()`永遠回傳`{ok:true, status:'not_ready',
+  data:null}`，不會受Phase 3在Analysis/Recommendation
+  Extension Point的任何修改影響。Phase 3應該以
+  Facade→ExecutionManager→Service→Orchestrator這條路徑為準，
+  `insightService`/`analysisEngine`/`recommendationEngine`三者
+  是否要保留、汰換、或整併，留給未來任務決定。
+- Governance Layer（TASK1.55）建立後**完全沒有被接進**
+  Facade/Execution Manager的真實呼叫鏈——目前呼叫
+  `executionManager.execute()`不會經過任何Governance檢查。Phase 3
+  如果要啟用真正的執行前政策檢查，需要明確新增一個任務去做「把
+  Governance接進Execution Manager」這件事，這不會在沒有專屬任務的
+  情況下自動發生。
+- 整個Intelligence Layer目前**沒有任何route/controller讀取**
+  `app.intelligence`——所有16個欄位都只是組裝好放在
+  `src/bootstrap/application.js`裡，沒有任何使用者可見的功能受
+  Phase 2影響。
+- D1裡的`users`/`sessions`/全部domain表/`auth_audit_logs`從Phase 2
+  開始建立至今（TASK1.40~1.58）恆為0筆——Phase 2完全是Cloudflare
+  Worker既有生產環境之外的、獨立的程式碼新增，沒有任何一次測試或
+  審查在真實資料庫留下痕跡。
+
 ## 測試方式
 
 `backups/phase1-task1.40-intelligence-foundation/test_intelligence_foundation.mjs`：
@@ -269,3 +384,15 @@ Identity Provider）」——是Phase 2結束前最後一份測試套件，通�
 即代表可以進入Ending Review，往後任何Phase 3的變更都應該從上面
 「Phase 3 Extension Point」列出的四個既有邊界接入，而不是回頭修改
 Phase 2既有的任何一個檔案。
+
+**TASK1.58更新（Phase 2最終驗證，最後一份測試套件）**：
+`backups/phase1-task1.58-phase2-ending/
+test_phase2_final_validation.mjs`是Phase 2正式結束前的最終驗證，
+在TASK1.56/1.57既有的架構審查基礎上，額外明確驗證「Analysis/
+Recommendation Extension Point」（`dependencies.modules`注入機制）
+確實可用、且Application/Runtime/Pipeline三層各自的職責邊界（見上方
+「Phase 2 Ending Documentation」）沒有被混淆。這份測試通過後，
+Phase 2 Intelligence Runtime Foundation正式結束，往後的Intelligence
+相關任務屬於Phase 3，應該從本文件「Phase 3 Extension Point」/
+「Phase 2 Ending Documentation」列出的既有邊界接入，不應該回頭修改
+`src/intelligence/`底下任何Phase 2既有檔案的行為。
