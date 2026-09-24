@@ -159,3 +159,72 @@ Insight Feature → AI Provider       ❌
   API route——這是Phase 3第一個「正式」的domain-specific Feature
   Capability，驗證了Feature Entry Architecture可以承載一個明確
   定義domain intent的Insight Feature，不只是通用骨架。
+
+## 完整生命週期（TASK1.70 Lifecycle Validation Review確認）
+
+TASK1.70是一次**審查任務**——不新增功能、不建立新Layer、不導入
+AI，目的是確認截至TASK1.69為止建立的整條Insight Feature
+Architecture，其完整生命週期在真實依賴鏈下確實成立，而且每一個
+Boundary在錯誤情境下都能正確回傳結構化結果。
+
+完整生命週期（`backups/phase3-task1.70-insight-lifecycle-review/
+test_insight_lifecycle_review.mjs`逐項驗證）：
+
+```
+Request
+  ↓
+Insight Execution Flow（TASK1.69，src/.../insight/execution/）
+  ↓
+Workflow（TASK1.64，內部主動採用Contract Layer TASK1.63做請求/
+回應驗證）
+  ↓
+Capability（TASK1.62）→ Use Case（TASK1.61）→ Application Service
+（TASK1.60）→ Intelligence Facade（TASK1.48）→ Execution Manager
+（TASK1.50）→ Intelligence Service（TASK1.46）→ Orchestrator
+（TASK1.45）→ Data Preparation/Insight Context/Analysis/
+Recommendation（Phase 2 Runtime）
+  ↓
+Context Mapping（TASK1.67，把Runtime Result攤平成Insight Domain
+可用格式）
+  ↓
+Output Mapping（TASK1.68，驗證並轉換成InsightOutputModel）
+  ↓
+Response（TASK1.69 Result Builder，
+`{ok:true, feature:'insight', output}`／
+`{ok:false, feature:'insight', reason}`）
+```
+
+審查結論：
+
+- **成功路徑**：透過完整真實依賴鏈（一路到Analysis/Recommendation
+  Runner）呼叫`app.intelligence.insightExecutionFlow.
+  runInsightExecution()`，可以得到通過`validateInsightOutput()`
+  驗證的合法輸出，跟`app.intelligence.insightFeature`（TASK1.66既有
+  entry point）消費的是同一份Runtime資料。
+- **錯誤路徑**：invalid request（Execution Flow自己的最小驗證）、
+  invalid contract（Workflow內部的Contract Layer攔截）、workflow
+  failure（Capability/Use Case/Application Service任何一層失敗）、
+  runtime failure（Data Preparation/Context Builder/Orchestrator
+  任何一階段失敗，皆為結構化`{ok:false, reason}`，不是例外）、
+  invalid output（Output Mapper驗證失敗）五種情境，全部一路正確
+  轉發成最終`{ok:false, feature:'insight', reason}`，沒有一處會
+  讓例外未經處理外洩到呼叫端。
+- **Dependency Boundary**：Insight Feature整條目錄樹（12個.js
+  檔案：`insight_capability.js`/`insight_result_mapper.js`/
+  `index.js` + `context/`/`output/`/`execution/`三個nested子目錄
+  各4個檔案）逐一掃描確認，完全不直接依賴database（`src/db/`）、
+  auth/oauth（`src/auth/`、`src/oauth/`）、Execution Runtime
+  internal components（`src/intelligence/execution/`、
+  `service/`、`orchestration/`、`analysis/`、`recommendation/`、
+  `data_preparation/`、`facade/`、`governance/`、`history/`、
+  `metrics/`、`events/`、`monitoring/`）、AI Provider（沒有任何
+  anthropic/claude/openai/gpt/deepseek相關字樣，也沒有`fetch()`
+  呼叫）。
+- **Regression**：Phase 1～Phase 3全部既有測試檔案（含TASK1.56
+  自己的meta regression suite）在本次審查後完整重跑皆為0
+  failed。
+
+本次審查**沒有修改任何production邏輯檔案**——這是唯一的文件變更
+（本章節），`src/bootstrap/application.js`、Workflow/Capability/
+Use Case/Application Service/Insight Domain各層原始碼、Runtime
+Execution Layer全部維持TASK1.69之後的狀態不變。
