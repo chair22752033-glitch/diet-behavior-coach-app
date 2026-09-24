@@ -1,14 +1,28 @@
 /*
  * Phase 1 TASK 1.48｜Intelligence Application Facade Layer Foundation
  * 測試
+ * （TASK1.50後更新：Facade改為只呼叫Execution Manager，不再直接呼叫
+ * Intelligence Service——原本Category B「service integration」大量
+ * 測試建構`createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) })`直接注入假造的
+ * service，驗證facade是否正確呼叫`service.getIntelligence()`；這個
+ * 呼叫模式在TASK1.50之後已經不成立（facade不再持有`service`依賴），
+ * 改為統一透過`createExecutionManager({ service })`包一層再注入
+ * `executionManager`，讓底層假造的service依然會被呼叫到（因為
+ * Execution Manager內部真的會呼叫它），這樣可以在最小改動下維持這些
+ * 測試原本驗證的呼叫語意——db/userId/options是否正確流向下一層，只是
+ * 「下一層」從Service變成Execution Manager，Execution Manager再往下
+ * 呼叫Service。凡是牽涉到這個改動的測試都加上了「TASK1.50後更新」
+ * 標記並更新標題/斷言，沒有任何測試被靜默刪除。）
  *
  * 本任務不是AI功能開發——這個測試檔案驗證的是「未來Application
- * Consumer跟Intelligence Service（TASK1.46）之間的application-facing
- * 穩定門面」：intelligence_facade.js的executeIntelligence(db, request)
- * 能不能正確驗證輸入、只呼叫Service（不繞過它直接呼叫Orchestrator/
- * Analysis/Recommendation/Data Preparation/Domain Service/Database）、
- * 把Service的回傳重新包裝成facade自己的穩定輸出格式。不驗證任何真正
- * 的AI分析/推薦邏輯（因為根本沒有）。
+ * Consumer跟Intelligence Execution Manager（TASK1.50）之間的
+ * application-facing穩定門面」：intelligence_facade.js的
+ * executeIntelligence(db, request)能不能正確驗證輸入、只呼叫
+ * Execution Manager（不繞過它直接呼叫Intelligence
+ * Service/Orchestrator/Analysis/Recommendation/Data
+ * Preparation/Domain Service/Database）、把Execution Manager的回傳
+ * 重新包裝成facade自己的穩定輸出格式。不驗證任何真正的AI分析/推薦
+ * 邏輯（因為根本沒有）。
  *
  * 分為以下15個部分：
  * A) facade interface
@@ -101,6 +115,17 @@ async function run() {
   const { createIntelligenceFacade } = facadeMod;
   const resultBuilderMod = await import(path.join(facadeDir, 'facade_result_builder.js'));
   const { createFacadeResultBuilder } = resultBuilderMod;
+  const { createExecutionManager } = await import(path.join(intelDir, 'execution', 'index.js'));
+
+  // TASK1.50後新增：facade不再直接持有service依賴，改為透過Execution
+  // Manager間接呼叫。這個helper把一個（假造或真正的）service包成
+  // Execution Manager，讓既有測試能以最小改動繼續驗證「facade的呼叫
+  // 最終有沒有正確傳到service」這件事——calls[]記錄的仍然是service
+  // 實際收到的(db, request)，形狀跟TASK1.49（facade直接呼叫service時）
+  // 完全相同，因為Execution Manager只是原封不動地把這個呼叫轉發下去。
+  function wrapAsExecutionManager(service) {
+    return createExecutionManager({ service });
+  }
   await import(path.join(facadeDir, 'index.js'));
   const { createIntelligenceService } = await import(path.join(intelDir, 'service', 'index.js'));
   const { createIntelligenceOrchestrator } = await import(path.join(intelDir, 'orchestration', 'index.js'));
@@ -117,7 +142,7 @@ async function run() {
 
   await test('（1.facade interface）executeIntelligence() 回傳一個Promise', () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = facade.executeIntelligence({}, { userId: 'u1' });
     assert.ok(result instanceof Promise);
   });
@@ -138,7 +163,7 @@ async function run() {
 
   await test('（1.facade interface，端對端）真正的createIntelligenceService()實例可以被當作依賴注入進facade（形狀相容，不拋出例外）', () => {
     const realService = createIntelligenceService({});
-    assert.doesNotThrow(() => createIntelligenceFacade({ service: realService }));
+    assert.doesNotThrow(() => createIntelligenceFacade({ executionManager: wrapAsExecutionManager(realService) }));
   });
 
   await test('（1.facade interface）index.js 正確re-export createIntelligenceFacade/createFacadeResultBuilder', async () => {
@@ -162,7 +187,7 @@ async function run() {
   // 改成驗證這兩者不變、options的既有欄位值也都保留。
   await test('（TASK1.49後更新）db/userId原樣轉交給service.getIntelligence()，options的既有欄位值也都保留（只是被合併進一個帶有runtimeContext的新物件，不再是同一個參考）', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const db = { marker: 'the-db' };
     const options = { includeContext: true };
     await facade.executeIntelligence(db, { userId: 'u1', options });
@@ -178,7 +203,7 @@ async function run() {
   // runtimeContext欄位的物件。這是規格明確要求的架構調整，不是回歸。
   await test('（TASK1.49後更新）request.options未提供時，service.getIntelligence()收到的options不再是undefined，而是只帶有runtimeContext欄位的物件', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1' });
     assert.notStrictEqual(calls[0].request.options, undefined);
     assert.deepStrictEqual(Object.keys(calls[0].request.options), ['runtimeContext']);
@@ -186,27 +211,36 @@ async function run() {
 
   await test('（2.service integration）service恰好只被呼叫一次', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(calls.length, 1);
   });
 
   await test('（2.service integration）facade輸入驗證失敗時，service完全不會被呼叫', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, {});
     assert.strictEqual(calls.length, 0);
   });
 
-  await test('（2.service integration）service依賴完全缺少時，安全回傳失敗，不拋出例外', async () => {
+  // 注意：TASK1.50（Intelligence Execution Lifecycle Manager）明確
+  // 要求Facade改為只呼叫Execution Manager、不再直接持有service依賴
+  // ——facade完全缺少依賴時的失敗原因，因此從'service_unavailable'
+  // 變成'execution_manager_unavailable'，這是規格明確要求的架構調整，
+  // 不是回歸。
+  await test('（TASK1.50後更新）executionManager依賴完全缺少時，安全回傳失敗，不拋出例外', async () => {
     const facade = createIntelligenceFacade({});
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, false);
-    assert.strictEqual(result.reason, 'service_unavailable');
+    assert.strictEqual(result.reason, 'execution_manager_unavailable');
   });
 
-  await test('（2.service integration）service.getIntelligence不是函式時，安全回傳失敗', async () => {
-    const facade = createIntelligenceFacade({ service: { getIntelligence: 'nope' } });
+  // 注意：TASK1.50後，service不再直接被facade持有，這裡改成把畸形
+  // service包進真正的Execution Manager再注入facade——'service_unavailable'
+  // 這個reason是Execution Manager自己的guard產生的，經由facade原樣
+  // 轉發，驗證這一路失敗原因正確傳遞到底。
+  await test('（TASK1.50後更新）service.getIntelligence不是函式時（透過Execution Manager轉發），facade安全回傳失敗', async () => {
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager({ getIntelligence: 'nope' }) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'service_unavailable');
@@ -214,7 +248,7 @@ async function run() {
 
   await test('（2.service integration）連續兩次呼叫、不同userId，各自呼叫service時帶著正確的userId', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1' });
     await facade.executeIntelligence({}, { userId: 'u2' });
     assert.strictEqual(calls[0].request.userId, 'u1');
@@ -226,7 +260,7 @@ async function run() {
       runIntelligencePipeline: async () => ({ ok: true, status: 'intelligence_ready', data: { result: sampleServiceData() } }),
     };
     const realService = createIntelligenceService({ orchestrator: fakeOrchestrator });
-    const facade = createIntelligenceFacade({ service: realService });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(realService) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, true);
     assert.strictEqual(result.data.status, 'intelligence_ready');
@@ -240,7 +274,7 @@ async function run() {
       recommendationRunner: { runRecommendation: () => ({ ok: true, result: sampleServiceData().recommendation }) },
     });
     const realService = createIntelligenceService({ orchestrator: realOrchestrator });
-    const facade = createIntelligenceFacade({ service: realService });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(realService) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: {} });
     assert.strictEqual(result.ok, true);
     assert.strictEqual(result.data.status, 'intelligence_ready');
@@ -255,7 +289,7 @@ async function run() {
 
   await test('（3.input validation）request為null時安全回傳{ok:false, reason:"invalid_request"}', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, null);
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_request');
@@ -263,7 +297,7 @@ async function run() {
 
   await test('（3.input validation）request為undefined時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, undefined);
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_request');
@@ -271,21 +305,21 @@ async function run() {
 
   await test('（3.input validation）request為字串時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, 'nope');
     assert.strictEqual(result.ok, false);
   });
 
   await test('（3.input validation）request為陣列時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, []);
     assert.strictEqual(result.ok, false);
   });
 
   await test('（3.input validation）request缺少userId時安全回傳{ok:false, reason:"invalid_user_id"}', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, {});
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_user_id');
@@ -293,7 +327,7 @@ async function run() {
 
   await test('（3.input validation）userId為空字串時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: '' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_user_id');
@@ -301,14 +335,14 @@ async function run() {
 
   await test('（3.input validation）userId為數字時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 123 });
     assert.strictEqual(result.ok, false);
   });
 
   await test('（3.input validation）options存在但不是物件時安全回傳{ok:false, reason:"invalid_options_type"}', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: 'nope' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_options_type');
@@ -316,28 +350,28 @@ async function run() {
 
   await test('（3.input validation）options為陣列時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: [] });
     assert.strictEqual(result.ok, false);
   });
 
   await test('（3.input validation）options為null時安全回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: null });
     assert.strictEqual(result.ok, false);
   });
 
   await test('（3.input validation）合法request {userId} 通過驗證（options選填）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, true);
   });
 
   await test('（3.input validation）options內容完全不被facade解讀（只是原樣轉交），即使options帶著非預期欄位也不影響驗證結果', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: { weird: 'field' } });
     assert.strictEqual(result.ok, true);
   });
@@ -409,7 +443,7 @@ async function run() {
 
   await test('（4.output contract，端對端）executeIntelligence()成功時回傳shape恰好是{ok, data}兩個頂層欄位', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.deepStrictEqual(Object.keys(result).sort(), ['data', 'ok']);
   });
@@ -422,7 +456,7 @@ async function run() {
 
   await test('（4.output contract）JSON.stringify(result)不會拋出例外、也不會遺失任何頂層欄位（純資料結構）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     const roundTripped = JSON.parse(JSON.stringify(result));
     assert.deepStrictEqual(Object.keys(roundTripped).sort(), Object.keys(result).sort());
@@ -437,7 +471,7 @@ async function run() {
 
   await test('（5.failure handling）service失敗（ok:false）且有reason時，facade原樣轉發同一個reason', async () => {
     const { service } = makeSpyService({ getIntelligence: () => ({ ok: false, reason: 'user_not_found' }) });
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'user_not_found');
@@ -445,20 +479,20 @@ async function run() {
 
   await test('（5.failure handling）facade失敗結果完全不含data欄位（沒有把部分執行結果頂替回傳）', async () => {
     const { service } = makeSpyService({ getIntelligence: () => ({ ok: false, reason: 'boom' }) });
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.data, undefined);
   });
 
   await test('（5.failure handling）service丟出例外（reject）時，executeIntelligence()整體也會reject（不吞掉錯誤）', async () => {
     const service = { getIntelligence: async () => { throw new Error('boom'); } };
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await assert.rejects(() => facade.executeIntelligence({}, { userId: 'u1' }), /boom/);
   });
 
   await test('（5.failure handling）驗證失敗（invalid_user_id）的失敗結果格式跟service失敗的格式完全一致（都是{ok:false, reason}）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const a = await facade.executeIntelligence({}, {});
     assert.deepStrictEqual(Object.keys(a).sort(), ['ok', 'reason']);
   });
@@ -466,7 +500,7 @@ async function run() {
   await test('（5.failure handling，端對端）真正的Service在Orchestrator失敗時，facade正確轉發失敗原因', async () => {
     const fakeOrchestrator = { runIntelligencePipeline: async () => ({ ok: false, status: 'orchestration_unavailable', reason: 'data_preparation_unavailable', data: null }) };
     const realService = createIntelligenceService({ orchestrator: fakeOrchestrator });
-    const facade = createIntelligenceFacade({ service: realService });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(realService) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'data_preparation_unavailable');
@@ -475,7 +509,7 @@ async function run() {
   await test('（5.failure handling）options型別錯誤造成service內部execution contract拒絕時，facade正確轉發失敗（透過真正的service+假orchestrator）', async () => {
     const fakeOrchestrator = { runIntelligencePipeline: async () => ({ ok: true, status: 'intelligence_ready', data: { result: sampleServiceData() } }) };
     const realService = createIntelligenceService({ orchestrator: fakeOrchestrator });
-    const facade = createIntelligenceFacade({ service: realService });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(realService) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', options: { includeContext: 'nope' } });
     assert.strictEqual(result.ok, false);
   });
@@ -489,15 +523,15 @@ async function run() {
 
   await test('（6.deterministic behavior）同樣的假service輸出，連續呼叫兩次executeIntelligence()得到完全相同（deepStrictEqual）的結果', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const a = await facade.executeIntelligence({}, { userId: 'u1' });
     const b = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.deepStrictEqual(a, b);
   });
 
   await test('（6.deterministic behavior）不同facade實例對同樣輸入產生相同輸出（不依賴實例內部狀態）', async () => {
-    const a = await createIntelligenceFacade({ service: makeSpyService().service }).executeIntelligence({}, { userId: 'u1' });
-    const b = await createIntelligenceFacade({ service: makeSpyService().service }).executeIntelligence({}, { userId: 'u1' });
+    const a = await createIntelligenceFacade({ executionManager: wrapAsExecutionManager(makeSpyService().service) }).executeIntelligence({}, { userId: 'u1' });
+    const b = await createIntelligenceFacade({ executionManager: wrapAsExecutionManager(makeSpyService().service) }).executeIntelligence({}, { userId: 'u1' });
     assert.deepStrictEqual(a, b);
   });
 
@@ -515,7 +549,7 @@ async function run() {
 
   await test('（6.deterministic behavior）executeIntelligence()不會修改（mutate）傳入的原始request物件', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const request = { userId: 'u1', options: { includeContext: true } };
     const snapshot = JSON.parse(JSON.stringify(request));
     await facade.executeIntelligence({}, request);
@@ -524,7 +558,7 @@ async function run() {
 
   await test('（6.deterministic behavior）連續三次呼叫（相同輸入）第一次跟第三次的結果完全相同（不依賴呼叫次數/內部計數器）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const first = await facade.executeIntelligence({}, { userId: 'u1' });
     await facade.executeIntelligence({}, { userId: 'u1' });
     const third = await facade.executeIntelligence({}, { userId: 'u1' });
@@ -828,9 +862,12 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.facade.executeIntelligence, 'function');
   });
 
-  await test('（14.bootstrap compatibility）app.intelligence 恰好具備十個欄位（TASK1.46既有九個加上TASK1.48新增的facade）', () => {
+  // 注意：TASK1.50為app.intelligence新增了`execution`欄位（Execution
+  // Manager的extension point），這是明確要做的擴充，不是回歸，這裡的
+  // 預期key清單已同步更新。
+  await test('（TASK1.50後更新）app.intelligence 恰好具備十一個欄位（TASK1.46既有九個加上TASK1.48新增的facade、TASK1.50新增的execution）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（14.bootstrap compatibility）app.intelligence.facade內部注入的service跟app.intelligence.service是同一個實例（用spy覆寫getIntelligence()驗證兩者共用同一個物件參考）', async () => {
@@ -871,11 +908,17 @@ async function run() {
     assert.strictEqual(app.router.routes.length, 21);
   });
 
-  await test('（14.bootstrap compatibility）原始碼掃描：src/bootstrap/application.js 呼叫createIntelligenceFacade()時注入的是既有的intelligenceService變數（不是新建第二份實例）', () => {
+  // 注意：TASK1.50明確要求Facade改為只呼叫Execution Manager，
+  // src/bootstrap/application.js呼叫createIntelligenceFacade()時注入
+  // 的依賴因此從`service: intelligenceService`改成
+  // `executionManager: intelligenceExecutionManager`，這是規格明確
+  // 要求的架構調整，不是回歸。
+  await test('（TASK1.50後更新）原始碼掃描：src/bootstrap/application.js 呼叫createIntelligenceFacade()時注入的是既有的intelligenceExecutionManager變數（不是新建第二份實例，也不再直接注入service）', () => {
     const src = stripComments(fs.readFileSync(path.join(srcRoot, 'bootstrap', 'application.js'), 'utf8'));
     const match = src.match(/createIntelligenceFacade\(\{([^}]*)\}\)/);
     assert.ok(match, '應該找得到createIntelligenceFacade({...})呼叫');
-    assert.ok(/service\s*:\s*intelligenceService/.test(match[1]));
+    assert.ok(/executionManager\s*:\s*intelligenceExecutionManager/.test(match[1]));
+    assert.ok(!/\bservice\s*:/.test(match[1]), 'createIntelligenceFacade()不應該再直接注入service');
   });
 
   console.log('');

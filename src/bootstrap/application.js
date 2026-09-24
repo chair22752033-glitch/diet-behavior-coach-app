@@ -107,10 +107,23 @@
  * `executeIntelligence(db, request)`一個介面，把Service回傳的
  * {status, context, analysis, recommendation, metadata}重新包裝成
  * {status, result:{context, analysis, recommendation}, metadata}。
- * 注入的是跟`intelligence.service`完全相同的`intelligenceService`
- * 實例（不是各自建立第二份）。Facade明確只允許呼叫Service，本次任務
- * 完全沒有修改intelligence_service.js/Orchestrator/Analysis/
- * Recommendation，也明確禁止串接任何route/controller/worker.js。
+ * 當時注入的是跟`intelligence.service`完全相同的`intelligenceService`
+ * 實例（不是各自建立第二份）。本次任務完全沒有修改
+ * intelligence_service.js/Orchestrator/Analysis/Recommendation，也
+ * 明確禁止串接任何route/controller/worker.js。
+ *
+ * TASK1.50新增：`intelligence.execution`，組裝
+ * src/intelligence/execution/ 的 createExecutionManager() 實例——
+ * 負責「管理單次Intelligence執行的生命週期
+ * （initialized→running→completed/failed），標準化Service呼叫細節
+ * 跟成功/失敗結果」。注入的是跟`intelligence.service`完全相同的
+ * `intelligenceService`實例（不是各自建立第二份）。**這次起，
+ * `intelligence.facade`改為注入`executionManager: intelligenceExecutionManager`
+ * （不再注入`service`）**——Facade不再直接呼叫Service，Facade
+ * → Execution Manager → Service成為新的呼叫鏈。
+ * `intelligence_service.js`/Orchestrator/Analysis/Recommendation/
+ * Runtime Context/Data Preparation六者的原始碼依然完全沒有被修改，
+ * 本次任務明確禁止串接任何route/controller/worker.js。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -138,7 +151,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace, execution as intelligenceExecutionNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -218,8 +231,11 @@ export function createApplication(env) {
   const intelligenceService = intelligenceServiceNamespace.createIntelligenceService({
     orchestrator: intelligenceOrchestrator,
   });
-  const intelligenceFacade = intelligenceFacadeNamespace.createIntelligenceFacade({
+  const intelligenceExecutionManager = intelligenceExecutionNamespace.createExecutionManager({
     service: intelligenceService,
+  });
+  const intelligenceFacade = intelligenceFacadeNamespace.createIntelligenceFacade({
+    executionManager: intelligenceExecutionManager,
   });
   const intelligence = {
     insightService,
@@ -231,6 +247,7 @@ export function createApplication(env) {
     recommendation: recommendationRunner,
     orchestration: intelligenceOrchestrator,
     service: intelligenceService,
+    execution: intelligenceExecutionManager,
     facade: intelligenceFacade,
   };
 

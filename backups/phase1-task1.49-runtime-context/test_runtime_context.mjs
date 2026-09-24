@@ -77,6 +77,16 @@ async function run() {
   const { createRuntimeContext, DEFAULT_REQUEST_ID, DEFAULT_VERSION, DEFAULT_TIMESTAMP } = builderMod;
   await import(path.join(runtimeDir, 'index.js'));
   const { createIntelligenceFacade } = await import(path.join(facadeDir, 'index.js'));
+  const { createExecutionManager } = await import(path.join(intelDir, 'execution', 'index.js'));
+
+  // TASK1.50後新增：facade不再直接持有service依賴，改為透過Execution
+  // Manager間接呼叫（見src/intelligence/facade/intelligence_facade.js
+  // 的TASK1.50更動）。這個helper把一個（假造或真正的）service包成
+  // Execution Manager，讓本檔案既有的facade integration測試能以最小
+  // 改動繼續驗證「facade的呼叫最終有沒有正確傳到service」這件事。
+  function wrapAsExecutionManager(service) {
+    return createExecutionManager({ service });
+  }
 
   // =========================================================================
   // A. runtime context creation
@@ -303,7 +313,7 @@ async function run() {
 
   await test('（4.facade integration）executeIntelligence()成功時，service收到的options.runtimeContext存在且userId正確', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1' });
     assert.ok(calls[0].request.options.runtimeContext);
     assert.strictEqual(calls[0].request.options.runtimeContext.userId, 'u1');
@@ -311,42 +321,42 @@ async function run() {
 
   await test('（4.facade integration）request帶requestId時，runtimeContext.requestId正確保留', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1', requestId: 'req-99' });
     assert.strictEqual(calls[0].request.options.runtimeContext.requestId, 'req-99');
   });
 
   await test('（4.facade integration）request帶version時，runtimeContext.version正確保留', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1', version: '3' });
     assert.strictEqual(calls[0].request.options.runtimeContext.version, '3');
   });
 
   await test('（4.facade integration）request帶timestamp時，runtimeContext.timestamp正確保留', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1', timestamp: '2026-06-01T00:00:00Z' });
     assert.strictEqual(calls[0].request.options.runtimeContext.timestamp, '2026-06-01T00:00:00Z');
   });
 
   await test('（4.facade integration）request帶metadata時，runtimeContext.metadata正確保留', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1', metadata: { source: 'test' } });
     assert.deepStrictEqual(calls[0].request.options.runtimeContext.metadata, { source: 'test' });
   });
 
   await test('（4.facade integration）request沒有帶任何runtime欄位時，runtimeContext套用全部預設值', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1' });
     assert.deepStrictEqual(calls[0].request.options.runtimeContext, { requestId: null, userId: 'u1', version: '1', timestamp: null, metadata: {} });
   });
 
   await test('（4.facade integration）request.options的既有欄位（例如includeContext）在合併後依然存在，沒有被runtimeContext覆蓋或遺失', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     await facade.executeIntelligence({}, { userId: 'u1', options: { includeContext: true, includeAnalysis: false } });
     assert.strictEqual(calls[0].request.options.includeContext, true);
     assert.strictEqual(calls[0].request.options.includeAnalysis, false);
@@ -355,7 +365,7 @@ async function run() {
 
   await test('（4.facade integration）request帶不合法的runtime欄位（例如version不是字串）時，facade正確攔截並回傳失敗，service完全不會被呼叫', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', version: 123 });
     assert.strictEqual(result.ok, false);
     assert.strictEqual(calls.length, 0);
@@ -363,21 +373,21 @@ async function run() {
 
   await test('（4.facade integration）request帶不合法的requestId（非字串非null）時，facade正確攔截並回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', requestId: 123 });
     assert.strictEqual(result.ok, false);
   });
 
   await test('（4.facade integration）request帶不合法的metadata（陣列）時，facade正確攔截並回傳失敗', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', metadata: [] });
     assert.strictEqual(result.ok, false);
   });
 
   await test('（4.facade integration）executeIntelligence()對外可觀察的成功回傳格式完全沒有因為新增Runtime Context而改變（依然是{ok:true, data:{status, result, metadata}}）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1' });
     assert.deepStrictEqual(Object.keys(result).sort(), ['data', 'ok']);
     assert.deepStrictEqual(Object.keys(result.data).sort(), ['metadata', 'result', 'status']);
@@ -428,7 +438,7 @@ async function run() {
 
   await test('（5.deterministic behavior，端對端）同樣的假service輸出，連續呼叫兩次executeIntelligence()（相同request，含相同runtime欄位）得到完全相同的結果', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const request = { userId: 'u1', requestId: 'req-1', version: '1', timestamp: 't1', metadata: {} };
     const a = await facade.executeIntelligence({}, request);
     const b = await facade.executeIntelligence({}, request);
@@ -457,7 +467,7 @@ async function run() {
 
   await test('（6.failure handling）facade輸入驗證失敗（缺少userId）時，完全不會呼叫createRuntimeContext後續流程，service也不會被呼叫', async () => {
     const { service, calls } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, {});
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'invalid_user_id');
@@ -466,14 +476,14 @@ async function run() {
 
   await test('（6.failure handling）runtime context驗證失敗時的失敗結果格式跟其他失敗一致（都是{ok:false, reason}）', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', timestamp: 12345 });
     assert.deepStrictEqual(Object.keys(result).sort(), ['ok', 'reason']);
   });
 
   await test('（6.failure handling）runtime context驗證失敗時，reason正是validateRuntimeContext()回傳的reason', async () => {
     const { service } = makeSpyService();
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const result = await facade.executeIntelligence({}, { userId: 'u1', timestamp: 12345 });
     const direct = validateRuntimeContext({ userId: 'u1', requestId: null, version: '1', timestamp: 12345, metadata: {} });
     assert.strictEqual(result.reason, direct.reason);
@@ -691,9 +701,19 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（12.pipeline isolation）原始碼掃描：src/bootstrap/application.js 完全沒有被TASK1.49修改（Runtime Context是純函式工具，不需要在bootstrap組裝）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // 注意：這裡原本用「git diff --stat src/bootstrap/application.js
+  // 必須為空」檢查TASK1.49沒有修改這個檔案——TASK1.50（Intelligence
+  // Execution Lifecycle Manager）合法新增了`intelligence.execution`
+  // 欄位並把facade改為注入executionManager，需要修改這個檔案，讓這個
+  // live diff檢查永遠失敗，屬於TASK1.39當時就記錄過的「用即時git
+  // diff檢查未來會被後續任務合法修改的檔案」治具問題。修正為內容型
+  // 檢查：確認TASK1.49當時真正在乎的事情——Runtime Context Builder
+  // 依然是純函式工具，不需要被bootstrap組裝成獨立實例（原始碼裡不會
+  // 出現createRuntimeContext()被賦值成intelligence namespace底下的
+  // 欄位）。
+  await test('（TASK1.50後更新）原始碼掃描：src/bootstrap/application.js 裡createRuntimeContext()依然不是被組裝進intelligence namespace的獨立實例（Runtime Context Builder依然是純函式工具，不受後續任務新增欄位影響）', () => {
+    const src = stripComments(fs.readFileSync(path.join(srcRoot, 'bootstrap', 'application.js'), 'utf8'));
+    assert.ok(!/createRuntimeContext/.test(src), 'application.js不應該直接呼叫createRuntimeContext()，那是facade內部的責任');
   });
 
   await test('（12.pipeline isolation，端對端）Runtime Context只是多帶著一個目前沒有人讀取的欄位往下傳，不影響既有pipeline行為——用真正的Orchestrator（假造四個底層子依賴）驗證options.runtimeContext不影響分析/推薦結果', async () => {
@@ -710,7 +730,7 @@ async function run() {
       recommendationRunner: createRecommendationRunner(),
     });
     const service = createIntelligenceService({ orchestrator });
-    const facade = createIntelligenceFacade({ service });
+    const facade = createIntelligenceFacade({ executionManager: wrapAsExecutionManager(service) });
     const withoutRuntime = await facade.executeIntelligence({}, { userId: 'u1' });
     const withRuntime = await facade.executeIntelligence({}, { userId: 'u1', requestId: 'req-x', metadata: { source: 'test' } });
     assert.deepStrictEqual(withoutRuntime.data.result, withRuntime.data.result);
@@ -781,9 +801,12 @@ async function run() {
     assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'intelligence', 'middleware', 'router', 'services']);
   });
 
-  await test('（14.bootstrap compatibility）app.intelligence 恰好仍是TASK1.48既有的十個欄位（Runtime Context是純函式工具，不需要新增獨立的intelligence欄位）', () => {
+  // 注意：TASK1.50為app.intelligence新增了`execution`欄位（Execution
+  // Manager的extension point），這是明確要做的擴充，不是回歸，這裡的
+  // 預期key清單已同步更新。
+  await test('（TASK1.50後更新）app.intelligence 恰好具備十一個欄位（TASK1.48既有十個加上TASK1.50新增的execution）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（14.bootstrap compatibility）透過bootstrap建立的app.intelligence.facade.executeIntelligence()依然正確建立並套用Runtime Context', async () => {

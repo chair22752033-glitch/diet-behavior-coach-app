@@ -5,7 +5,7 @@
  * namespace；TASK1.44 新增 recommendation namespace；TASK1.45 新增
  * orchestration namespace；TASK1.46 新增 service namespace；TASK1.47
  * 新增 executionContracts namespace；TASK1.48 新增 facade namespace；
- * TASK1.49 新增 runtime namespace）
+ * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -35,7 +35,11 @@
  * 實例。TASK1.49新增的runtime namespace則跟executionContracts一樣，
  * 是被intelligence/facade/intelligence_facade.js直接import使用的
  * 純函式工具（用來建立Runtime Context），不是需要在bootstrap組裝的
- * 獨立子層實例。
+ * 獨立子層實例。TASK1.50新增的execution namespace則跟orchestration/
+ * service一樣，透過依賴注入呼叫service（唯一允許呼叫的下一層），是
+ * 需要在bootstrap組裝的獨立子層實例——這次起，facade改為呼叫
+ * execution namespace組裝出來的Execution Manager，不再直接呼叫
+ * service（見src/bootstrap/application.js）。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -51,3 +55,4 @@ export * as service from './service/index.js';
 export * as executionContracts from './contracts/execution/index.js';
 export * as facade from './facade/index.js';
 export * as runtime from './runtime/index.js';
+export * as execution from './execution/index.js';
