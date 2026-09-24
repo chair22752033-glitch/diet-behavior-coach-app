@@ -161,6 +161,91 @@ Request/Response 是什麼。
 **目前沒有任何 route/controller 讀取 `app.intelligence`**，純粹是
 組裝好、放在那裡供 Phase 2 使用，不影響任何一條既有 route 的行為。
 
+## Phase 3 Extension Point（TASK1.57新增——Ending Preparation Review
+確認的四個未來接入口）
+
+Phase 2 把整個Intelligence Runtime Foundation建好，但**刻意完全沒有
+啟用任何AI功能**——未來Phase 3要導入真實的分析/推薦能力（例如接上
+真正的AI Provider）時，明確只能從下面四個既有邊界其中之一接入，
+全部都是既有的依賴注入(DI)組裝點，不需要新增任何檔案就能替換掉
+內部實作：
+
+1. **`intelligence.facade`**（`src/intelligence/facade/`，TASK1.48）
+   ——未來的Controller/API Layer如果要用Intelligence功能，只能透過
+   `facade.executeIntelligence(db, request)`這一個入口，不會、也
+   不應該跳過Facade直接呼叫底下任何一層。
+2. **`intelligence.service`**（`src/intelligence/service/`，
+   TASK1.46）——應用層跟Orchestrator之間的邊界，`getIntelligence()`
+   內部用Execution Contract驗證輸入/輸出形狀，未來真正的AI推論邏輯
+   如果需要在這一層插入前處理/後處理，可以透過重新組裝
+   `createIntelligenceService({orchestrator, resultBuilder})`的
+   依賴注入參數達成，不需要修改Facade或Orchestrator。
+3. **`intelligence.execution`**（Execution Manager，
+   `src/intelligence/execution/`，TASK1.50）——生命週期管理邊界，
+   未來如果需要在「執行中」加入額外的runtime控制（例如逾時、重試、
+   熔斷），可以透過`createExecutionManager()`既有的依賴注入參數
+   （`service`/`eventDispatcher`/`historyStore`）擴充，不需要更動
+   Facade或Service對外的介面。
+4. **`intelligence.governance`**（`src/intelligence/governance/`，
+   TASK1.55）——目前完全獨立、沒有被接進真實呼叫鏈的政策邊界，
+   是Phase 3最直接的接入點：未來要在「允許執行AI分析前」加入真正
+   的業務規則（例如額度限制、使用者資格判斷）時，只需要擴充
+   `execution_policy.js`的規則，再由Facade/Execution Manager透過
+   依賴注入呼叫`governanceService.validateExecution()`，不需要改變
+   Governance現有的`{status, allowed, reasons, metadata}`輸出格式。
+
+**明確禁止的捷徑**（Phase 3導入AI Provider時同樣適用，TASK1.40既定
+原則的延伸）：未來的AI Provider**不得**繞過上面四個邊界，直接進入
+`src/controllers/`、`src/routes/`、`src/worker.js`、或
+`src/services/`（既有Domain Service）——這四個Phase 2既有位置對
+Intelligence Layer的存在完全不知情（`src/routes/`/`src/controllers/`/
+`src/worker.js`/`src/services/`目前零個檔案import
+`src/intelligence/`底下任何東西，只有`src/bootstrap/application.js`
+一個組裝點），Phase 3必須維持這個邊界，不能為了接AI Provider而讓
+Controller或Domain Service反過來認識Intelligence Layer的存在。
+
+## Data Flow（單向資料流，TASK1.57確認）
+
+```
+Domain Data（既有五大Domain Service）
+  ↓
+Data Preparation（TASK1.41）── 蒐集 + 正規化
+  ↓
+Insight Context（TASK1.42）── 組出通過驗證的Context
+  ↓
+Analysis（TASK1.43）── deterministic分析（目前inert）
+  ↓
+Recommendation（TASK1.44）── deterministic推薦（目前inert）
+  ↓
+Execution Runtime（Orchestrator→Service→Execution Manager→Facade，
+  TASK1.45/1.46/1.50/1.48）── 生命週期管理 + 統一輸出格式
+```
+
+`intelligence_orchestrator.js`的`runIntelligencePipeline()`程式碼
+本身就是這個順序的直接體現（依序呼叫`dataPreparation.prepare()` →
+`contextBuilder.buildInsightContext()` →
+`analysisRunner.runAnalysis()` →
+`recommendationRunner.runRecommendation()`，任何一步失敗立刻停止，
+不會用不完整資料頂替繼續跑後面階段）——資料只往下游流動，沒有任何
+一層會回頭呼叫它的上游（例如Analysis不會反過來呼叫Data
+Preparation），這個順序自TASK1.45建立以來沒有被任何後續任務改變過。
+
+## Ending Review 準備狀態（TASK1.57確認）
+
+- **Runtime Layer完整性**：Input（Data Preparation）/Context
+  （Insight Context）/Analysis/Recommendation/Execution
+  （Execution Manager）/Runtime（Runtime Context）/Governance
+  七個boundary全部存在且各自有獨立的README/index.js/測試套件。
+- **Phase 3接入口明確**：見上方「Phase 3 Extension Point」四點。
+- **無未閉合邊界**：TASK1.56的Runtime Architecture Review已程式化
+  驗證整個`src/intelligence/`零循環依賴、export一致、Execution
+  Manager維持唯一lifecycle入口、Governance維持完全獨立無狀態。
+- **Security Boundary**：整個Intelligence Layer完全不import
+  `src/auth/`/`src/oauth/`/`src/identity/`/`src/middleware/`，不
+  解析session/cookie/JWT，不呼叫`requireAuth()`。
+- Phase 2 Intelligence Runtime Foundation**已具備進入Ending
+  Review的條件**。
+
 ## 測試方式
 
 `backups/phase1-task1.40-intelligence-foundation/test_intelligence_foundation.mjs`：
@@ -175,3 +260,12 @@ Request/Response 是什麼。
 test_runtime_architecture_review.mjs`是這條測試鏈最新的一份，專門
 驗證整個`src/intelligence/`的namespace一致性/dependency boundary/
 無循環依賴/無跨層直接引用，而不是驗證某一個特定子層的業務邏輯。
+
+**TASK1.57更新**：`backups/phase1-task1.57-ending-preparation/
+test_phase2_ending_review.mjs`延續TASK1.56的審查手法，額外驗證
+「Phase 2 Layer完整性」「Phase 3 Extension Point是否明確」「Data
+Flow是否維持單向」「Security Boundary（Auth/OAuth/Session/User
+Identity Provider）」——是Phase 2結束前最後一份測試套件，通過後
+即代表可以進入Ending Review，往後任何Phase 3的變更都應該從上面
+「Phase 3 Extension Point」列出的四個既有邊界接入，而不是回頭修改
+Phase 2既有的任何一個檔案。
