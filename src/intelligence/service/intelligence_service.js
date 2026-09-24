@@ -1,5 +1,7 @@
 /*
  * Phase 1 TASK 1.46｜Intelligence Application Service Layer Foundation
+ * （TASK1.47 起改用 src/intelligence/contracts/execution/ 三個contract
+ * 驗證request/options/response，取代原本內建的validateRequest()）
  * - Intelligence Service
  *
  * 責任：在未來的 Application/API Layer 跟 Intelligence Orchestrator
@@ -10,7 +12,7 @@
  *
  *   Application Layer（未來的Controller/API）
  *     ↓
- *   Intelligence Service（這裡）
+ *   Intelligence Service（這裡）── 使用Execution Contract驗證輸入/輸出
  *     ↓
  *   Intelligence Orchestrator（TASK1.45）
  *     ↓
@@ -35,27 +37,31 @@
  *
  * 只呼叫 Intelligence Orchestrator（透過依賴注入拿到的
  * `orchestrator.runIntelligencePipeline()`），不繞過它直接呼叫任何
- * 更底層的Phase 2子層。
+ * 更底層的Phase 2子層。TASK1.47明確禁止修改Orchestrator/Analysis
+ * Runner/Recommendation Runner的邏輯——三者的原始碼完全沒有被觸碰，
+ * 這次只有這個檔案（Service boundary本身）改成使用
+ * src/intelligence/contracts/execution/ 底下三個contract做驗證。
+ *
+ * TASK1.47新增的驗證步驟（getIntelligence()內部依序執行）：
+ * 1. validateIntelligenceRequest(request) —— 驗證request形狀
+ *    （userId必填非空字串、options選填且存在時必須是物件）
+ * 2. validateExecutionOptions(request.options) —— 驗證options支援
+ *    欄位（version/includeContext/includeAnalysis/
+ *    includeRecommendation）的型別，request.options為undefined時
+ *    視為合法、跳過此步驟等同直接通過
+ * 3.（呼叫Orchestrator，完全沒有修改）
+ * 4. validateIntelligenceResponse(outcome.data.result) —— 確認
+ *    Orchestrator回傳的Unified Intelligence Result依然符合穩定
+ *    contract（status恰好是"intelligence_ready"、五個欄位型別正確）
+ *    才回傳給呼叫端
+ *
+ * `getIntelligence()`對外可觀察的行為（成功回傳{ok:true,data}、失敗
+ * 回傳{ok:false,reason}）完全沒有改變，這是純粹的「內部驗證邏輯加固」。
  */
 import { createServiceResultBuilder } from './service_result_builder.js';
-
-/**
- * 驗證 getIntelligence() 的 request 輸入——只檢查這一層自己需要知道的
- * 最小欄位（userId 是否為非空字串），不解讀 options 的內容（options
- * 完全原樣轉交給 Orchestrator，由更底層的子層決定怎麼使用）。
- *
- * @param {*} request
- * @returns {{ok:boolean, reason?:string}}
- */
-function validateRequest(request) {
-  if (!request || typeof request !== 'object') {
-    return { ok: false, reason: 'invalid_request' };
-  }
-  if (typeof request.userId !== 'string' || request.userId.length === 0) {
-    return { ok: false, reason: 'invalid_user_id' };
-  }
-  return { ok: true };
-}
+import { validateIntelligenceRequest } from '../contracts/execution/intelligence_request_contract.js';
+import { validateExecutionOptions } from '../contracts/execution/execution_options_contract.js';
+import { validateIntelligenceResponse } from '../contracts/execution/intelligence_response_contract.js';
 
 /**
  * @param {object} dependencies
@@ -69,22 +75,30 @@ export function createIntelligenceService(dependencies) {
   const resultBuilder = dependencies.resultBuilder || createServiceResultBuilder();
 
   /**
-   * 應用層唯一需要呼叫的入口：驗證輸入 → 呼叫 Intelligence Orchestrator
-   * → 回傳穩定的服務層結果格式。任何一步失敗都立刻回傳
-   * {ok:false, reason}，不會用不完整的資料頂替繼續執行。
+   * 應用層唯一需要呼叫的入口：用Execution Contract驗證request →
+   * 用Execution Contract驗證options → 呼叫 Intelligence Orchestrator
+   * （完全沒有修改）→ 用Execution Contract驗證response → 回傳穩定的
+   * 服務層結果格式。任何一步失敗都立刻回傳{ok:false, reason}，不會用
+   * 不完整/不符合形狀的資料頂替繼續執行。
    *
    * @param {object} db - createDb(env) 回傳的 db 物件，一律由呼叫端
    *   傳入，這裡不持有任何狀態，原樣轉交給
    *   orchestrator.runIntelligencePipeline()
    * @param {{userId:string, options?:object}} request - 應用層傳入的
    *   請求物件，`userId` 一律是已經確認過的使用者id，`options`
-   *   （選填）原樣轉交給Orchestrator，這裡完全不解讀其內容
+   *   （選填）先經過execution options contract驗證型別，再原樣轉交給
+   *   Orchestrator，這裡完全不解讀其業務內容
    * @returns {Promise<{ok:true, data:{status:string, context:object, analysis:object, recommendation:object, metadata:object}}|{ok:false, reason:string}>}
    */
   async function getIntelligence(db, request) {
-    const validation = validateRequest(request);
-    if (!validation.ok) {
-      return resultBuilder.buildFailureResult(validation.reason);
+    const requestValidation = validateIntelligenceRequest(request);
+    if (!requestValidation.ok) {
+      return resultBuilder.buildFailureResult(requestValidation.reason);
+    }
+
+    const optionsValidation = validateExecutionOptions(request.options);
+    if (!optionsValidation.ok) {
+      return resultBuilder.buildFailureResult(optionsValidation.reason);
     }
 
     if (!orchestrator || typeof orchestrator.runIntelligencePipeline !== 'function') {
@@ -94,6 +108,11 @@ export function createIntelligenceService(dependencies) {
     const outcome = await orchestrator.runIntelligencePipeline(db, request.userId, request.options);
     if (!outcome.ok) {
       return resultBuilder.buildFailureResult(outcome.reason);
+    }
+
+    const responseValidation = validateIntelligenceResponse(outcome.data.result);
+    if (!responseValidation.ok) {
+      return resultBuilder.buildFailureResult(responseValidation.reason);
     }
 
     return resultBuilder.buildSuccessResult(outcome.data.result);

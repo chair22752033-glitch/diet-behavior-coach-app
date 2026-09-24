@@ -3,7 +3,8 @@
  * （TASK1.41 新增 dataPreparation namespace；TASK1.42 新增 context
  * namespace 與 insightContextContract；TASK1.43 新增 analysis
  * namespace；TASK1.44 新增 recommendation namespace；TASK1.45 新增
- * orchestration namespace；TASK1.46 新增 service namespace）
+ * orchestration namespace；TASK1.46 新增 service namespace；TASK1.47
+ * 新增 executionContracts namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -23,7 +24,11 @@
  * point，留給未來任務決定怎麼串接。orchestration namespace本身透過
  * 依賴注入協調前面四層（dataPreparation/context/analysis/
  * recommendation），service namespace則透過依賴注入呼叫orchestration，
- * 但這個統一輸出入口本身不做任何組裝，只負責re-export。
+ * 但這個統一輸出入口本身不做任何組裝，只負責re-export。TASK1.47新增
+ * 的executionContracts namespace跟insightContextContract一樣，是被
+ * intelligence/service/intelligence_service.js直接import使用的純函式
+ * 驗證工具（用來驗證getIntelligence()的request/options/response
+ * 形狀），不是需要在bootstrap組裝的獨立子層實例。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -36,3 +41,4 @@ export * as analysis from './analysis/index.js';
 export * as recommendation from './recommendation/index.js';
 export * as orchestration from './orchestration/index.js';
 export * as service from './service/index.js';
+export * as executionContracts from './contracts/execution/index.js';

@@ -312,9 +312,17 @@ async function run() {
     assert.strictEqual(result.ok, true);
   });
 
-  await test('（3.input validation）validateRequest()的驗證邏輯只在service內部，原始碼掃描確認intelligence_service.js有一個名為validateRequest的函式', () => {
+  // 注意：TASK1.47（Intelligence Execution Contract Layer）明確要求
+  // intelligence_service.js改用src/intelligence/contracts/execution/
+  // 底下的validateIntelligenceRequest()取代這裡原本內建的
+  // validateRequest()，這是規格明確要求的架構調整，不是回歸——
+  // getIntelligence()對外可觀察的行為（成功/失敗的回傳格式）完全沒有
+  // 改變，這裡改成驗證「intelligence_service.js確實import並使用
+  // execution contract層的驗證函式」。
+  await test('（TASK1.47後更新）intelligence_service.js改用src/intelligence/contracts/execution/的validateIntelligenceRequest()做輸入驗證（不再是內建的validateRequest()）', () => {
     const src = readSrc(path.join(serviceDir, 'intelligence_service.js'));
-    assert.ok(/function validateRequest\(request\)/.test(src));
+    assert.ok(/import\s*\{\s*validateIntelligenceRequest\s*\}\s*from\s*['"]\.\.\/contracts\/execution\/intelligence_request_contract\.js['"]/.test(src));
+    assert.ok(/validateIntelligenceRequest\(request\)/.test(src));
   });
 
   console.log('');
