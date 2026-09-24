@@ -73,6 +73,17 @@
  * `insightService`本次完全沒有被修改成會呼叫它，是各自獨立掛在
  * intelligence namespace底下的extension point，沒有任何
  * route/controller讀取它，留給未來任務決定怎麼串接。
+ *
+ * TASK1.45新增：`intelligence.orchestration`，組裝
+ * src/intelligence/orchestration/ 的 createIntelligenceOrchestrator()
+ * 實例——負責「依固定順序協調dataPreparation→context→analysis→
+ * recommendation四個既有子層，組出單一Unified Intelligence Result」。
+ * 注入的是跟`intelligence.dataPreparation`/`intelligence.context`/
+ * `intelligence.analysis`/`intelligence.recommendation`完全相同的
+ * 實例（不是各自獨立建立第二份），確保orchestrator跑出來的結果跟
+ * 直接個別呼叫這幾層是一致的。`insightService`本次依然完全沒有被
+ * 修改成會呼叫orchestrator，兩者是各自獨立掛在intelligence
+ * namespace底下的extension point，沒有任何route/controller讀取它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -100,7 +111,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -171,6 +182,12 @@ export function createApplication(env) {
   });
   const analysisRunner = analysis.createAnalysisRunner();
   const recommendationRunner = recommendation.createRecommendationRunner();
+  const intelligenceOrchestrator = orchestration.createIntelligenceOrchestrator({
+    dataPreparation: dataPreparationService,
+    contextBuilder: insightContextBuilder,
+    analysisRunner,
+    recommendationRunner,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -179,6 +196,7 @@ export function createApplication(env) {
     context: insightContextBuilder,
     analysis: analysisRunner,
     recommendation: recommendationRunner,
+    orchestration: intelligenceOrchestrator,
   };
 
   return { config, db, services, router, middleware, intelligence };

@@ -87,11 +87,12 @@ async function run() {
 
   // 注意：TASK1.42 新增了 contracts/（Insight Context Contract）跟
   // context/（Insight Context Builder）兩個子目錄，TASK1.43 新增了
-  // analysis/（Analysis Framework），TASK1.44 又新增了
-  // recommendation/（Recommendation Framework），都是明確要做的擴充，
+  // analysis/（Analysis Framework），TASK1.44 新增了
+  // recommendation/（Recommendation Framework），TASK1.45 又新增了
+  // orchestration/（Intelligence Orchestrator），都是明確要做的擴充，
   // 不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.44後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/recommendation 五個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'recommendation']);
+  await test('（TASK1.45後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/orchestration/recommendation 六個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'orchestration', 'recommendation']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -528,12 +529,14 @@ async function run() {
 
   // 注意：TASK1.41 為 app.intelligence 新增了 `dataPreparation` 欄位，
   // TASK1.42 又新增了 `context` 欄位，TASK1.43 新增了 `analysis`
-  // 欄位，TASK1.44 再新增了 `recommendation` 欄位（Recommendation
+  // 欄位，TASK1.44 新增了 `recommendation` 欄位（Recommendation
   // Framework的extension point，見src/intelligence/recommendation/），
-  // 都是明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.44後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation 七個欄位', () => {
+  // TASK1.45 再新增了 `orchestration` 欄位（Intelligence Orchestrator
+  // 的extension point，見src/intelligence/orchestration/），都是明確
+  // 要做的擴充，不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.45後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration 八個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'recommendation', 'recommendationEngine']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {
