@@ -694,9 +694,9 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.service.getIntelligence, 'function');
   });
 
-  await test('（TASK1.54後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics 十五個欄位', () => {
+  await test('（TASK1.55後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics/governance 十六個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（12.bootstrap injection）app.intelligence.service內部注入的orchestrator跟app.intelligence.orchestration是同一個實例（用spy覆寫runIntelligencePipeline()驗證兩者共用同一個物件參考）', async () => {

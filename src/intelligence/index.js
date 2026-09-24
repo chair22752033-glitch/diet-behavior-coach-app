@@ -8,7 +8,7 @@
  * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
  * namespace；TASK1.51 新增 events namespace；TASK1.52 新增 history
  * namespace；TASK1.53 新增 monitoring namespace；TASK1.54 新增
- * metrics namespace）
+ * metrics namespace；TASK1.55 新增 governance namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -68,7 +68,14 @@
  * monitoring著重「查詢單次執行的狀態/歷史」，metrics著重「跨執行
  * 的彙總統計數字（次數/平均耗時/成功率）」，兩者各自獨立訂閱同一個
  * Event Dispatcher實例，互不影響，execution_manager.js本身這次
- * 同樣完全沒有被修改。
+ * 同樣完全沒有被修改。TASK1.55新增的governance namespace跟前面
+ * 幾個Phase 2 extension point不同——`createGovernanceService()`
+ * 是完全無狀態的純函式組裝（不像events/history/monitoring/metrics
+ * 那樣持有Map狀態，也不訂閱Event Dispatcher），只回答「這次執行的
+ * 輸入形狀允不允許執行」，刻意不接進facade→execution manager的
+ * 真實呼叫鏈（規格明確要求「不改變既有execution behavior」），
+ * `execution_manager.js`/`intelligence/facade/`本次同樣完全沒有
+ * 被修改，是留給Phase 3未來透過依賴注入接上的獨立治理邊界。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -89,3 +96,4 @@ export * as events from './events/index.js';
 export * as history from './history/index.js';
 export * as monitoring from './monitoring/index.js';
 export * as metrics from './metrics/index.js';
+export * as governance from './governance/index.js';
