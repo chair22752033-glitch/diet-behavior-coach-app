@@ -292,6 +292,28 @@
  * `execution_manager.js`本身也完全沒有被修改。本次任務明確禁止
  * 新增任何API route，`intelligence.features`目前是純粹的Phase 3
  * extension point，還沒有任何真實的User Application呼叫它。
+ *
+ * Phase 3 TASK1.66新增：`intelligence.insightFeature`，組裝
+ * src/intelligence/application/features/insight/ 的
+ * createInsightFeatureCapability({workflow}) 實例——Phase 3第一個
+ * 「正式」的domain-specific Feature Capability（跟TASK1.65通用的
+ * `intelligence.features`並存、互不覆蓋）。注入的`workflow`是跟
+ * `intelligence.workflow`完全相同的`intelligenceApplicationWorkflow`
+ * 實例（不是各自建立第二份）。Insight Feature Capability完全不能
+ * 直接呼叫Capability/Use Case/Application Service/Facade/
+ * Execution Manager/History Store/Metrics Store/Event Dispatcher/
+ * Database/AI Provider（規格明確禁止的捷徑），唯一認識的下一層是
+ * Workflow Layer。這是純粹的依賴注入組裝，`intelligence.workflow`/
+ * `intelligence.features`/`intelligence.capabilities`/
+ * `intelligence.useCases`/`intelligence.application`/
+ * `intelligence.facade`/其餘既有欄位完全沒有被重新注入任何新
+ * 依賴，`application_workflow.js`/`insight_capability.js`（位於
+ * capabilities/）/`insight_use_case.js`/`application_service.js`/
+ * `intelligence_facade.js`/`execution_manager.js`/TASK1.65
+ * `features/insight_feature.js`本身也完全沒有被修改。本次任務
+ * 明確禁止新增任何API route，`intelligence.insightFeature`目前是
+ * 純粹的Phase 3 extension point，還沒有任何真實的User Application
+ * 呼叫它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -435,6 +457,9 @@ export function createApplication(env) {
   const intelligenceInsightFeature = intelligenceApplicationNamespace.features.createInsightFeature({
     workflow: intelligenceApplicationWorkflow,
   });
+  const intelligenceInsightFeatureCapability = intelligenceApplicationNamespace.features.insight.createInsightFeatureCapability({
+    workflow: intelligenceApplicationWorkflow,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -456,6 +481,7 @@ export function createApplication(env) {
     capabilities: intelligenceInsightCapability,
     workflow: intelligenceApplicationWorkflow,
     features: intelligenceInsightFeature,
+    insightFeature: intelligenceInsightFeatureCapability,
     facade: intelligenceFacade,
   };
 
