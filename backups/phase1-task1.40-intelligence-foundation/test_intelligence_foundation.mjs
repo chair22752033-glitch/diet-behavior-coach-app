@@ -89,11 +89,12 @@ async function run() {
   // context/（Insight Context Builder）兩個子目錄，TASK1.43 新增了
   // analysis/（Analysis Framework），TASK1.44 新增了
   // recommendation/（Recommendation Framework），TASK1.45 新增了
-  // orchestration/（Intelligence Orchestrator），TASK1.46 又新增了
-  // service/（Intelligence Application Service），都是明確要做的
+  // orchestration/（Intelligence Orchestrator），TASK1.46 新增了
+  // service/（Intelligence Application Service），TASK1.48 又新增了
+  // facade/（Intelligence Application Facade），都是明確要做的
   // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.46後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/orchestration/recommendation/service 七個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'orchestration', 'recommendation', 'service']);
+  await test('（TASK1.48後更新）src/intelligence/ 底下的子目錄依序是 analysis/context/contracts/data_preparation/facade/orchestration/recommendation/service 八個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'context', 'contracts', 'data_preparation', 'facade', 'orchestration', 'recommendation', 'service']);
   });
 
   for (const f of EXPECTED_FILES) {
@@ -537,9 +538,9 @@ async function run() {
   // 再新增了 `service` 欄位（Intelligence Application Service的
   // extension point，見src/intelligence/service/），都是明確要做的
   // 擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.46後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service 九個欄位', () => {
+  await test('（TASK1.48後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade 十個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {

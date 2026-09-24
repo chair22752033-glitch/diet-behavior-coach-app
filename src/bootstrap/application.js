@@ -94,6 +94,23 @@
  * `insightService`本次依然完全沒有被修改成會呼叫這個service，兩者是
  * 各自獨立掛在intelligence namespace底下的extension point，本次任務
  * 明確禁止串接任何route/controller/worker.js。
+ *
+ * TASK1.47（Intelligence Execution Contract Layer）本次不需要修改
+ * 這個檔案——新增的三個contract是純函式驗證工具，由
+ * intelligence_service.js內部import使用，不是需要在這裡組裝的獨立
+ * 子層實例。
+ *
+ * TASK1.48新增：`intelligence.facade`，組裝
+ * src/intelligence/facade/ 的 createIntelligenceFacade() 實例——負責
+ * 「在未來的Application Consumer跟Intelligence Service之間再建立一層
+ * application-facing的穩定門面」，對外只暴露
+ * `executeIntelligence(db, request)`一個介面，把Service回傳的
+ * {status, context, analysis, recommendation, metadata}重新包裝成
+ * {status, result:{context, analysis, recommendation}, metadata}。
+ * 注入的是跟`intelligence.service`完全相同的`intelligenceService`
+ * 實例（不是各自建立第二份）。Facade明確只允許呼叫Service，本次任務
+ * 完全沒有修改intelligence_service.js/Orchestrator/Analysis/
+ * Recommendation，也明確禁止串接任何route/controller/worker.js。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -121,7 +138,7 @@ import * as timelineService from '../services/timeline_service.js';
 import * as sessionCleanupService from '../services/session_cleanup_service.js';
 import * as sessionManagementService from '../services/session_management_service.js';
 import * as auditLogService from '../services/audit_log_service.js';
-import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace } from '../intelligence/index.js';
+import { createInsightService, createAnalysisEngine, createRecommendationEngine, dataPreparation, context as insightContext, analysis, recommendation, orchestration, service as intelligenceServiceNamespace, facade as intelligenceFacadeNamespace } from '../intelligence/index.js';
 
 /**
  * @param {object} env - Worker 的 env 物件
@@ -201,6 +218,9 @@ export function createApplication(env) {
   const intelligenceService = intelligenceServiceNamespace.createIntelligenceService({
     orchestrator: intelligenceOrchestrator,
   });
+  const intelligenceFacade = intelligenceFacadeNamespace.createIntelligenceFacade({
+    service: intelligenceService,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -211,6 +231,7 @@ export function createApplication(env) {
     recommendation: recommendationRunner,
     orchestration: intelligenceOrchestrator,
     service: intelligenceService,
+    facade: intelligenceFacade,
   };
 
   return { config, db, services, router, middleware, intelligence };

@@ -754,9 +754,12 @@ async function run() {
     assert.deepStrictEqual(Object.keys(app).sort(), ['config', 'db', 'intelligence', 'middleware', 'router', 'services']);
   });
 
-  await test('（13.bootstrap compatibility）app.intelligence 恰好仍是TASK1.46既有的九個欄位（本次任務沒有新增/移除任何intelligence欄位）', () => {
+  // 注意：TASK1.48（Intelligence Facade Layer）為app.intelligence新增
+  // 了`facade`欄位，這是明確要做的擴充，不是回歸，這裡的預期key清單
+  // 已同步更新。
+  await test('（TASK1.48後更新）app.intelligence 恰好具備TASK1.46既有九個欄位加上TASK1.48新增的facade，共十個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（13.bootstrap compatibility）app.intelligence.service.getIntelligence() 透過bootstrap建立的實例依然正確使用新的execution contract驗證（缺少userId時回傳invalid_user_id）', async () => {
@@ -778,9 +781,19 @@ async function run() {
     assert.strictEqual(app.router.routes.length, 21);
   });
 
-  await test('（13.bootstrap compatibility）原始碼掃描：src/bootstrap/application.js 本次任務完全沒有被修改（git diff確認）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // 注意：這裡原本用「git diff --stat src/bootstrap/application.js
+  // 必須為空」檢查TASK1.47沒有修改這個檔案——TASK1.48（Intelligence
+  // Facade Layer）合法新增了`intelligence.facade`欄位，需要修改這個
+  // 檔案，讓這個live diff檢查永遠失敗，屬於TASK1.39當時就記錄過的
+  // 「用即時git diff檢查未來會被後續任務合法修改的檔案」治具問題。
+  // 修正為內容型檢查：確認TASK1.47當時真正在乎的事情——
+  // intelligenceService的組裝方式（用intelligenceOrchestrator做DI）
+  // 依然存在，不受未來新增欄位影響。
+  await test('（TASK1.48後更新）原始碼掃描：src/bootstrap/application.js 裡createIntelligenceService()依然用intelligenceOrchestrator做依賴注入（TASK1.47當時的組裝方式沒有被後續任務破壞，即使檔案本身因TASK1.48新增facade欄位而合法變動）', () => {
+    const src = stripComments(fs.readFileSync(path.join(srcRoot, 'bootstrap', 'application.js'), 'utf8'));
+    const match = src.match(/createIntelligenceService\(\{([^}]*)\}\)/);
+    assert.ok(match, '應該找得到createIntelligenceService({...})呼叫');
+    assert.ok(/orchestrator\s*:\s*intelligenceOrchestrator/.test(match[1]));
   });
 
   await test('（13.bootstrap compatibility）原始碼掃描：src/intelligence/orchestration/、src/intelligence/analysis/、src/intelligence/recommendation/ 三個目錄的.js檔案完全沒有被TASK1.47修改（規格明確禁止）', () => {
