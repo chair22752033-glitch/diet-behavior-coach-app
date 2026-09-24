@@ -35,7 +35,16 @@
  * insight_result_mapper.js import——維持「建立但不改變既有
  * execution behavior」的邊界決策，用測試證明Insight Feature
  * 事實上可以消費Runtime Context。
+ *
+ * Phase 3 TASK1.68新增：`output` namespace，re-export
+ * ./output/index.js——把Insight Context Mapper（TASK1.67）攤平出來
+ * 的Insight Domain視圖轉換成穩定Insight Domain Output的純函式
+ * 工具（`InsightOutputModel`/`validateInsightOutput`/
+ * `createInsightOutputMapper()`），同樣是「建立但不改變既有
+ * execution behavior」的extension point，目前沒有被
+ * insight_capability.js/insight_context_mapper.js import。
  */
 export { createInsightFeatureCapability } from './insight_capability.js';
 export { createInsightResultMapper } from './insight_result_mapper.js';
 export * as context from './context/index.js';
+export * as output from './output/index.js';
