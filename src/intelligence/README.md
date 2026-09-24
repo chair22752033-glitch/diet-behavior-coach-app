@@ -361,6 +361,128 @@ application.js`是唯一的組裝點，`src/controllers/`/`src/routes/`/
   Worker既有生產環境之外的、獨立的程式碼新增，沒有任何一次測試或
   審查在真實資料庫留下痕跡。
 
+## Phase 3 Application Architecture Plan（TASK1.59——架構規劃，
+不是實作）
+
+Phase 2把整個Intelligence Runtime Foundation建好、也確認了它已具備
+Ending Review的條件（TASK1.56~1.58）。這一節是Phase 3正式開始前的
+**架構規劃**——本身**不是新功能、不是AI功能、不修改任何Phase 2既有
+檔案的行為**，只是把「Phase 3該怎麼安全地使用Phase 2成果」寫清楚，
+供未來實際動手實作Phase 3時依循。
+
+### 1. Phase 3 Architecture Boundary（確認呼叫鏈方向合理）
+
+```
+User Application（Phase 3未來要建立，目前不存在）
+  ↓
+Intelligence Facade（Phase 2既有，src/intelligence/facade/）
+  ↓
+Intelligence Service（Phase 2既有，src/intelligence/service/）
+  ↓
+Execution Runtime（Phase 2既有：Execution Manager→Orchestrator）
+  ↓
+Analysis / Recommendation Extension（Phase 2既有的modules注入機制）
+```
+
+這條鏈路合理，原因：
+- 每一層都已經在Phase 2被建好、被測試過（TASK1.48/1.46/1.50/1.45/
+  1.43/1.44），Phase 3不需要重新設計任何一層的介面。
+- User Application是唯一「Phase 3需要新增」的東西，而且它只需要
+  認識**一個**介面：`facade.executeIntelligence(db, request)`。
+  User Application完全不需要、也不應該知道Intelligence Service/
+  Execution Manager/Orchestrator/Analysis/Recommendation的存在，
+  這是Facade Pattern存在的目的。
+- 這條鏈路跟TASK1.45起建立、TASK1.56/1.57/1.58反覆驗證過的既有
+  Data Flow（Domain Data→Data Preparation→Insight Context→
+  Analysis→Recommendation→Execution Runtime）完全相容，只是這裡
+  額外在最上面加了一層「User Application」，不改變Execution
+  Runtime以下的任何東西。
+
+### 2. AI Provider Extension Point（重申並收斂TASK1.58的結論）
+
+未來Phase 3如果要導入真正的AI Provider（呼叫Claude/OpenAI/
+DeepSeek或任何model inference服務），**只能**進入下面兩個具體
+位置，不能有第三個：
+
+- **`src/intelligence/analysis/analysis_runner.js`的
+  `dependencies.modules`**——把AI分析邏輯包成一個
+  `(insightContext) => {type,value,source}|null`函式，加進（或
+  取代）`DEFAULT_ANALYSIS_MODULES`陣列。
+- **`src/intelligence/recommendation/recommendation_runner.js`的
+  `dependencies.modules`**——同樣的機制，`(analysisResult) =>
+  {type,value,source}|null`函式。
+
+**不得**進入（TASK1.59重申，範圍跟TASK1.58一致）：
+`src/routes/`、`src/controllers/`、`src/worker.js`、
+`src/auth/`/`src/oauth/`（Authentication）、`src/services/`
+（既有Domain Service）。原因：這五個位置目前對Intelligence Layer
+完全不知情（零import），AI Provider如果被塞進這五個位置，會需要
+讓這些位置反過來認識Intelligence Layer的內部細節，破壞Phase 2
+建立的「Application/Domain Service不知道Intelligence存在」邊界。
+
+### 3. Application Usage Boundary（未來使用者功能該怎麼取得
+Intelligence Result）
+
+未來的使用者功能（例如「查看我的健康分析報告」）取得Intelligence
+Result的**唯一**合法路徑：
+
+```
+Controller（Phase 3未來新增）
+  ↓
+app.intelligence.facade.executeIntelligence(db, { userId, ... })
+  ↓
+{ ok, data: { status, result: { context, analysis, recommendation }, metadata } }
+```
+
+Application Layer（未來的Controller/Route）**不得直接操作**：
+- `app.intelligence.execution`（Execution Manager的
+  `execute()`）——生命週期管理是Facade內部的細節，Controller不需要
+  知道「執行到哪個狀態」。
+- `app.intelligence.history`（History Store的`add()`/`get()`/
+  `list()`）——歷史紀錄是Runtime Layer的內部觀測機制，不是使用者
+  功能該讀取的資料來源。
+- `app.intelligence.metrics`（Execution Metrics的
+  `getMetrics()`/`getExecutionMetrics()`）——統計數字是給維運/
+  監控看的，不是終端使用者功能的一部分。
+
+如果未來真的需要「給使用者看執行歷史」或「給維運看統計儀表板」這種
+功能，那是**獨立的、明確的新任務**（例如一個专门的Admin/Ops
+API），不應該悄悄地讓一般使用者功能繞過Facade直接讀取
+`intelligence.history`/`intelligence.metrics`。
+
+### 4. Dependency Direction（Phase 3新增內容必須維持的方向）
+
+```
+Application（Phase 3新增：Controller/Route/未來的User-facing功能）
+  ↓
+Intelligence（Phase 2既有：Facade→Service→Execution Runtime→
+              Analysis/Recommendation）
+  ↓
+Domain Data（既有五大Domain Service→D1）
+```
+
+**不得反向依賴**：
+- Domain Service（`src/services/`）不得import
+  `src/intelligence/`（維持TASK1.41既定的「Data Preparation依賴
+  Domain Service，不是反過來」方向）。
+- Intelligence Layer任何一個子層都不得import Phase 3未來新增的
+  Controller/Route檔案（維持「下層不知道上層存在」）。
+- Phase 3新增的AI Provider實作（未來的analysis/recommendation
+  modules）不得反過來import`src/controllers/`、`src/routes/`、
+  `src/auth/`、`src/oauth/`、`src/services/`——AI Provider只應該
+  依賴它接收到的純資料輸入（`insightContext`/`analysisResult`），
+  不應該有能力去查詢使用者身份或直接存取Domain Data。
+
+### Phase 3 Readiness Checklist
+
+- ✅ Phase 3架構方向明確（見上方1~4點）
+- ✅ AI Extension Point明確（只有Analysis/Recommendation modules
+  兩個位置）
+- ✅ Application Boundary明確（只透過Facade，不直接碰execution/
+  history/metrics）
+- ✅ 本次規劃沒有啟用任何AI功能、沒有修改Phase 2既有任何檔案的行為
+- ✅ 可以正式進入Phase 3 Development
+
 ## 測試方式
 
 `backups/phase1-task1.40-intelligence-foundation/test_intelligence_foundation.mjs`：
@@ -396,3 +518,17 @@ Phase 2 Intelligence Runtime Foundation正式結束，往後的Intelligence
 相關任務屬於Phase 3，應該從本文件「Phase 3 Extension Point」/
 「Phase 2 Ending Documentation」列出的既有邊界接入，不應該回頭修改
 `src/intelligence/`底下任何Phase 2既有檔案的行為。
+
+**TASK1.59更新（Phase 3架構規劃，第一份Phase 3任務）**：
+`backups/phase2-task1.59-phase3-planning/
+test_phase3_architecture_plan.mjs`是Phase 3正式開始的第一份測試
+套件——本身**不是實作**，驗證的是上方「Phase 3 Application
+Architecture Plan」規劃的四個邊界（Phase 3 Architecture Boundary/
+AI Provider Extension Point/Application Usage Boundary/Dependency
+Direction）目前都還維持著（因為Phase 3實際上還沒開始動工，這些
+邊界目前全部是「規劃正確、且現狀沒有違反」的雙重確認），同時再次
+確認Phase 2既有的全部Layer/測試/D1狀態完全沒有被這次規劃任務動到
+一根汗毛。往後實際開始寫Phase 3程式碼時，應該持續維持這份規劃
+定義的邊界，任何違反（例如AI Provider邏輯跑進Controller、
+Application Layer直接讀`intelligence.history`）都應該被視為架構
+回歸。
