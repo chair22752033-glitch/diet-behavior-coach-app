@@ -823,9 +823,12 @@ async function run() {
     assert.strictEqual(typeof app.intelligence.execution.execute, 'function');
   });
 
-  await test('（14.bootstrap compatibility）app.intelligence 恰好具備十一個欄位（TASK1.48既有十個加上TASK1.50新增的execution）', () => {
+  // 注意：TASK1.51為app.intelligence新增了`events`欄位（Execution
+  // Event Layer的extension point），這是明確要做的擴充，不是回歸，
+  // 這裡的預期key清單已同步更新。
+  await test('（TASK1.51後更新）app.intelligence 恰好具備十二個欄位（TASK1.48既有十個加上TASK1.50新增的execution、TASK1.51新增的events）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（14.bootstrap compatibility）app.intelligence.execution內部注入的service跟app.intelligence.service是同一個實例（用spy覆寫getIntelligence()驗證兩者共用同一個物件參考）', async () => {

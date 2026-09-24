@@ -548,9 +548,9 @@ async function run() {
   // 這是明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
   // 注意：TASK1.46 為 app.intelligence 新增了 `service` 欄位，這是
   // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.50後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution 十一個欄位', () => {
+  await test('（TASK1.51後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events 十二個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（10.bootstrap injection，端對端）透過app.intelligence.analysis+app.intelligence.recommendation串接呼叫，可以正確運作', () => {

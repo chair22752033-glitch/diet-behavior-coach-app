@@ -5,7 +5,8 @@
  * namespace；TASK1.44 新增 recommendation namespace；TASK1.45 新增
  * orchestration namespace；TASK1.46 新增 service namespace；TASK1.47
  * 新增 executionContracts namespace；TASK1.48 新增 facade namespace；
- * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution namespace）
+ * TASK1.49 新增 runtime namespace；TASK1.50 新增 execution
+ * namespace；TASK1.51 新增 events namespace）
  * - 統一輸出入口
  *
  * 跟 src/contracts/index.js、src/routes/index.js 同樣的角色：把
@@ -39,7 +40,12 @@
  * service一樣，透過依賴注入呼叫service（唯一允許呼叫的下一層），是
  * 需要在bootstrap組裝的獨立子層實例——這次起，facade改為呼叫
  * execution namespace組裝出來的Execution Manager，不再直接呼叫
- * service（見src/bootstrap/application.js）。
+ * service（見src/bootstrap/application.js）。TASK1.51新增的events
+ * namespace同樣是需要在bootstrap組裝的獨立子層實例（因為
+ * createEventDispatcher()內部持有一份訂閱清單狀態），組裝出來的
+ * dispatcher實例透過依賴注入傳給execution namespace組裝出來的
+ * Execution Manager，讓生命週期狀態轉換可以額外emit事件，但
+ * execution_manager.js本身完全不import events目錄底下任何檔案。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -56,3 +62,4 @@ export * as executionContracts from './contracts/execution/index.js';
 export * as facade from './facade/index.js';
 export * as runtime from './runtime/index.js';
 export * as execution from './execution/index.js';
+export * as events from './events/index.js';

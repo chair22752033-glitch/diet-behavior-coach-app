@@ -1,5 +1,7 @@
 /*
  * Phase 1 TASK 1.50｜Intelligence Execution Lifecycle Manager Foundation
+ * （TASK1.51 起額外支援選填的eventDispatcher依賴，狀態轉換時額外
+ * emit對應的Execution Event，不改變原本的執行邏輯）
  * - Intelligence Execution Manager
  *
  * 責任：在 Intelligence Facade（TASK1.48）跟 Intelligence Service
@@ -48,8 +50,54 @@
  * 鉤子對外可觀察（供測試驗證轉換順序），不提供時完全不影響行為——
  * 這不是一個可以被外部輪詢的持久化狀態機，只是讓「這一次execute()
  * 呼叫依序經過了哪些狀態」變得可驗證。
+ *
+ * TASK1.51新增：額外支援選填的`dependencies.eventDispatcher`——每次
+ * 狀態轉換除了呼叫既有的`onStateChange(state)`之外，如果有提供
+ * eventDispatcher，還會額外呼叫`eventDispatcher.emit()`發送對應的
+ * Execution Event（見src/intelligence/events/）。Lifecycle Mapping
+ * （規格原文，寫死在這個檔案自己的常數對照表，完全不import
+ * src/intelligence/events/底下任何檔案）：
+ *
+ *   "initialized" → "execution_initialized"
+ *   "running"     → "execution_started"
+ *   "completed"   → "execution_completed"
+ *   "failed"      → "execution_failed"
+ *
+ * 事件的`executionId`/`timestamp`取自Facade建立的Runtime Context
+ * （`runtimeContext.requestId`/`runtimeContext.timestamp`，沒有提供
+ * 時安全為null），`payload`在completed/failed狀態時分別帶上
+ * `{status}`/`{reason}`，initialized/running狀態的payload為null。
+ * 這是純粹新增的旁路行為——`eventDispatcher`是選填依賴，不提供時
+ * 完全不影響`execute()`的行為；就算提供了，emit()呼叫失敗或訂閱者
+ * 拋出例外也完全不影響execute()的回傳結果（見
+ * event_dispatcher.js的emit()實作），確保「事件處理跟執行邏輯完全
+ * independent」。
  */
 import { createExecutionResultBuilder } from './execution_result_builder.js';
+
+const STATE_TO_EVENT_TYPE = Object.freeze({
+  initialized: 'execution_initialized',
+  running: 'execution_started',
+  completed: 'execution_completed',
+  failed: 'execution_failed',
+});
+
+/**
+ * 從execute()的input裡（在還沒驗證input是否合法之前）安全取出
+ * Runtime Context的requestId/timestamp，供事件的executionId/
+ * timestamp欄位使用。input格式不正確時安全回傳null，不拋出例外——
+ * 這裡完全不解讀runtimeContext的其他內容，也不驗證其格式，那是
+ * Runtime Context Layer（TASK1.49）的責任。
+ *
+ * @param {*} input
+ * @returns {{executionId:string|null, timestamp:string|null}}
+ */
+function extractEventMeta(input) {
+  const runtimeContext = input && typeof input === 'object' && !Array.isArray(input) ? input.runtimeContext : undefined;
+  const executionId = runtimeContext && typeof runtimeContext === 'object' && typeof runtimeContext.requestId === 'string' ? runtimeContext.requestId : null;
+  const timestamp = runtimeContext && typeof runtimeContext === 'object' && typeof runtimeContext.timestamp === 'string' ? runtimeContext.timestamp : null;
+  return { executionId, timestamp };
+}
 
 /**
  * 驗證 execute() 的輸入——只檢查這一層自己需要知道的最小欄位
@@ -86,16 +134,41 @@ function validateExecuteInput(input) {
  *   狀態轉換觀察鉤子，每次狀態轉換（initialized/running/completed/
  *   failed）都會被呼叫一次，純粹用於觀察，不影響任何回傳值；不提供時
  *   完全不影響行為
+ * @param {{emit: (event:object) => {ok:boolean, handlerCount?:number, reason?:string}}} [dependencies.eventDispatcher] - 選填的
+ *   Execution Event Dispatcher（TASK1.51，見
+ *   src/intelligence/events/event_dispatcher.js），每次狀態轉換時
+ *   額外emit對應的Execution Event；不提供時完全不影響行為
  * @returns {{execute: (db:object, input:{request:{userId:string, options?:object}, runtimeContext?:object}) => Promise<{ok:true, state:"completed", data:{status:*, result:object}}|{ok:false, state:"failed", reason:string}>}}
  */
 export function createExecutionManager(dependencies) {
   dependencies = dependencies || {};
-  const { service, onStateChange } = dependencies;
+  const { service, onStateChange, eventDispatcher } = dependencies;
   const resultBuilder = dependencies.resultBuilder || createExecutionResultBuilder();
 
-  function setState(next) {
+  /**
+   * @param {string} next - 目標狀態（initialized/running/completed/failed）
+   * @param {{executionId:string|null, timestamp:string|null}} meta
+   * @param {*} [payload] - 選填，completed/failed狀態時分別帶
+   *   {status}/{reason}，其餘狀態為null
+   */
+  function setState(next, meta, payload) {
     if (typeof onStateChange === 'function') {
       onStateChange(next);
+    }
+    if (eventDispatcher && typeof eventDispatcher.emit === 'function') {
+      try {
+        eventDispatcher.emit({
+          type: STATE_TO_EVENT_TYPE[next],
+          timestamp: meta ? meta.timestamp : null,
+          executionId: meta ? meta.executionId : null,
+          payload: payload !== undefined ? payload : null,
+        });
+      } catch (_error) {
+        // 事件發送失敗（或訂閱者拋出未被event_dispatcher.js吞掉的
+        // 例外）完全不應該影響Execution Manager本身的執行邏輯，這裡
+        // 刻意用try/catch隔絕，維持「事件處理跟執行邏輯完全
+        // independent」。
+      }
     }
     return next;
   }
@@ -112,24 +185,26 @@ export function createExecutionManager(dependencies) {
    *   `request`是業務請求（userId必填、options選填），`runtimeContext`
    *   （選填）是Facade建立的Runtime Context（TASK1.49），這裡完全不
    *   解讀其內容，只負責合併進轉交給Service的options.runtimeContext
-   *   欄位
+   *   欄位，跟（TASK1.51新增）供事件的executionId/timestamp欄位使用
    * @returns {Promise<{ok:true, state:"completed", data:{status:string, result:{context:object, analysis:object, recommendation:object, metadata:object}}}|{ok:false, state:"failed", reason:string}>}
    */
   async function execute(db, input) {
-    setState('initialized');
+    const meta = extractEventMeta(input);
+
+    setState('initialized', meta);
 
     const validation = validateExecuteInput(input);
     if (!validation.ok) {
-      setState('failed');
+      setState('failed', meta, { reason: validation.reason });
       return resultBuilder.buildFailedResult(validation.reason);
     }
 
     const { request, runtimeContext } = input;
 
-    setState('running');
+    setState('running', meta);
 
     if (!service || typeof service.getIntelligence !== 'function') {
-      setState('failed');
+      setState('failed', meta, { reason: 'service_unavailable' });
       return resultBuilder.buildFailedResult('service_unavailable');
     }
 
@@ -137,11 +212,11 @@ export function createExecutionManager(dependencies) {
     const outcome = await service.getIntelligence(db, { userId: request.userId, options });
 
     if (!outcome.ok) {
-      setState('failed');
+      setState('failed', meta, { reason: outcome.reason });
       return resultBuilder.buildFailedResult(outcome.reason);
     }
 
-    setState('completed');
+    setState('completed', meta, { status: outcome.data.status });
     return resultBuilder.buildCompletedResult(outcome.data);
   }
 

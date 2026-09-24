@@ -802,11 +802,12 @@ async function run() {
   });
 
   // 注意：TASK1.50為app.intelligence新增了`execution`欄位（Execution
-  // Manager的extension point），這是明確要做的擴充，不是回歸，這裡的
-  // 預期key清單已同步更新。
-  await test('（TASK1.50後更新）app.intelligence 恰好具備十一個欄位（TASK1.48既有十個加上TASK1.50新增的execution）', () => {
+  // Manager的extension point），TASK1.51又新增了`events`欄位
+  // （Execution Event Layer的extension point），都是明確要做的擴充，
+  // 不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.51後更新）app.intelligence 恰好具備十二個欄位（TASK1.48既有十個加上TASK1.50新增的execution、TASK1.51新增的events）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（14.bootstrap compatibility）透過bootstrap建立的app.intelligence.facade.executeIntelligence()依然正確建立並套用Runtime Context', async () => {

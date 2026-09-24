@@ -699,11 +699,11 @@ async function run() {
   // 注意：TASK1.46 又新增了 `service` 欄位，這是明確要做的擴充，不是
   // 回歸，這裡的預期key清單已同步更新。
   // 注意：TASK1.48 又新增了 `facade` 欄位，TASK1.50 又新增了
-  // `execution` 欄位，都是明確要做的擴充，不是回歸，這裡的預期key
-  // 清單已同步更新。
-  await test('（TASK1.50後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation跟TASK1.42既有的context跟TASK1.43既有的analysis跟TASK1.44既有的recommendation跟TASK1.45既有的orchestration跟TASK1.46既有的service跟TASK1.48既有的facade（沒有被TASK1.50取代或破壞）', () => {
+  // `execution` 欄位，TASK1.51 又新增了 `events` 欄位，都是明確要做的
+  // 擴充，不是回歸，這裡的預期key清單已同步更新。
+  await test('（TASK1.51後更新）app.intelligence 仍然保留TASK1.40既有的insightService/analysisEngine/recommendationEngine跟TASK1.41既有的dataPreparation跟TASK1.42既有的context跟TASK1.43既有的analysis跟TASK1.44既有的recommendation跟TASK1.45既有的orchestration跟TASK1.46既有的service跟TASK1.48既有的facade跟TASK1.50既有的execution（沒有被TASK1.51取代或破壞）', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'insightService', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
   });
 
   await test('（10.bootstrap injection）透過app.intelligence.dataPreparation.prepare()呼叫，可以正確運作（端對端，含mock db）', async () => {
