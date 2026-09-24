@@ -152,6 +152,24 @@
  * 被修改。這個統一輸出入口（src/intelligence/index.js）本身沒有
  * 變化——workflows是nested在application namespace底下，不是新的
  * 頂層namespace。
+ *
+ * Phase 3 TASK1.65新增的application namespace底下的features
+ * 子namespace（`application.features`，re-export自
+ * ./application/features/index.js）是Phase 3第一個完整的Feature
+ * Entry——`createInsightFeature({workflow})`透過依賴注入拿到跟
+ * `intelligence.workflow`完全相同的Application Workflow實例，
+ * 驗證TASK1.60~1.64建立的Application Service/Use Case/
+ * Capability/Contract/Workflow五層可以承載一個從頭到尾的
+ * Intelligence Feature Flow。Feature Layer完全不import
+ * src/intelligence/application/capabilities/、use_cases/、
+ * application_service.js、facade/、execution/、history/、
+ * metrics/、events/、service/、orchestration/、analysis/、
+ * recommendation/、governance/底下任何檔案，唯一認識的下一層是
+ * Workflow Layer，`application_workflow.js`/`insight_capability.js`/
+ * `insight_use_case.js`/`application_service.js`/
+ * `intelligence_facade.js`本身完全沒有被修改。這個統一輸出入口
+ * （src/intelligence/index.js）本身沒有變化——features是nested在
+ * application namespace底下，不是新的頂層namespace。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';

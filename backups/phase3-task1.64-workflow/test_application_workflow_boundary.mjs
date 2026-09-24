@@ -601,12 +601,12 @@ async function run() {
     }
   });
 
-  await test('（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備20個欄位（TASK1.63既有19個加上TASK1.64新增的workflow）', async () => {
+  await test('（TASK1.65後更新）（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備21個欄位（TASK1.63既有19個加上TASK1.64新增的workflow、TASK1.65新增的features）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
-      'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
+      'facade', 'features', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });

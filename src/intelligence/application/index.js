@@ -58,6 +58,15 @@
  * `intelligence.capabilities`完全相同的Insight Capability實例，
  * 不直接import./use_cases/或./application_service.js，維持「每一層
  * 只認識自己呼叫的下一層」的既有慣例。
+ *
+ * Phase 3 TASK1.65新增：`features` namespace，re-export
+ * ./features/index.js——Phase 3第一個完整的Feature Entry
+ * （`createInsightFeature({workflow})`），驗證Application Service/
+ * Use Case/Capability/Contract/Workflow五層可以承載真正的
+ * Intelligence Feature Flow。只透過依賴注入拿到跟
+ * `intelligence.workflow`完全相同的Application Workflow實例，不
+ * 直接import./workflows/以外的任何子目錄，維持「每一層只認識自己
+ * 呼叫的下一層」的既有慣例，再往上疊一層。
  */
 export { createApplicationService } from './application_service.js';
 export { createApplicationResultBuilder } from './application_result_builder.js';
@@ -65,3 +74,4 @@ export * as useCases from './use_cases/index.js';
 export * as capabilities from './capabilities/index.js';
 export * as contracts from './contracts/index.js';
 export * as workflows from './workflows/index.js';
+export * as features from './features/index.js';

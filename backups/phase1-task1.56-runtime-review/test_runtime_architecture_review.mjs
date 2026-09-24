@@ -302,7 +302,7 @@ async function run() {
     assert.strictEqual(cycleEdge, null, `發現循環依賴：${cycleEdge}`);
   });
 
-  await test('（TASK1.64後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有8組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
+  await test('（TASK1.65後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有9組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
     const crossDirImports = [];
     for (const f of allFiles) {
       const fDir = path.relative(intelDir, path.dirname(f));
@@ -330,6 +330,9 @@ async function run() {
     // TASK1.64新增：application/index.js -> application/workflows/index.js
     // 同樣是Workflow Layer統一輸出入口re-export自己nested子目錄的合法
     // 邊界，同一種性質，不是新的違規跨層引用。
+    // TASK1.65新增：application/index.js -> application/features/index.js
+    // 同樣是Feature Layer統一輸出入口re-export自己nested子目錄的合法
+    // 邊界，同一種性質，不是新的違規跨層引用。
     const allowed = crossDirImports.every((edge) => {
       return (
         edge.includes('facade/intelligence_facade.js -> runtime/index.js') ||
@@ -339,7 +342,8 @@ async function run() {
         edge.includes('application/index.js -> application/use_cases/index.js') ||
         edge.includes('application/index.js -> application/capabilities/index.js') ||
         edge.includes('application/index.js -> application/contracts/index.js') ||
-        edge.includes('application/index.js -> application/workflows/index.js')
+        edge.includes('application/index.js -> application/workflows/index.js') ||
+        edge.includes('application/index.js -> application/features/index.js')
       );
     });
     assert.ok(allowed, `發現未預期的跨目錄import：${JSON.stringify(crossDirImports)}`);

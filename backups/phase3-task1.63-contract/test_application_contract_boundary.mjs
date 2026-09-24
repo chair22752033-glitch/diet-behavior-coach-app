@@ -617,12 +617,12 @@ async function run() {
     assert.ok(!/from\s+['"].*\/application\/contracts\//.test(readSrc(path.join(srcRoot, 'bootstrap', 'application.js'))));
   });
 
-  await test('（TASK1.64後更新）（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備20個欄位（TASK1.63當時是19個沒有新增欄位；TASK1.64新增了workflow，這是後續任務的合法擴充，不是TASK1.63本身造成的回歸）', async () => {
+  await test('（TASK1.65後更新）（7.runtime isolation）src/bootstrap/application.js的intelligence物件恰好具備21個欄位（TASK1.63當時是19個沒有新增欄位；TASK1.64新增了workflow、TASK1.65新增了features，都是後續任務的合法擴充，不是TASK1.63本身造成的回歸）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution',
-      'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
+      'facade', 'features', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
       'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases', 'workflow',
     ]);
   });
