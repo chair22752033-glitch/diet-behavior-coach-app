@@ -550,9 +550,9 @@ async function run() {
   // 注意：TASK1.50 又新增了 `execution` 欄位（Intelligence Execution
   // Manager的extension point，見src/intelligence/execution/），這是
   // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.60後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics/governance/application 十七個欄位', () => {
+  await test('（TASK1.61後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics/governance/application/useCases 十八個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases']);
   });
 
   await test('（12.bootstrap integration）app.intelligence.insightService 具備 getUserInsight 函式', () => {

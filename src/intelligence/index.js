@@ -87,6 +87,21 @@
  * service/、orchestration/、analysis/、recommendation/、
  * governance/底下任何檔案，唯一認識的下一層是Facade，
  * `intelligence_facade.js`本身完全沒有被修改。
+ *
+ * Phase 3 TASK1.61新增的application namespace底下的useCases
+ * 子namespace（`application.useCases`，re-export自
+ * ./application/use_cases/index.js）建立在Application Service之上
+ * ——`createInsightUseCase({applicationService})`透過依賴注入拿到
+ * 跟`intelligence.application`完全相同的Application Service實例，
+ * 定義未來User Application要如何使用Intelligence能力（第一個具名
+ * Application Scenario：取得使用者的Insight）。Use Case Layer完全
+ * 不import src/intelligence/facade/、execution/、history/、
+ * metrics/、events/、service/、orchestration/、analysis/、
+ * recommendation/、governance/底下任何檔案，唯一認識的下一層是
+ * Application Service，`application_service.js`/
+ * `intelligence_facade.js`本身完全沒有被修改。這個統一輸出入口
+ * （src/intelligence/index.js）本身沒有變化——useCases是nested在
+ * application namespace底下，不是新的頂層namespace。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';

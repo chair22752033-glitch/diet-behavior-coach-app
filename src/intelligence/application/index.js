@@ -22,6 +22,15 @@
  * 純粹的Phase 3 extension point（見src/bootstrap/application.js的
  * `intelligence.application`），也還沒有任何真實的User Application
  * 呼叫它，本次任務明確禁止新增任何API route。
+ *
+ * Phase 3 TASK1.61新增：`useCases` namespace，re-export
+ * ./use_cases/index.js——建立在Application Service之上的Use Case
+ * Layer（`createInsightUseCase({applicationService})`），完全不
+ * import本檔案（application_service.js/
+ * application_result_builder.js），只透過依賴注入拿到跟
+ * `intelligence.application`完全相同的Application Service實例，
+ * 維持「每一層只認識自己呼叫的下一層」的既有慣例。
  */
 export { createApplicationService } from './application_service.js';
 export { createApplicationResultBuilder } from './application_result_builder.js';
+export * as useCases from './use_cases/index.js';

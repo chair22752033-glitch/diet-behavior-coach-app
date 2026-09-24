@@ -564,13 +564,13 @@ async function run() {
     assert.strictEqual(typeof intelligenceModule.application.createApplicationResultBuilder, 'function');
   });
 
-  await test('（8.export consistency）app.intelligence（bootstrap組裝結果）恰好具備17個欄位（TASK1.55既有16個加上TASK1.60新增的application）', async () => {
+  await test('（TASK1.61後更新）（8.export consistency）app.intelligence（bootstrap組裝結果）恰好具備18個欄位（TASK1.55既有16個加上TASK1.60新增的application、TASK1.61新增的useCases）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
     assert.deepStrictEqual(Object.keys(app.intelligence).sort(), [
       'analysis', 'analysisEngine', 'application', 'context', 'dataPreparation', 'events', 'execution',
       'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring',
-      'orchestration', 'recommendation', 'recommendationEngine', 'service',
+      'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases',
     ]);
   });
 
