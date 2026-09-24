@@ -102,6 +102,22 @@
  * `intelligence_facade.js`本身完全沒有被修改。這個統一輸出入口
  * （src/intelligence/index.js）本身沒有變化——useCases是nested在
  * application namespace底下，不是新的頂層namespace。
+ *
+ * Phase 3 TASK1.62新增的application namespace底下的capabilities
+ * 子namespace（`application.capabilities`，re-export自
+ * ./application/capabilities/index.js）建立在Use Case Layer之上
+ * ——`createInsightCapability({useCase})`透過依賴注入拿到跟
+ * `intelligence.useCases`完全相同的Insight Use Case實例，讓未來
+ * 不同的Intelligence Application能力可以被清楚分類與管理（第一個
+ * 具名Capability：Insight）。Capability Layer完全不import
+ * src/intelligence/application/application_service.js、facade/、
+ * execution/、history/、metrics/、events/、service/、
+ * orchestration/、analysis/、recommendation/、governance/底下任何
+ * 檔案，唯一認識的下一層是Use Case Layer，`insight_use_case.js`/
+ * `application_service.js`/`intelligence_facade.js`本身完全沒有
+ * 被修改。這個統一輸出入口（src/intelligence/index.js）本身沒有
+ * 變化——capabilities是nested在application namespace底下，不是
+ * 新的頂層namespace。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';

@@ -226,6 +226,25 @@
  * `execution_manager.js`本身也完全沒有被修改。本次任務明確禁止
  * 新增任何API route，`intelligence.useCases`目前是純粹的Phase 3
  * extension point，還沒有任何真實的User Application呼叫它。
+ *
+ * Phase 3 TASK1.62新增：`intelligence.capabilities`，組裝
+ * src/intelligence/application/capabilities/ 的
+ * createInsightCapability() 實例——建立在Use Case Layer之上的
+ * Capability Layer，讓未來不同的Intelligence Application能力
+ * 可以被清楚分類與管理（目前是「Insight」這一個具名能力）。注入
+ * 的是跟`intelligence.useCases`完全相同的
+ * `intelligenceInsightUseCase`實例（不是各自建立第二份）。
+ * Capability Layer完全不能直接呼叫Application Service/Facade/
+ * Execution Manager/History Store/Metrics Store/Event
+ * Dispatcher/Database/AI Provider（規格明確禁止的捷徑），唯一
+ * 認識的下一層是Use Case Layer。這是純粹的依賴注入組裝，
+ * `intelligence.useCases`/`intelligence.application`/
+ * `intelligence.facade`/其餘既有欄位完全沒有被重新注入任何新
+ * 依賴，`insight_use_case.js`/`application_service.js`/
+ * `intelligence_facade.js`/`execution_manager.js`本身也完全沒有
+ * 被修改。本次任務明確禁止新增任何API route，
+ * `intelligence.capabilities`目前是純粹的Phase 3 extension
+ * point，還沒有任何真實的User Application呼叫它。
  */
 import { getEnvConfig } from '../config/env.js';
 import { getAuthConfig } from '../config/auth_config.js';
@@ -358,6 +377,9 @@ export function createApplication(env) {
   const intelligenceInsightUseCase = intelligenceApplicationNamespace.useCases.createInsightUseCase({
     applicationService: intelligenceApplicationService,
   });
+  const intelligenceInsightCapability = intelligenceApplicationNamespace.capabilities.createInsightCapability({
+    useCase: intelligenceInsightUseCase,
+  });
   const intelligence = {
     insightService,
     analysisEngine,
@@ -376,6 +398,7 @@ export function createApplication(env) {
     governance: intelligenceGovernanceService,
     application: intelligenceApplicationService,
     useCases: intelligenceInsightUseCase,
+    capabilities: intelligenceInsightCapability,
     facade: intelligenceFacade,
   };
 

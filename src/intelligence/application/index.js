@@ -30,7 +30,16 @@
  * application_result_builder.js），只透過依賴注入拿到跟
  * `intelligence.application`完全相同的Application Service實例，
  * 維持「每一層只認識自己呼叫的下一層」的既有慣例。
+ *
+ * Phase 3 TASK1.62新增：`capabilities` namespace，re-export
+ * ./capabilities/index.js——建立在Use Case Layer之上的Capability
+ * Layer（`createInsightCapability({useCase})`），完全不import
+ * ./use_cases/index.js或本檔案（application_service.js/
+ * application_result_builder.js），只透過依賴注入拿到跟
+ * `intelligence.useCases`完全相同的Insight Use Case實例，維持
+ * 「每一層只認識自己呼叫的下一層」的既有慣例，再往上疊一層。
  */
 export { createApplicationService } from './application_service.js';
 export { createApplicationResultBuilder } from './application_result_builder.js';
 export * as useCases from './use_cases/index.js';
+export * as capabilities from './capabilities/index.js';

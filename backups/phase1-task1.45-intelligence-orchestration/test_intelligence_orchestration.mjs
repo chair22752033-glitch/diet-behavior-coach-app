@@ -898,9 +898,9 @@ async function run() {
 
   // 注意：TASK1.46 為 app.intelligence 新增了 `service` 欄位，這是
   // 明確要做的擴充，不是回歸，這裡的預期key清單已同步更新。
-  await test('（TASK1.61後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics/governance/application/useCases 十八個欄位', () => {
+  await test('（TASK1.62後更新）app.intelligence 恰好具備 insightService/analysisEngine/recommendationEngine/dataPreparation/context/analysis/recommendation/orchestration/service/facade/execution/events/history/monitoring/metrics/governance/application/useCases/capabilities 十九個欄位', () => {
     const app = createApplication(makeFullEnv());
-    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases']);
+    assert.deepStrictEqual(Object.keys(app.intelligence).sort(), ['analysis', 'analysisEngine', 'application', 'capabilities', 'context', 'dataPreparation', 'events', 'execution', 'facade', 'governance', 'history', 'insightService', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'recommendationEngine', 'service', 'useCases']);
   });
 
   await test('（13.bootstrap injection）app.intelligence.orchestration內部注入的dataPreparation跟app.intelligence.dataPreparation是同一個實例（用spy覆寫prepare()驗證兩者共用同一個物件參考）', async () => {
