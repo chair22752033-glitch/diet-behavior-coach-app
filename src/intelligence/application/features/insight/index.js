@@ -25,6 +25,17 @@
  * 純粹的Phase 3 extension point（見src/bootstrap/application.js的
  * `intelligence.insightFeature`），也還沒有任何真實的User
  * Application呼叫它，本次任務明確禁止新增任何API route。
+ *
+ * Phase 3 TASK1.67新增：`context` namespace，re-export
+ * ./context/index.js——把Runtime Context映射成Insight Domain可
+ * 使用格式的純函式工具（`createInsightContextMapper()`/
+ * `createInsightContextResultBuilder()`），跟TASK1.63
+ * src/intelligence/application/contracts/同樣的角色。這個
+ * namespace目前**沒有被**insight_capability.js/
+ * insight_result_mapper.js import——維持「建立但不改變既有
+ * execution behavior」的邊界決策，用測試證明Insight Feature
+ * 事實上可以消費Runtime Context。
  */
 export { createInsightFeatureCapability } from './insight_capability.js';
 export { createInsightResultMapper } from './insight_result_mapper.js';
+export * as context from './context/index.js';
