@@ -110,3 +110,12 @@ Execution Manager 透過選填的`dependencies.eventDispatcher`依賴注入
   明確禁止觸碰它們。
 - 完全沒有連接任何 route/controller/`worker.js`，也沒有新增任何
   資料庫logging——這是純粹的Phase 2 extension point。
+
+**TASK1.56（Runtime Policy Integration Review）更新**：這個
+`application.intelligence.events`實例，後續被TASK1.53
+（`intelligence.monitoring`）跟TASK1.54（`intelligence.metrics`）
+各自透過`eventDispatcher.subscribe()`額外訂閱——三者（Execution
+Manager的emit端、Monitoring、Metrics）共用同一個Event Dispatcher
+實例，訂閱清單裡因此同時存在三種訂閱者，但彼此透過
+`event_dispatcher.js`既有的「一個handler拋出例外不影響其他handler」
+設計完全隔離，這個檔案本身完全沒有因為新增訂閱者而被修改。

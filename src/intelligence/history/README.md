@@ -113,3 +113,12 @@ Execution Event（TASK1.51）保持結構相容，但`execution_manager.js`本�
 - 完全沒有連接任何 route/controller/`worker.js`，也沒有新增任何
   D1/SQL/migration——這是純粹的Phase 2 extension point，為未來可能的
   持久化預留邊界。
+
+**TASK1.56（Runtime Policy Integration Review）更新**：這個
+`application.intelligence.history`實例，後續被TASK1.53
+（`intelligence.monitoring`的`getExecutionHistory()`/`getSummary()`）
+跟TASK1.54（`intelligence.metrics`的`getExecutionMetrics()`回退
+查詢）各自透過`historyStore.get()`/`historyStore.list()`唯讀查詢——
+三者都只呼叫`get()`/`list()`，只有Execution Manager會呼叫`add()`
+寫入，維持「Execution Manager是唯一能修改History的入口，其餘全部
+是唯讀消費者」的邊界，這個檔案本身完全沒有因為新增消費者而被修改。
