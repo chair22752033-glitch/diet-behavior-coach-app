@@ -669,10 +669,23 @@ async function run() {
     assert.strictEqual(typeof applicationModule.capabilities.createCapabilityResultBuilder, 'function');
   });
 
-  await test('（9.export consistency）src/intelligence/index.js的統一輸出入口本身沒有新增任何頂層namespace（capabilities是nested在application底下，不是新的頂層namespace）', () => {
+  // （TASK1.76後更新）原本這裡斷言「src/intelligence/index.js
+  // 完全沒有新增capabilities這個頂層namespace」，因為TASK1.62
+  // 當時capabilities只nested在application底下。Phase 4 TASK1.76
+  // 建立了`src/intelligence/capabilities/`（Analysis Capability
+  // Execution Boundary，直接包裝Runtime層的Analysis Runner），
+  // 是完全不同架構位置、刻意用同一個名稱的另一個namespace——這是
+  // 巧合的命名撞名，不是TASK1.62自己的`application.capabilities`
+  // 被移到頂層或被取代。這裡改成明確驗證兩者確實是不同的東西
+  // （不會互相覆蓋、不會讓application.capabilities意外消失）。
+  await test('（TASK1.76後更新）（9.export consistency）src/intelligence/index.js的頂層capabilities namespace（TASK1.76新增，Analysis Capability）跟application.capabilities（TASK1.62本身，Insight Capability）是兩個完全不同、互不覆蓋的東西', async () => {
     const namespaces = getReExportedNamespaces(path.join(intelDir, 'index.js'));
-    assert.ok(!namespaces.has('capabilities'));
     assert.ok(namespaces.has('application'));
+    const intelModule = await import(path.join(intelDir, 'index.js'));
+    assert.strictEqual(typeof intelModule.application.capabilities.createInsightCapability, 'function');
+    if (namespaces.has('capabilities')) {
+      assert.strictEqual(typeof intelModule.capabilities.createInsightCapability, 'undefined');
+    }
   });
 
   await test('（9.export consistency）application/index.js re-export了capabilities這個namespace（export * as capabilities）', () => {

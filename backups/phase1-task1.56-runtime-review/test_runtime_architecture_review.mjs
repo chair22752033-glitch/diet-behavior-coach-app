@@ -133,8 +133,12 @@ async function run() {
   // 清單同步更新（跟bootstrap.intelligence鍵值清單同樣的既有慣例——
   // 每次新增子目錄，既有任務的測試套件裡列舉子目錄的斷言都要更新，
   // 不是回歸）。
+  // TASK1.76後更新：Phase 4新增了capabilities/子目錄（Analysis
+  // Capability Execution Boundary，跟application/底下nested的
+  // application/capabilities/是完全不同的東西），同樣是明確的
+  // 擴充，加入預期清單。
   const EXPECTED_SUBDIRS = [
-    'analysis', 'application', 'context', 'contracts', 'data_preparation', 'events', 'execution',
+    'analysis', 'application', 'capabilities', 'context', 'contracts', 'data_preparation', 'events', 'execution',
     'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration',
     'recommendation', 'runtime', 'service',
   ];
@@ -150,7 +154,7 @@ async function run() {
   const NAMESPACE_SUBDIRS = EXPECTED_SUBDIRS.filter((d) => d !== 'contracts');
   const rootIndexSrc = readSrc(path.join(intelDir, 'index.js'));
 
-  await test('（TASK1.60後更新）src/intelligence/ 底下的子目錄恰好是規格列出的16個（含TASK1.55新增的governance、TASK1.60新增的application）', () => {
+  await test('（TASK1.76後更新）src/intelligence/ 底下的子目錄恰好是規格列出的17個（含TASK1.55新增的governance、TASK1.60新增的application、TASK1.76新增的capabilities）', () => {
     assert.deepStrictEqual(subDirs, EXPECTED_SUBDIRS);
   });
 
@@ -302,7 +306,7 @@ async function run() {
     assert.strictEqual(cycleEdge, null, `發現循環依賴：${cycleEdge}`);
   });
 
-  await test('（TASK1.72後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有14組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features、application/features→application/features/insight、application/features/insight→application/features/insight/context、application/features/insight→application/features/insight/output、application/features/insight→application/features/insight/execution、application/features→application/features/behavior），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
+  await test('（TASK1.76後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有15組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features、application/features→application/features/insight、application/features/insight→application/features/insight/context、application/features/insight→application/features/insight/output、application/features/insight→application/features/insight/execution、application/features→application/features/behavior、capabilities→capabilities/analysis），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
     const crossDirImports = [];
     for (const f of allFiles) {
       const fDir = path.relative(intelDir, path.dirname(f));
@@ -360,6 +364,12 @@ async function run() {
     // 輸出入口re-export自己nested子目錄的合法邊界，同一種性質
     // （features/底下這次是behavior/這個跟insight/平行並存的兄弟
     // 子目錄），不是新的違規跨層引用。
+    // TASK1.76新增：capabilities/index.js ->
+    // capabilities/analysis/index.js——Phase 4第一個Intelligence
+    // Capability Execution Boundary（Analysis Capability）統一
+    // 輸出入口re-export自己nested子目錄的合法邊界，同一種性質
+    // （上層index.js認識自己底下的子目錄），不是新的違規跨層
+    // 引用。
     const allowed = crossDirImports.every((edge) => {
       return (
         edge.includes('facade/intelligence_facade.js -> runtime/index.js') ||
@@ -375,7 +385,8 @@ async function run() {
         edge.includes('application/features/insight/index.js -> application/features/insight/context/index.js') ||
         edge.includes('application/features/insight/index.js -> application/features/insight/output/index.js') ||
         edge.includes('application/features/insight/index.js -> application/features/insight/execution/index.js') ||
-        edge.includes('application/features/index.js -> application/features/behavior/index.js')
+        edge.includes('application/features/index.js -> application/features/behavior/index.js') ||
+        edge.includes('capabilities/index.js -> capabilities/analysis/index.js')
       );
     });
     assert.ok(allowed, `發現未預期的跨目錄import：${JSON.stringify(crossDirImports)}`);

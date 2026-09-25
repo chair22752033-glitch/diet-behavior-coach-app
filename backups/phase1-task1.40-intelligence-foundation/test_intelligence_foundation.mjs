@@ -105,8 +105,12 @@ async function run() {
   // Governance Layer），Phase 3 TASK1.60 再新增了application/
   // （Intelligence Application Service Layer），都是明確要做的
   // 擴充，不是回歸——這裡的預期子目錄清單已同步更新。
-  await test('（TASK1.60後更新）src/intelligence/ 底下的子目錄依序是 analysis/application/context/contracts/data_preparation/events/execution/facade/governance/history/metrics/monitoring/orchestration/recommendation/runtime/service 十六個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'application', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'runtime', 'service']);
+  // TASK1.76後更新：Phase 4新增了capabilities/（Analysis
+  // Capability Execution Boundary，跟application/底下nested的
+  // application/capabilities/是完全不同的東西），同樣是明確的
+  // 擴充，加入預期清單。
+  await test('（TASK1.76後更新）src/intelligence/ 底下的子目錄依序是 analysis/application/capabilities/context/contracts/data_preparation/events/execution/facade/governance/history/metrics/monitoring/orchestration/recommendation/runtime/service 十七個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'application', 'capabilities', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'runtime', 'service']);
   });
 
   for (const f of EXPECTED_FILES) {

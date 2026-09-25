@@ -794,10 +794,16 @@ async function run() {
     }
   });
 
-  await test('（8.export consistency）src/intelligence/index.js完全沒有被本次審查修改（application/features/insight/整條樹都是nested三層以下，不需要在最外層統一輸出入口新增任何東西）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.76後更新）原本這裡有一個「src/intelligence/index.js
+  // 完全沒有被TASK1.70修改」的斷言，比對整個檔案即時的git diff
+  // --stat。這是跟TASK1.39/TASK1.56/TASK1.63/TASK1.67/TASK1.68
+  // 同一種「比對即時整檔git diff」的脆弱治具：src/intelligence/
+  // index.js從來就不在本任務系列真正的禁止清單裡，TASK1.76合法地
+  // 在這個檔案新增了頂層capabilities namespace的re-export
+  // （`export * as capabilities from './capabilities/index.js'`），
+  // 導致這個斷言失敗——這不是TASK1.70造成的回歸，而是斷言本身
+  // 寫得過度嚴格，這裡移除這個斷言，改由TASK1.76/後續任務自己的
+  // 章節驗證真正的禁止清單（worker.js等）維持零異動即可。
 
   await test('（8.export consistency）insight_capability.js/insight_result_mapper.js（TASK1.66）本次審查完全沒有被修改（唯一相對路徑import維持是./insight_result_mapper.js）', () => {
     const src = readSrc(path.join(insightDir, 'insight_capability.js'));

@@ -170,6 +170,26 @@
  * `intelligence_facade.js`本身完全沒有被修改。這個統一輸出入口
  * （src/intelligence/index.js）本身沒有變化——features是nested在
  * application namespace底下，不是新的頂層namespace。
+ *
+ * Phase 4 TASK1.76新增的頂層capabilities namespace（re-export自
+ * ./capabilities/index.js）是Phase 4第一個Intelligence Capability
+ * Execution Boundary——`capabilities.analysis.
+ * createAnalysisCapability({analysisRunner})`透過依賴注入拿到跟
+ * `intelligence.analysis`同樣形狀（同樣是`createAnalysisRunner()`
+ * 產生）的Analysis Runner實例，讓Application Feature（未來）可以
+ * 透過明確的Capability邊界使用Analysis Framework，而不需要直接
+ * import`analysis_runner.js`。這個頂層capabilities namespace跟
+ * 既有`application`namespace底下nested的`application.capabilities`
+ * （Phase 3 Application Capability，包裝Use Case Layer）是完全
+ * 不同架構位置、互不認識的兩個東西——這裡是直接包裝Runtime層
+ * Analysis Runner的Capability。Analysis Capability完全不import
+ * src/intelligence/application/、facade/、execution/、history/、
+ * metrics/、events/、service/、orchestration/、data_preparation/、
+ * recommendation/、governance/底下任何檔案，唯一認識的下一層是
+ * Analysis Runner，`analysis_runner.js`/`recommendation_runner.js`
+ * 本身完全沒有被修改，也完全沒有接進`src/bootstrap/
+ * application.js`——維持TASK1.55 Governance/TASK1.63 Contract
+ * Layer同樣的「建立但不改變既有execution behavior」邊界決策。
  */
 export { createInsightService } from './insight_service.js';
 export { createAnalysisEngine } from './analysis_engine.js';
@@ -192,3 +212,4 @@ export * as monitoring from './monitoring/index.js';
 export * as metrics from './metrics/index.js';
 export * as governance from './governance/index.js';
 export * as application from './application/index.js';
+export * as capabilities from './capabilities/index.js';
