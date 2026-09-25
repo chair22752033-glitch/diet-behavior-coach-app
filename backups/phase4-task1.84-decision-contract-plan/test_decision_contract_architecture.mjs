@@ -360,12 +360,31 @@ async function run() {
     assert.strictEqual(diff.trim(), '', `發現非預期的production程式碼變更：${diff}`);
   });
 
-  await test('（4.dependency direction）四層既有Phase 4 Capability（analysis/recommendation/orchestration/decision）本次規劃完全沒有任何.js檔案被新增或修改', () => {
-    const status = execFileSync('sh', ['-c', 'git status --porcelain -- src/intelligence/capabilities/analysis/ src/intelligence/capabilities/recommendation/ src/intelligence/capabilities/orchestration/ src/intelligence/capabilities/decision/'], { cwd: repoRoot, encoding: 'utf8' });
+  // TASK1.86後更新：這個斷言原本連同orchestration/一起比對，預期
+  // 完全沒有異動。TASK1.86依照TASK1.85規劃結論（本次規劃TASK1.84
+  // 的下一步），合法地修改了orchestration/底下的
+  // capability_orchestrator.js/capability_result_builder.js（新增
+  // 選填的decisionCapability整合）——這是規劃系列預期的下一步，
+  // 不是回歸。這裡改為只比對analysis/recommendation/decision三層
+  // （本次任務確實沒有觸及的部分），orchestration/的異動已知合法、
+  // 另有專屬斷言驗證。
+  await test('（TASK1.86後更新）（4.dependency direction）三層既有Phase 4 Capability（analysis/recommendation/decision）本次規劃完全沒有任何.js檔案被新增或修改，TASK1.86擴充的orchestration/是規劃系列預期的下一步', () => {
+    const status = execFileSync('sh', ['-c', 'git status --porcelain -- src/intelligence/capabilities/analysis/ src/intelligence/capabilities/recommendation/ src/intelligence/capabilities/decision/'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(status.trim(), '');
   });
 
+  const TASK1_86_MODIFIED_FILES = new Set(['orchestration/capability_orchestrator.js', 'orchestration/capability_result_builder.js']);
+
   for (const { layer, file, full } of ALL_PHASE4_FILES) {
+    const key = `${layer}/${file}`;
+    if (TASK1_86_MODIFIED_FILES.has(key)) {
+      await test(`（TASK1.86後更新）（4.dependency direction）${key} 已由TASK1.86依照後續規劃正式修改（新增選填的decisionCapability整合，不是回歸）`, () => {
+        const relPath = path.relative(repoRoot, full);
+        const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
+        assert.ok(diff.trim().length > 0, `${key} 預期已被TASK1.86修改，但git diff為空`);
+      });
+      continue;
+    }
     await test(`（4.dependency direction）${layer}/${file} 本次規劃完全沒有被修改（逐檔案git diff確認）`, () => {
       const relPath = path.relative(repoRoot, full);
       const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
@@ -435,9 +454,14 @@ async function run() {
     assert.deepStrictEqual(Object.keys(result.data).sort(), ['analysis', 'recommendation']);
   });
 
-  await test('（5.capability isolation）capability_orchestrator.js完全不出現Decision相關字樣（本次規劃沒有把Decision Capability接進Orchestrator）', () => {
+  // TASK1.86後更新：TASK1.84當下capability_orchestrator.js確實完全
+  // 不出現Decision字樣（本次規劃沒有把Decision Capability接進
+  // Orchestrator）。TASK1.86依照TASK1.85規劃結論正式落地了選填的
+  // decisionCapability整合，現在合法地出現Decision相關字樣——這裡
+  // 改為驗證這個演進本身。
+  await test('（TASK1.86後更新）（5.capability isolation）capability_orchestrator.js現在合法出現Decision相關字樣（TASK1.86正式把選填的decisionCapability接進Orchestrator）', () => {
     const src = readSrc(path.join(orchestrationCapabilityDir, 'capability_orchestrator.js'));
-    assert.ok(!/Decision/.test(src));
+    assert.ok(/decisionCapability/.test(src));
   });
 
   await test('（5.capability isolation）intelligence_feature.js完全不出現Decision相關字樣（本次規劃沒有把Decision Capability接進Feature層）', () => {

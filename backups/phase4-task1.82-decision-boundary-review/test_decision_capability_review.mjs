@@ -305,7 +305,28 @@ async function run() {
     assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision')));
   });
 
+  // TASK1.86後更新：orchestration層的capability_orchestrator.js/
+  // capability_result_builder.js已由TASK1.86依照TASK1.82審查結論
+  // （建議選項B、Orchestrator保持未接線）之後的TASK1.85規劃，正式
+  // 合法修改（新增選填的decisionCapability整合）——這是審查系列
+  // 預期的下一步，不是回歸。這兩個檔案改為驗證「現在合法已修改/
+  // 出現Decision字樣」，其餘檔案維持原本的驗證。
+  const TASK1_86_MODIFIED_FILES = new Set(['orchestration/capability_orchestrator.js', 'orchestration/capability_result_builder.js']);
+
   for (const { layer, file, full } of ALL_PHASE4_FILES) {
+    const key = `${layer}/${file}`;
+    if (TASK1_86_MODIFIED_FILES.has(key)) {
+      await test(`（TASK1.86後更新）（3.dependency direction）${key} 已由TASK1.86依照後續規劃正式修改（新增選填的decisionCapability整合，不是回歸）`, () => {
+        const relPath = path.relative(repoRoot, full);
+        const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
+        assert.ok(diff.trim().length > 0, `${key} 預期已被TASK1.86修改，但git diff為空`);
+      });
+      await test(`（TASK1.86後更新）（3.dependency direction）${key} 現在合法出現decision相關字樣（TASK1.86正式整合decisionCapability，大小寫不拘比對，capability_result_builder.js的decisionResult是小寫識別字）`, () => {
+        const src = readSrc(full);
+        assert.ok(/decision/i.test(src), `${key} 預期出現decision字樣`);
+      });
+      continue;
+    }
     await test(`（3.dependency direction）${layer}/${file} 本次審查完全沒有被修改（逐檔案git diff確認）`, () => {
       const relPath = path.relative(repoRoot, full);
       const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });

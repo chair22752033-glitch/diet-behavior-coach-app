@@ -576,8 +576,17 @@ async function run() {
     assert.strictEqual(diff.trim(), '', `發現非預期的production程式碼變更：${diff}`);
   });
 
-  await test('（5.runtime isolation）Phase 4三個Capability（analysis/recommendation/orchestration）整條樹本次審查完全沒有被修改', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/analysis/ src/intelligence/capabilities/recommendation/ src/intelligence/capabilities/orchestration/'], { cwd: repoRoot, encoding: 'utf8' });
+  // TASK1.86後更新：原本這裡比對analysis/recommendation/
+  // orchestration三個目錄整體的即時git diff。TASK1.86依照
+  // TASK1.85規劃結論，合法地為orchestration/底下的
+  // capability_orchestrator.js/capability_result_builder.js新增
+  // 選填的decisionCapability整合（Backward
+  // Compatible）——這不是TASK1.80造成的回歸，而是斷言本身寫得
+  // 過度嚴格，這裡改為只驗證analysis/recommendation兩個目錄
+  // （本次任務沒有觸及、依然完全沒有被修改），orchestration/
+  // 的異動已知合法。
+  await test('（TASK1.86後更新）（5.runtime isolation）Phase 4的Analysis/Recommendation Capability（analysis/recommendation/兩個目錄）本次審查完全沒有被修改', () => {
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/analysis/ src/intelligence/capabilities/recommendation/'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(diff.trim(), '');
   });
 

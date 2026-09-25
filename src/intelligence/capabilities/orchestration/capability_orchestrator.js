@@ -1,5 +1,7 @@
 /*
  * Phase 4 TASK 1.78｜Intelligence Capability Orchestration Foundation
+ * （TASK1.86後更新：新增選填的decisionCapability依賴，見下方
+ * 「TASK1.86新增」區塊）
  * - Capability Orchestrator
  *
  * 責任：Phase 4第三個Intelligence Capability
@@ -26,8 +28,32 @@
  *   Analysis Capability（TASK1.76，完全不修改）
  *     ↓
  *   Recommendation Capability（TASK1.77，完全不修改）
+ *     ↓（TASK1.86新增：若有提供decisionCapability，多一步）
+ *   Decision Capability（TASK1.83，完全不修改）
  *     ↓
  *   Capability Result
+ *
+ * TASK1.86新增（依照TASK1.85 Integration Architecture Plan記錄的
+ * 設計圖落地，見`../../PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md`）：
+ * `createCapabilityOrchestrator()`新增一個**選填**的
+ * `decisionCapability`依賴——
+ * - **沒有提供**時（`dependencies.decisionCapability`為
+ *   `undefined`/`null`，或提供的物件沒有`requestDecision`函式）：
+ *   `requestCapabilityFlow()`完全維持TASK1.78建立當下的既有行為，
+ *   只呼叫Analysis Capability跟Recommendation
+ *   Capability，回傳的Unified Capability Result恰好只有
+ *   `{analysis, recommendation}`兩個欄位——這是Backward
+ *   Compatibility的核心保證，本次任務用測試逐一驗證這個保證
+ *   對既有呼叫端完全成立。
+ * - **有提供**且`requestDecision`是函式時：Recommendation
+ *   Capability成功後，多一步把`recommendationOutcome.result`包成
+ *   `{recommendationResult}`轉交給
+ *   `decisionCapability.requestDecision()`，成功時Unified
+ *   Capability Result會多一個`decision`欄位（放Decision
+ *   Capability回傳的`result`，目前依然是TASK1.83/1.84建立的
+ *   `decision: null`佔位形狀，本次任務沒有、也不應該讓這個欄位
+ *   出現任何實際決策內容），失敗時回傳
+ *   `{ok:false, capability:'orchestration', reason, field?, stage:'decision'}`。
  *
  * 注意：這裡的「Runtime Orchestrator」跟Phase 2既有的
  * `src/intelligence/orchestration/`（TASK1.45 Intelligence
@@ -41,7 +67,8 @@
  * Phase 2 Runtime Orchestrator，這裡也完全不import
  * `src/intelligence/orchestration/`底下任何檔案，兩者互不認識。
  *
- * Capability Orchestrator只負責四件事（規格明確列出，不多不少）：
+ * Capability Orchestrator只負責四件事（規格明確列出，不多不少），
+ * TASK1.86新增第五件事（選填）：
  * - 接收 intelligence capability request（`{context, options?}`
  *   形狀，跟Analysis Capability的request形狀完全一致——因為
  *   Orchestrator就是從Analysis這一段開始整條Flow）
@@ -51,17 +78,28 @@
  *   注入拿到的`recommendationCapability.requestRecommendation()`，
  *   轉交的是Analysis Capability回傳的`result`欄位，包成
  *   Recommendation Capability要求的`{analysisResult}`形狀）
+ * - （TASK1.86新增，選填）若有提供`decisionCapability`，將
+ *   Recommendation Result傳遞給Decision
+ *   Capability（透過依賴注入拿到的
+ *   `decisionCapability.requestDecision()`，轉交的是
+ *   Recommendation Capability回傳的`result`欄位，包成Decision
+ *   Capability要求的`{recommendationResult}`形狀）
  * - 回傳 Unified Capability Result（透過
  *   `capability_result_builder.js`統一包裝，見該檔案的說明）
  *
  * 明確要求（Capability Orchestrator may call / must NOT call）：
- * - ✅ 只能呼叫 Analysis Capability 跟 Recommendation Capability
- *   （各自的`requestAnalysis()`/`requestRecommendation()`）
+ * - ✅ 只能呼叫 Analysis Capability、Recommendation
+ *   Capability，跟（TASK1.86新增，選填）Decision Capability
+ *   （各自的`requestAnalysis()`/`requestRecommendation()`/
+ *   `requestDecision()`）
  * - ❌ 不直接呼叫 Analysis Runner/Recommendation
  *   Runner（不import`src/intelligence/analysis/`、
  *   `src/intelligence/recommendation/`——Orchestrator只認識
  *   Capability這一層，不繞過Capability直接摸Runtime層，維持
- *   TASK1.76/1.77建立的邊界）
+ *   TASK1.76/1.77建立的邊界，TASK1.86新增的Decision
+ *   Capability整合同樣遵守這個邊界——不import
+ *   `src/intelligence/capabilities/decision/`底下任何實作
+ *   檔案，只透過依賴注入拿到的`decisionCapability`介面呼叫）
  * - ❌ 不直接存取 Database（不 import src/db/ 底下任何檔案，這個
  *   檔案完全不接受db參數，也不知道db是什麼）
  * - ❌ 不直接存取 Auth/Session（不 import src/auth/、src/oauth/、
@@ -102,7 +140,12 @@
  * 讓任何既有Feature（Insight/Behavior）呼叫它——這是刻意的邊界
  * 決策，跟TASK1.76/1.77同樣的模式：「建立但不改變既有execution
  * behavior」，用測試證明Analysis + Recommendation可以被安全組合
- * 執行即可，接不接進真實Feature留給未來任務決定。
+ * 執行即可，接不接進真實Feature留給未來任務決定。TASK1.86新增的
+ * Decision Capability選填整合同樣延續這個決策——沒有把
+ * Orchestrator接進bootstrap，也沒有讓Feature Integration
+ * （TASK1.79 `intelligence_feature.js`）注入`decisionCapability`
+ * ，這個選填依賴目前只在測試裡被驗證存在、可運作，實際串接給
+ * 真實Feature留給未來任務決定。
  */
 import { createCapabilityOrchestratorResultBuilder } from './capability_result_builder.js';
 
@@ -137,27 +180,31 @@ function validateCapabilityOrchestratorRequest(request) {
  * @param {object} dependencies
  * @param {{requestAnalysis: Function}} dependencies.analysisCapability
  * @param {{requestRecommendation: Function}} dependencies.recommendationCapability
+ * @param {{requestDecision: Function}} [dependencies.decisionCapability] - 選填（TASK1.86新增）。沒有提供、或提供的物件沒有requestDecision函式時，完全維持TASK1.78既有的兩段Flow行為（Backward Compatibility）。
  * @param {{buildSuccessResult: Function, buildFailureResult: Function}} [dependencies.resultBuilder]
- * @returns {{requestCapabilityFlow: (request:{context:object, options?:object}) => {ok:true, capability:'orchestration', result:{analysis:object, recommendation:object}}|{ok:false, capability:'orchestration', reason:string, field?:string, stage?:string}}}
+ * @returns {{requestCapabilityFlow: (request:{context:object, options?:object}) => {ok:true, capability:'orchestration', result:{analysis:object, recommendation:object, decision?:object}}|{ok:false, capability:'orchestration', reason:string, field?:string, stage?:string}}}
  */
 export function createCapabilityOrchestrator(dependencies) {
   dependencies = dependencies || {};
-  const { analysisCapability, recommendationCapability } = dependencies;
+  const { analysisCapability, recommendationCapability, decisionCapability } = dependencies;
   const resultBuilder = dependencies.resultBuilder || createCapabilityOrchestratorResultBuilder();
 
   /**
-   * Feature唯一需要呼叫的「組合Analysis + Recommendation」進入點：
-   * 驗證輸入 → 呼叫Analysis Capability → 把Analysis Result轉交給
-   * Recommendation Capability → 回傳穩定的Unified Capability
-   * Result。任何一步失敗都立刻回傳
+   * Feature唯一需要呼叫的「組合Analysis + Recommendation（+選填的
+   * Decision）」進入點：驗證輸入 → 呼叫Analysis Capability → 把
+   * Analysis Result轉交給Recommendation Capability →
+   * （TASK1.86新增，選填）若有提供decisionCapability，把
+   * Recommendation Result轉交給Decision Capability →
+   * 回傳穩定的Unified Capability Result。任何一步失敗都立刻回傳
    * {ok:false, capability:'orchestration', reason, field?, stage?}，
    * 不會用不完整的資料頂替繼續執行。這是同步函式，跟Analysis
-   * Capability/Recommendation Capability本身的同步簽名完全一致。
+   * Capability/Recommendation Capability/Decision
+   * Capability本身的同步簽名完全一致。
    *
    * @param {{context:object, options?:object}} request - 結構化
    *   intelligence capability request，形狀跟Analysis
    *   Capability的request完全相同，Orchestrator原樣轉交
-   * @returns {{ok:true, capability:'orchestration', result:{analysis:object, recommendation:object}}|{ok:false, capability:'orchestration', reason:string, field?:string, stage?:string}}
+   * @returns {{ok:true, capability:'orchestration', result:{analysis:object, recommendation:object, decision?:object}}|{ok:false, capability:'orchestration', reason:string, field?:string, stage?:string}}
    */
   function requestCapabilityFlow(request) {
     const validation = validateCapabilityOrchestratorRequest(request);
@@ -183,7 +230,16 @@ export function createCapabilityOrchestrator(dependencies) {
       return resultBuilder.buildFailureResult(recommendationOutcome.reason, recommendationOutcome.field, 'recommendation');
     }
 
-    return resultBuilder.buildSuccessResult(analysisOutcome.result, recommendationOutcome.result);
+    if (!decisionCapability || typeof decisionCapability.requestDecision !== 'function') {
+      return resultBuilder.buildSuccessResult(analysisOutcome.result, recommendationOutcome.result);
+    }
+
+    const decisionOutcome = decisionCapability.requestDecision({ recommendationResult: recommendationOutcome.result });
+    if (!decisionOutcome.ok) {
+      return resultBuilder.buildFailureResult(decisionOutcome.reason, decisionOutcome.field, 'decision');
+    }
+
+    return resultBuilder.buildSuccessResult(analysisOutcome.result, recommendationOutcome.result, decisionOutcome.result);
   }
 
   return { requestCapabilityFlow };

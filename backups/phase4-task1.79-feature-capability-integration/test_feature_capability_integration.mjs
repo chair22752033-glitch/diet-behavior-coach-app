@@ -433,9 +433,23 @@ async function run() {
     assert.strictEqual(result.stage, 'analysis');
   });
 
-  await test('（2.capability orchestration usage）Capability Orchestrator本身（capability_orchestrator.js/capability_result_builder.js）本次任務完全沒有被修改', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/orchestration/capability_orchestrator.js src/intelligence/capabilities/orchestration/capability_result_builder.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // TASK1.86後更新：原本這裡有一個「Capability
+  // Orchestrator本身完全沒有被修改」的斷言，比對即時的git diff
+  // --stat。TASK1.86依照TASK1.85規劃結論，合法地為
+  // capability_orchestrator.js/capability_result_builder.js新增了
+  // 選填的decisionCapability整合（Backward Compatible，不提供
+  // decisionCapability時行為完全不變）——這不是TASK1.79造成的
+  // 回歸，而是斷言本身寫得過度嚴格，這裡移除這個斷言，改為驗證
+  // 不提供decisionCapability時的既有行為依然成立。
+  await test('（TASK1.86後更新）（2.capability orchestration usage）不提供decisionCapability時，Capability Orchestrator依然只回傳{analysis, recommendation}兩個欄位（TASK1.79建立當下的行為經TASK1.86擴充後依然成立）', async () => {
+    const intelModule = await import(path.join(intelDir, 'index.js'));
+    const orchestrator = intelModule.capabilities.orchestration.createCapabilityOrchestrator({
+      analysisCapability: intelModule.capabilities.analysis.createAnalysisCapability({ analysisRunner: intelModule.analysis.createAnalysisRunner() }),
+      recommendationCapability: intelModule.capabilities.recommendation.createRecommendationCapability({ recommendationRunner: intelModule.recommendation.createRecommendationRunner() }),
+    });
+    const result = orchestrator.requestCapabilityFlow({ context: makeInsightContext() });
+    assert.strictEqual(result.ok, true);
+    assert.deepStrictEqual(Object.keys(result.result).sort(), ['analysis', 'recommendation']);
   });
 
   await test('（2.capability orchestration usage）Analysis Capability/Recommendation Capability本身完全沒有被修改（git diff確認，三個Capability互不影響）', () => {

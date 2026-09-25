@@ -698,14 +698,24 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（4.capability isolation）Capability Orchestrator（capability_orchestrator.js/capability_result_builder.js）本次任務完全沒有被修改——規格明確禁止「修改Existing Capability Logic」，requestCapabilityFlow()依然只呼叫Analysis/Recommendation Capability，不會自動呼叫Decision Capability', () => {
+  // TASK1.86後更新：TASK1.83當下規格明確禁止「修改Existing
+  // Capability Logic」，capability_orchestrator.js/capability_
+  // result_builder.js確實完全沒有被修改，requestCapabilityFlow()
+  // 當時只呼叫Analysis/Recommendation Capability。TASK1.86的規格
+  // 明確允許「Orchestrator extension」（跟TASK1.83不同），依照
+  // TASK1.85規劃結論正式把選填的decisionCapability整合進這兩個
+  // 檔案——這是規劃系列預期的下一步，不是TASK1.83造成的回歸，也
+  // 不代表TASK1.83自己違反了當時的規格（歷史上這條斷言在TASK1.83
+  // 完成當下是逐字成立的）。這裡改為驗證TASK1.86依照後續規格正式
+  // 落地了這個擴充。
+  await test('（TASK1.86後更新）（4.capability isolation）Capability Orchestrator（capability_orchestrator.js/capability_result_builder.js）已由TASK1.86依照TASK1.86規格（明確允許Orchestrator extension，跟TASK1.83的規格不同）正式修改，新增選填的decisionCapability整合', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/orchestration/capability_orchestrator.js src/intelligence/capabilities/orchestration/capability_result_builder.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    assert.ok(diff.trim().length > 0, '預期capability_orchestrator.js/capability_result_builder.js已被TASK1.86修改');
   });
 
-  await test('（4.capability isolation）capability_orchestrator.js完全不出現Decision相關字樣（本次任務沒有把Decision Capability接進Orchestrator）', () => {
+  await test('（TASK1.86後更新）（4.capability isolation）capability_orchestrator.js現在合法出現Decision相關字樣（TASK1.86正式把選填的decisionCapability接進Orchestrator）', () => {
     const src = readSrc(path.join(orchestrationCapabilityDir, 'capability_orchestrator.js'));
-    assert.ok(!/Decision/.test(src));
+    assert.ok(/decisionCapability/.test(src));
   });
 
   await test('（4.capability isolation）Feature Integration（intelligence_feature.js/intelligence_feature_result_mapper.js）本次任務完全沒有被修改', () => {
