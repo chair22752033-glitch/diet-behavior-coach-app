@@ -281,15 +281,17 @@ async function run() {
   // 狀態。TASK1.86的規格明確允許「Orchestrator extension」（跟
   // TASK1.85不同），依照本次規劃文件記錄的設計圖正式落地了選填的
   // decisionCapability整合——這是規劃系列預期的下一步，不是回歸。
-  // 這裡改為驗證TASK1.86依照本次規劃文件的設計圖正式落地。
-  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_orchestrator.js已由TASK1.86依照本次規劃文件記錄的設計圖正式修改（逐檔案git diff確認）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/capabilities/orchestration/capability_orchestrator.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(diff.trim().length > 0, '預期capability_orchestrator.js已被TASK1.86修改');
+  // 這裡改為驗證TASK1.86依照本次規劃文件的設計圖正式落地。注意：
+  // 不用即時git diff判斷「曾被修改」——TASK1.86的commit落地後，
+  // working tree對HEAD的diff永遠是空的，改用穩定的內容訊號。
+  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_orchestrator.js已由TASK1.86依照本次規劃文件記錄的設計圖正式修改（內容確認包含decisionCapability依賴注入）', () => {
+    const src = readSrc(path.join(orchestrationCapabilityDir, 'capability_orchestrator.js'));
+    assert.ok(/decisionCapability/.test(src), '預期capability_orchestrator.js包含decisionCapability依賴注入');
   });
 
-  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_result_builder.js（orchestration）已由TASK1.86依照本次規劃文件記錄的設計圖正式修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/capabilities/orchestration/capability_result_builder.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(diff.trim().length > 0, '預期capability_result_builder.js已被TASK1.86修改');
+  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_result_builder.js（orchestration）已由TASK1.86依照本次規劃文件記錄的設計圖正式修改（內容確認包含decisionResult參數）', () => {
+    const src = readSrc(path.join(orchestrationCapabilityDir, 'capability_result_builder.js'));
+    assert.ok(/decisionResult/.test(src), '預期capability_result_builder.js包含decisionResult參數');
   });
 
   await test('（TASK1.86後更新）（3.orchestrator boundary）capability_orchestrator.js現在合法出現Decision相關字樣（TASK1.86正式把選填的decisionCapability接進Orchestrator，結束了本次規劃記錄的「未接線狀態」）', () => {
@@ -362,12 +364,13 @@ async function run() {
 
   // TASK1.86後更新：TASK1.85當下capability_orchestrator.js原始碼
   // 行數確實前後一致（零異動）。TASK1.86依照本次規劃文件的設計圖
-  // 正式擴充了這個檔案，行數已合法改變——這裡改為驗證git
-  // diff --stat確實回報了異動（不再是空字串），紀錄從「零異動」到
-  // 「TASK1.86正式落地」的演進。
-  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_orchestrator.js的原始碼行數已由TASK1.86合法變動（git diff --stat確認確實有異動，非零字串）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/capabilities/orchestration/capability_orchestrator.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.notStrictEqual(diff, '');
+  // 正式擴充了這個檔案，行數已合法改變——這裡改為驗證目前的行數
+  // 明顯超過TASK1.85當下零異動時的既有規模（不用即時git
+  // diff，因為commit落地後對HEAD的diff永遠是空的）。
+  await test('（TASK1.86後更新）（3.orchestrator boundary）capability_orchestrator.js的原始碼行數已由TASK1.86合法擴充（超過150行，遠高於TASK1.85當下零異動的既有規模）', () => {
+    const rawContent = fs.readFileSync(path.join(orchestrationCapabilityDir, 'capability_orchestrator.js'), 'utf8');
+    const lineCount = rawContent.split('\n').length;
+    assert.ok(lineCount > 150, `預期capability_orchestrator.js已擴充超過150行，實際${lineCount}行`);
   });
 
   console.log('');
@@ -433,10 +436,11 @@ async function run() {
   for (const { layer, file, full } of ALL_PHASE4_FILES) {
     const key = `${layer}/${file}`;
     if (TASK1_86_MODIFIED_FILES.has(key)) {
+      // 注意：不用即時git diff判斷「曾被修改」——commit落地後對
+      // HEAD的diff永遠是空的，改用穩定的內容訊號。
       await test(`（TASK1.86後更新）（4.dependency scan）${key} 已由TASK1.86依照本次規劃文件的設計圖正式修改（不是回歸）`, () => {
-        const relPath = path.relative(repoRoot, full);
-        const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
-        assert.ok(diff.trim().length > 0, `${key} 預期已被TASK1.86修改，但git diff為空`);
+        const src = readSrc(full);
+        assert.ok(/decisionCapability|decisionResult/.test(src), `${key} 預期包含decisionCapability/decisionResult`);
       });
       continue;
     }

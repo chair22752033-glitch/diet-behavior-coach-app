@@ -708,9 +708,13 @@ async function run() {
   // 不代表TASK1.83自己違反了當時的規格（歷史上這條斷言在TASK1.83
   // 完成當下是逐字成立的）。這裡改為驗證TASK1.86依照後續規格正式
   // 落地了這個擴充。
+  // 注意：不用即時git diff判斷「曾被修改」——TASK1.86的commit落地
+  // 後，working tree對HEAD的diff永遠是空的，改用穩定的內容訊號。
   await test('（TASK1.86後更新）（4.capability isolation）Capability Orchestrator（capability_orchestrator.js/capability_result_builder.js）已由TASK1.86依照TASK1.86規格（明確允許Orchestrator extension，跟TASK1.83的規格不同）正式修改，新增選填的decisionCapability整合', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/orchestration/capability_orchestrator.js src/intelligence/capabilities/orchestration/capability_result_builder.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(diff.trim().length > 0, '預期capability_orchestrator.js/capability_result_builder.js已被TASK1.86修改');
+    const orchestratorContent = readSrc(path.join(orchestrationCapabilityDir, 'capability_orchestrator.js'));
+    const resultBuilderContent = readSrc(path.join(orchestrationCapabilityDir, 'capability_result_builder.js'));
+    assert.ok(/decisionCapability/.test(orchestratorContent), '預期capability_orchestrator.js包含decisionCapability依賴注入');
+    assert.ok(/decisionResult/.test(resultBuilderContent), '預期capability_result_builder.js包含decisionResult參數');
   });
 
   await test('（TASK1.86後更新）（4.capability isolation）capability_orchestrator.js現在合法出現Decision相關字樣（TASK1.86正式把選填的decisionCapability接進Orchestrator）', () => {

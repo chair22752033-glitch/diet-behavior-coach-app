@@ -413,10 +413,15 @@ async function run() {
   for (const { layer, file, full } of ALL_PHASE4_FILES) {
     const key = `${layer}/${file}`;
     if (TASK1_86_MODIFIED_FILES.has(key)) {
+      // 注意：這裡刻意不用「即時git diff是否為空」判斷是否被
+      // TASK1.86修改——一旦TASK1.86的commit落地，working tree
+      // 對HEAD的diff永遠是空的（不是因為沒改過，而是因為改動已經
+      // 進了歷史），用git diff驗證「曾經被修改」會隨著commit時間
+      // 而失效。改用「現在的原始碼內容確實包含decisionCapability
+      // 依賴注入」這個穩定、不受commit時間點影響的訊號。
       await test(`（TASK1.86後更新）（4.dependency direction）${key} 已由TASK1.86依照本次規劃正式修改（新增選填的decisionCapability整合，不是回歸）`, () => {
-        const relPath = path.relative(repoRoot, full);
-        const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
-        assert.ok(diff.trim().length > 0, `${key} 預期已被TASK1.86修改，但git diff為空`);
+        const src = readSrc(full);
+        assert.ok(/decisionCapability|decisionResult/.test(src), `${key} 預期包含decisionCapability或decisionResult`);
       });
       await test(`（TASK1.86後更新）（4.dependency direction）${key} 現在合法出現decision相關字樣（TASK1.86正式整合decisionCapability，大小寫不拘比對，capability_result_builder.js的decisionResult是小寫識別字）`, () => {
         const src = readSrc(full);

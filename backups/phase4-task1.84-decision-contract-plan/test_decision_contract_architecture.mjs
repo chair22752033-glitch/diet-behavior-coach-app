@@ -378,10 +378,12 @@ async function run() {
   for (const { layer, file, full } of ALL_PHASE4_FILES) {
     const key = `${layer}/${file}`;
     if (TASK1_86_MODIFIED_FILES.has(key)) {
+      // 注意：不用即時git diff判斷「曾被修改」——TASK1.86的commit
+      // 落地後，working tree對HEAD的diff永遠是空的，改用穩定的
+      // 內容訊號。
       await test(`（TASK1.86後更新）（4.dependency direction）${key} 已由TASK1.86依照後續規劃正式修改（新增選填的decisionCapability整合，不是回歸）`, () => {
-        const relPath = path.relative(repoRoot, full);
-        const diff = execFileSync('git', ['diff', '--stat', relPath], { cwd: repoRoot, encoding: 'utf8' });
-        assert.ok(diff.trim().length > 0, `${key} 預期已被TASK1.86修改，但git diff為空`);
+        const src = readSrc(full);
+        assert.ok(/decisionCapability|decisionResult/.test(src), `${key} 預期包含decisionCapability/decisionResult`);
       });
       continue;
     }

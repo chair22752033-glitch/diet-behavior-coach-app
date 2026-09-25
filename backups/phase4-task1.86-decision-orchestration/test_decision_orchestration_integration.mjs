@@ -558,9 +558,16 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（4.dependency scan）capability_orchestrator.js/capability_result_builder.js（orchestration）本次任務確實被修改（規格明確允許Orchestrator extension）', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/capabilities/orchestration/capability_orchestrator.js src/intelligence/capabilities/orchestration/capability_result_builder.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(diff.trim().length > 0);
+  // TASK1.87後更新：這裡原本用即時git diff --stat判斷「本次任務
+  // 確實修改了這兩個檔案」，在TASK1.86任務執行當下（commit之前）
+  // 是成立的。一旦TASK1.86的commit落地，working tree對HEAD的diff
+  // 永遠是空的（不是因為沒改過，而是改動已經進了歷史），這條斷言
+  // 會在往後任務的regression sweep裡誤判為失敗。改用穩定、不受
+  // commit時間點影響的內容訊號（decisionCapability/decisionResult
+  // 確實存在於目前的原始碼裡）。
+  await test('（TASK1.87後更新）（4.dependency scan）capability_orchestrator.js/capability_result_builder.js（orchestration）已由TASK1.86正式修改（規格明確允許Orchestrator extension，內容確認包含decisionCapability/decisionResult）', () => {
+    assert.ok(/decisionCapability/.test(orchestratorSrc), '預期capability_orchestrator.js包含decisionCapability');
+    assert.ok(/decisionResult/.test(resultBuilderSrc), '預期capability_result_builder.js包含decisionResult');
   });
 
   await test('（4.dependency scan）orchestration/index.js本次任務完全沒有被修改（只有內層兩個檔案被修改，統一輸出的方式不變）', () => {

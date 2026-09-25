@@ -72,7 +72,10 @@ async function run() {
     assert.ok(fs.existsSync(intelDir) && fs.statSync(intelDir).isDirectory());
   });
 
-  const EXPECTED_FILES = ['PHASE4_CAPABILITY_PLAN.md', 'PHASE4_CONSOLIDATION_REVIEW.md', 'PHASE4_DECISION_CAPABILITY_REVIEW.md', 'PHASE4_DECISION_CONTRACT_PLAN.md', 'PHASE4_DECISION_FLOW_PLAN.md', 'PHASE4_DECISION_INTEGRATION_PLAN.md', 'PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md', 'README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
+  const EXPECTED_FILES = ['PHASE4_CAPABILITY_PLAN.md', 'PHASE4_CONSOLIDATION_REVIEW.md', 'PHASE4_DECISION_CAPABILITY_REVIEW.md', 'PHASE4_DECISION_CONTRACT_PLAN.md', 'PHASE4_DECISION_FLOW_PLAN.md', 'PHASE4_DECISION_INTEGRATION_PLAN.md', 'PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md', 'PHASE4_DECISION_OUTPUT_EVOLUTION.md', 'README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
+  // TASK1.87後更新：新增了PHASE4_DECISION_OUTPUT_EVOLUTION.md
+  // （Decision Capability Output Evolution Architecture文件），
+  // 同樣是明確的文件補充，不是回歸，加入預期清單。
   // TASK1.86後更新：新增了PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md
   // （Decision Capability Orchestration Integration文件），同樣是
   // 明確的文件補充，不是回歸，加入預期清單。
@@ -102,7 +105,7 @@ async function run() {
   const actualFiles = actualEntries.filter((e) => e.isFile()).map((e) => e.name).sort();
   const actualDirs = actualEntries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
 
-  await test(`（TASK1.86後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個加上TASK1.75/1.80/1.81/1.82/1.84/1.85/1.86新增的7份Phase 4規劃/審查文件`, () => {
+  await test(`（TASK1.87後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個加上TASK1.75/1.80/1.81/1.82/1.84/1.85/1.86/1.87新增的8份Phase 4規劃/審查文件`, () => {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
   });
 
