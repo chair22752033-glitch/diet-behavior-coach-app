@@ -809,10 +809,16 @@ async function run() {
   // capabilities/index.js認識自己底下的子目錄本來就是允許的），
   // 「唯一的相對路徑import」這個斷言已經不成立，改為驗證兩個
   // import都存在且不多於這兩個。
-  await test('（TASK1.77後更新）（7.export consistency）src/intelligence/capabilities/index.js的相對路徑import恰好是./analysis/index.js跟./recommendation/index.js兩個', () => {
+  // TASK1.78後更新：capabilities/index.js又新增了
+  // `export * as orchestration from './orchestration/index.js';`
+  // 這一行同樣合法的nested子目錄re-export（跟analysis/、
+  // recommendation/同一種性質），「恰好是兩個」的斷言已經不成立，
+  // 改為驗證至少包含這兩個既有的import，不再限定總數。
+  await test('（TASK1.78後更新）（7.export consistency）src/intelligence/capabilities/index.js的相對路徑import包含./analysis/index.js跟./recommendation/index.js', () => {
     const src = readSrc(path.join(capabilitiesDir, 'index.js'));
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    assert.deepStrictEqual(imports.sort(), ['./analysis/index.js', './recommendation/index.js']);
+    assert.ok(imports.includes('./analysis/index.js'));
+    assert.ok(imports.includes('./recommendation/index.js'));
   });
 
   console.log('');

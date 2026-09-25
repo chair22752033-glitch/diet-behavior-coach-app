@@ -19,9 +19,16 @@ Capability，包裝Use Case Layer）是完全不同架構位置、互不認識�
   Recommendation Framework（TASK1.44），詳見
   `./recommendation/README.md`。跟`analysis/`是完全平行、互不
   import、互不認識的兩個Capability。
+- `orchestration/`（TASK1.78建立）：
+  `createCapabilityOrchestrator({analysisCapability, recommendationCapability})`，
+  把`analysis/`跟`recommendation/`這兩個Capability組合成一條完整
+  的Intelligence Capability Flow，回傳Unified Capability
+  Result，詳見`./orchestration/README.md`。跟前兩者不同的是，這
+  不是再包裝一個新的Runtime Runner，而是Capability層級的協調
+  邊界。
 
-未來若有其他Runtime層Capability，會以同樣的模式繼續新增平行的
-nested子目錄。
+未來若有其他Runtime層Capability或協調邊界，會以同樣的模式繼續
+新增平行的nested子目錄。
 
 ## 目前狀態
 

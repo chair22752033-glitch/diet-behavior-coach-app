@@ -377,6 +377,13 @@ async function run() {
     // 邊界，同一種性質（capabilities/底下這次是recommendation/
     // 這個跟analysis/平行並存的兄弟子目錄），不是新的違規跨層
     // 引用。
+    // TASK1.78新增：capabilities/index.js ->
+    // capabilities/orchestration/index.js——Phase 4第三個
+    // Intelligence Capability Boundary（Capability
+    // Orchestrator）統一輸出入口re-export自己nested子目錄的合法
+    // 邊界，同一種性質（capabilities/底下這次是orchestration/
+    // 這個跟analysis/、recommendation/平行並存的兄弟子目錄），
+    // 不是新的違規跨層引用。
     const allowed = crossDirImports.every((edge) => {
       return (
         edge.includes('facade/intelligence_facade.js -> runtime/index.js') ||
@@ -394,7 +401,8 @@ async function run() {
         edge.includes('application/features/insight/index.js -> application/features/insight/execution/index.js') ||
         edge.includes('application/features/index.js -> application/features/behavior/index.js') ||
         edge.includes('capabilities/index.js -> capabilities/analysis/index.js') ||
-        edge.includes('capabilities/index.js -> capabilities/recommendation/index.js')
+        edge.includes('capabilities/index.js -> capabilities/recommendation/index.js') ||
+        edge.includes('capabilities/index.js -> capabilities/orchestration/index.js')
       );
     });
     assert.ok(allowed, `發現未預期的跨目錄import：${JSON.stringify(crossDirImports)}`);

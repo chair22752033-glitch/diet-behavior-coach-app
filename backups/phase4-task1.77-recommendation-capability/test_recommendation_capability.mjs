@@ -799,9 +799,16 @@ async function run() {
     }
   });
 
-  await test('（7.export consistency）src/intelligence/capabilities/index.js（頂層）同時包含analysis跟recommendation兩個namespace', () => {
+  // TASK1.78後更新：capabilities/index.js新增了第三個namespace
+  // `orchestration`（Capability Orchestrator，跟這裡的analysis/
+  // recommendation是平行的兄弟namespace，互不import、互不覆蓋），
+  // 「恰好只有這兩個」的斷言已經不成立，改為驗證這兩個仍然存在，
+  // 不再驗證「僅有」這兩個——理由同TASK1.39/1.56/1.63/1.67/1.68/
+  // 1.76/1.77同一系列的修正案例。
+  await test('（TASK1.78後更新）（7.export consistency）src/intelligence/capabilities/index.js（頂層）仍然同時包含analysis跟recommendation兩個namespace（TASK1.78新增orchestration後，三者平行並存）', () => {
     const namespaces = getReExportedNamespaces(path.join(capabilitiesDir, 'index.js'));
-    assert.deepStrictEqual([...namespaces].sort(), ['analysis', 'recommendation']);
+    assert.ok(namespaces.has('analysis'));
+    assert.ok(namespaces.has('recommendation'));
   });
 
   await test('（7.export consistency）import後，capabilitiesModule.recommendation是非空物件，具備createRecommendationCapability/createRecommendationCapabilityResultBuilder', async () => {
@@ -864,10 +871,15 @@ async function run() {
     assert.deepStrictEqual([...src.matchAll(/from\s+['"]([^'"]+)['"]/g)], []);
   });
 
-  await test('（7.export consistency）src/intelligence/capabilities/index.js的相對路徑import恰好是./analysis/index.js跟./recommendation/index.js兩個', () => {
+  // TASK1.78後更新：capabilities/index.js新增了
+  // `export * as orchestration from './orchestration/index.js';`
+  // 這一行合法的nested子目錄re-export，「恰好是這兩個」的斷言已經
+  // 不成立，改為驗證至少包含這兩個既有的import，不再限定總數。
+  await test('（TASK1.78後更新）（7.export consistency）src/intelligence/capabilities/index.js的相對路徑import包含./analysis/index.js跟./recommendation/index.js', () => {
     const src = readSrc(path.join(capabilitiesDir, 'index.js'));
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    assert.deepStrictEqual(imports.sort(), ['./analysis/index.js', './recommendation/index.js']);
+    assert.ok(imports.includes('./analysis/index.js'));
+    assert.ok(imports.includes('./recommendation/index.js'));
   });
 
   console.log('');
