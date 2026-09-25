@@ -10,8 +10,11 @@
  * 直接包裝Runtime層（Analysis Runner/Recommendation Runner）的
  * Intelligence Capability。
  *
- * 目前只有`analysis`一個子namespace（TASK1.76建立），未來若有
- * Recommendation Capability或其他Runtime層Capability，會以同樣的
- * 模式新增平行的nested子目錄跟re-export一行。
+ * 原本只有`analysis`一個子namespace（TASK1.76建立），TASK1.77
+ * 新增平行的`recommendation`子namespace（`createRecommendationCapability({recommendationRunner})`，
+ * 包裝Recommendation Runner），兩者互不import、互不認識，未來若有
+ * 其他Runtime層Capability，會以同樣的模式繼續新增平行的nested
+ * 子目錄跟re-export一行。
  */
 export * as analysis from './analysis/index.js';
+export * as recommendation from './recommendation/index.js';

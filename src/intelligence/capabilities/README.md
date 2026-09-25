@@ -14,9 +14,14 @@ Capability，包裝Use Case Layer）是完全不同架構位置、互不認識�
 - `analysis/`（TASK1.76建立）：`createAnalysisCapability({analysisRunner})`，
   讓Application Feature（未來）可以透過明確的Capability邊界使用
   Analysis Framework（TASK1.43），詳見`./analysis/README.md`。
+- `recommendation/`（TASK1.77建立）：`createRecommendationCapability({recommendationRunner})`，
+  讓Application Feature（未來）可以透過明確的Capability邊界使用
+  Recommendation Framework（TASK1.44），詳見
+  `./recommendation/README.md`。跟`analysis/`是完全平行、互不
+  import、互不認識的兩個Capability。
 
-未來若有Recommendation Capability或其他Runtime層Capability，會
-以同樣的模式新增平行的nested子目錄。
+未來若有其他Runtime層Capability，會以同樣的模式繼續新增平行的
+nested子目錄。
 
 ## 目前狀態
 

@@ -750,9 +750,15 @@ async function run() {
     }
   });
 
-  await test('（7.export consistency）src/intelligence/capabilities/index.js（頂層）恰好只有analysis一個namespace', () => {
+  // TASK1.77後更新：capabilities/index.js新增了recommendation
+  // namespace（Recommendation Capability，跟這裡的analysis是平行
+  // 的兄弟namespace，互不import、互不覆蓋），這個「恰好只有
+  // analysis一個」的斷言已經不成立，改為驗證analysis仍然存在，
+  // 不再驗證「只有」這一個——理由跟TASK1.39/1.56/1.63/1.67/1.68/
+  // 1.76同一系列的「新增合法子項目導致舊斷言過期」修正案例相同。
+  await test('（TASK1.77後更新）（7.export consistency）src/intelligence/capabilities/index.js（頂層）仍然包含analysis這個namespace（TASK1.77新增recommendation後，兩者平行並存）', () => {
     const namespaces = getReExportedNamespaces(path.join(capabilitiesDir, 'index.js'));
-    assert.deepStrictEqual([...namespaces], ['analysis']);
+    assert.ok(namespaces.has('analysis'));
   });
 
   await test('（7.export consistency）import後，capabilitiesModule.analysis是非空物件，具備createAnalysisCapability/createAnalysisCapabilityResultBuilder', async () => {
@@ -797,10 +803,16 @@ async function run() {
     assert.deepStrictEqual([...src.matchAll(/from\s+['"]([^'"]+)['"]/g)], []);
   });
 
-  await test('（7.export consistency）src/intelligence/capabilities/index.js唯一的相對路徑import是./analysis/index.js', () => {
+  // TASK1.77後更新：capabilities/index.js新增了
+  // `export * as recommendation from './recommendation/index.js';`
+  // 這一行合法的nested子目錄re-export（跟analysis/同一種性質，
+  // capabilities/index.js認識自己底下的子目錄本來就是允許的），
+  // 「唯一的相對路徑import」這個斷言已經不成立，改為驗證兩個
+  // import都存在且不多於這兩個。
+  await test('（TASK1.77後更新）（7.export consistency）src/intelligence/capabilities/index.js的相對路徑import恰好是./analysis/index.js跟./recommendation/index.js兩個', () => {
     const src = readSrc(path.join(capabilitiesDir, 'index.js'));
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    assert.deepStrictEqual(imports, ['./analysis/index.js']);
+    assert.deepStrictEqual(imports.sort(), ['./analysis/index.js', './recommendation/index.js']);
   });
 
   console.log('');
