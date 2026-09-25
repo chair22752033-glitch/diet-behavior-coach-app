@@ -505,10 +505,15 @@ async function run() {
     }
   });
 
-  await test('（4.dependency scan）capabilities/index.js的相對路徑import恰好是三個nested子目錄（analysis/recommendation/orchestration），沒有多餘的import', () => {
+  // TASK1.83後更新：capabilities/index.js新增了decision這個第四個
+  // nested子目錄的合法re-export，「恰好是三個」的斷言已經不成立，
+  // 改為驗證這三個既有import都存在，不再限定總數。
+  await test('（TASK1.83後更新）（4.dependency scan）capabilities/index.js的相對路徑import包含三個既有nested子目錄（analysis/recommendation/orchestration）', () => {
     const src = readSrc(path.join(capabilitiesDir, 'index.js'));
     const imports = [...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
-    assert.deepStrictEqual(imports.sort(), ['./analysis/index.js', './orchestration/index.js', './recommendation/index.js']);
+    assert.ok(imports.includes('./analysis/index.js'));
+    assert.ok(imports.includes('./recommendation/index.js'));
+    assert.ok(imports.includes('./orchestration/index.js'));
   });
 
   console.log('');
@@ -669,9 +674,14 @@ async function run() {
   // =========================================================================
   console.log('--- G. export consistency ---');
 
-  await test('（7.export consistency）src/intelligence/capabilities/index.js（頂層）恰好具備analysis/orchestration/recommendation三個namespace', () => {
+  // TASK1.83後更新：capabilities/index.js新增了第四個namespace
+  // `decision`，「恰好具備三個」的斷言已經不成立，改為驗證這三個
+  // 既有namespace依然存在，不再驗證「僅有」這三個。
+  await test('（TASK1.83後更新）（7.export consistency）src/intelligence/capabilities/index.js（頂層）仍然具備analysis/orchestration/recommendation三個namespace（TASK1.83新增decision後，四者平行並存）', () => {
     const namespaces = getReExportedNamespaces(path.join(capabilitiesDir, 'index.js'));
-    assert.deepStrictEqual([...namespaces].sort(), ['analysis', 'orchestration', 'recommendation']);
+    assert.ok(namespaces.has('analysis'));
+    assert.ok(namespaces.has('orchestration'));
+    assert.ok(namespaces.has('recommendation'));
   });
 
   await test('（7.export consistency）application/features/index.js同時具備insight/behavior/intelligence三個namespace', () => {

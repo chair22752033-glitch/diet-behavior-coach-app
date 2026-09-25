@@ -198,9 +198,16 @@ async function run() {
     });
   }
 
-  await test('（2.capability compatibility）src/intelligence/capabilities/index.js（頂層）依然恰好具備analysis/orchestration/recommendation三個namespace（本次沒有新增decision namespace）', () => {
+  // TASK1.83後更新：TASK1.82當時的斷言是「本次審查沒有新增decision
+  // namespace」，這在TASK1.82當下是正確的（純審查任務）。TASK1.83
+  // 依照本次審查結論正式建立了Decision Capability並新增了
+  // `decision`namespace——這是審查系列預期的下一步、不是回歸，這裡
+  // 放寬為「三個既有namespace依然存在」。
+  await test('（TASK1.83後更新）（2.capability compatibility）src/intelligence/capabilities/index.js（頂層）依然包含analysis/orchestration/recommendation三個namespace（TASK1.83新增decision後，四者平行並存）', () => {
     const namespaces = getReExportedNamespaces(path.join(capabilitiesDir, 'index.js'));
-    assert.deepStrictEqual([...namespaces].sort(), ['analysis', 'orchestration', 'recommendation']);
+    assert.ok(namespaces.has('analysis'));
+    assert.ok(namespaces.has('orchestration'));
+    assert.ok(namespaces.has('recommendation'));
   });
 
   await test('（2.capability compatibility）application/features/index.js依然只有insight/behavior/intelligence三個namespace（本次沒有新增任何Feature）', () => {
@@ -282,23 +289,20 @@ async function run() {
   // =========================================================================
   console.log('--- C. dependency direction ---');
 
-  await test('（3.dependency direction）本次審查沒有建立任何decision相關的.js production程式碼檔案（掃描src/intelligence/整棵樹，排除本次任務自己新增的文件）', () => {
-    function walk(dir) {
-      const found = [];
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) found.push(...walk(full));
-        else if (entry.name.endsWith('.js') && /decision/i.test(entry.name)) found.push(full);
-      }
-      return found;
-    }
-    const decisionFiles = walk(intelDir);
-    assert.deepStrictEqual(decisionFiles, [], `發現非預期的decision相關.js檔案：${JSON.stringify(decisionFiles)}`);
+  // TASK1.83後更新：這兩個斷言在TASK1.82當下是正確的（純審查
+  // 任務，不建立任何Decision相關production程式碼）。TASK1.83依照
+  // TASK1.82的審查結論（選項B：Independent Decision Capability），
+  // 正式建立了`src/intelligence/capabilities/decision/`——這是
+  // 審查系列預期的下一步、不是回歸。這裡改為驗證這些檔案/目錄
+  // 確實存在，紀錄審查到落地的演進過程。
+  await test('（TASK1.83後更新）（3.dependency direction）TASK1.83已依照本次審查結論（選項B）建立capabilities/decision/目錄跟對應的.js production程式碼', () => {
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision', 'decision_capability.js')));
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision', 'decision_result_builder.js')));
   });
 
-  await test('（3.dependency direction）本次審查沒有新增src/intelligence/decision/或capabilities/decision/目錄', () => {
+  await test('（TASK1.83後更新）（3.dependency direction）TASK1.83建立的capabilities/decision/沒有連帶新增src/intelligence/decision/（頂層Runtime子系統，本次審查/後續實作都沒有建立Decision Runner）', () => {
     assert.strictEqual(fs.existsSync(path.join(intelDir, 'decision')), false);
-    assert.strictEqual(fs.existsSync(path.join(capabilitiesDir, 'decision')), false);
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision')));
   });
 
   for (const { layer, file, full } of ALL_PHASE4_FILES) {

@@ -195,9 +195,17 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（2.capability compatibility）src/intelligence/capabilities/index.js（頂層）依然恰好具備analysis/orchestration/recommendation三個namespace（本次沒有新增decision namespace）', () => {
+  // TASK1.83後更新：TASK1.81當時的斷言是「本次規劃沒有新增decision
+  // namespace」，這在TASK1.81當下是正確的（本任務只規劃，不實作）。
+  // TASK1.83依照TASK1.81/1.82的規劃/審查結論，正式建立了Decision
+  // Capability並新增了`decision`namespace——這是規劃系列預期的
+  // 下一步、不是回歸，這裡把斷言放寬為「三個既有namespace依然
+  // 存在」，不再驗證「僅有」這三個。
+  await test('（TASK1.83後更新）（2.capability compatibility）src/intelligence/capabilities/index.js（頂層）依然包含analysis/orchestration/recommendation三個namespace（TASK1.83新增decision後，四者平行並存）', () => {
     const namespaces = getReExportedNamespaces(path.join(capabilitiesDir, 'index.js'));
-    assert.deepStrictEqual([...namespaces].sort(), ['analysis', 'orchestration', 'recommendation']);
+    assert.ok(namespaces.has('analysis'));
+    assert.ok(namespaces.has('orchestration'));
+    assert.ok(namespaces.has('recommendation'));
   });
 
   await test('（2.capability compatibility）application/features/index.js依然只有insight/behavior/intelligence三個namespace（本次沒有新增任何Feature）', () => {
@@ -316,23 +324,21 @@ async function run() {
   // =========================================================================
   console.log('--- D. dependency direction ---');
 
-  await test('（4.dependency direction）本次規劃沒有建立任何decision相關的.js production程式碼檔案（掃描src/intelligence/整棵樹，排除本次任務自己新增的PHASE4_DECISION_FLOW_PLAN.md文件）', () => {
-    function walk(dir) {
-      const found = [];
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) found.push(...walk(full));
-        else if (entry.name.endsWith('.js') && /decision/i.test(entry.name)) found.push(full);
-      }
-      return found;
-    }
-    const decisionFiles = walk(intelDir);
-    assert.deepStrictEqual(decisionFiles, [], `發現非預期的decision相關.js檔案：${JSON.stringify(decisionFiles)}`);
+  // TASK1.83後更新：這兩個斷言在TASK1.81當下是正確的（純規劃
+  // 任務，不建立任何Decision相關production程式碼）。TASK1.83依照
+  // TASK1.81/1.82的規劃/審查結論，正式建立了
+  // `src/intelligence/capabilities/decision/`（Decision
+  // Capability，4個檔案）——這是規劃系列預期的下一步、不是回歸。
+  // 這裡改為驗證這些檔案/目錄確實存在（而不是確認不存在），紀錄
+  // 規劃到落地的演進過程。
+  await test('（TASK1.83後更新）（4.dependency direction）TASK1.83已依照本次規劃建立capabilities/decision/目錄跟對應的.js production程式碼', () => {
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision', 'decision_capability.js')));
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision', 'decision_result_builder.js')));
   });
 
-  await test('（4.dependency direction）本次規劃沒有新增src/intelligence/decision/或capabilities/decision/目錄', () => {
+  await test('（TASK1.83後更新）（4.dependency direction）TASK1.83建立的capabilities/decision/沒有連帶新增src/intelligence/decision/（頂層Runtime子系統，本次規劃/後續實作都沒有建立Decision Runner）', () => {
     assert.strictEqual(fs.existsSync(path.join(intelDir, 'decision')), false);
-    assert.strictEqual(fs.existsSync(path.join(capabilitiesDir, 'decision')), false);
+    assert.ok(fs.existsSync(path.join(capabilitiesDir, 'decision')));
   });
 
   await test('（4.dependency direction）analysis_runner.js/recommendation_runner.js完全不出現Decision相關字樣（本次規劃沒有修改Runner）', () => {
@@ -352,8 +358,15 @@ async function run() {
     assert.ok(!/Decision/.test(src));
   });
 
-  await test('（4.dependency direction）四層Phase 4 Capability（analysis/recommendation/orchestration/intelligence-feature）本次規劃完全沒有任何檔案被新增或修改（git status確認唯一變更是文件跟測試）', () => {
-    const status = execFileSync('git', ['status', '--porcelain', '--', 'src/intelligence/capabilities/', 'src/intelligence/application/features/'], { cwd: repoRoot, encoding: 'utf8' });
+  // TASK1.83後更新：這個斷言原本用`git status --porcelain`比對
+  // `src/intelligence/capabilities/`整個目錄樹，預期TASK1.81當下
+  // 完全沒有任何新增/修改。TASK1.83依照TASK1.81/1.82的規劃/審查
+  // 結論，在這個目錄底下新增了`decision/`子目錄——這是規劃系列
+  // 預期的下一步、不是回歸。改為逐一比對TASK1.76~1.79四層既有
+  // Capability各自的檔案（不含新增的decision/），確認它們本身
+  // 依然完全沒有被修改。
+  await test('（TASK1.83後更新）（4.dependency direction）四層既有Phase 4 Capability（analysis/recommendation/orchestration/intelligence-feature）本次規劃當時（TASK1.81）完全沒有任何檔案被新增或修改，後續TASK1.83新增的decision/是規劃系列預期的下一步', () => {
+    const status = execFileSync('sh', ['-c', "git status --porcelain -- src/intelligence/capabilities/analysis/ src/intelligence/capabilities/recommendation/ src/intelligence/capabilities/orchestration/ src/intelligence/application/features/"], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(status.trim(), '');
   });
 

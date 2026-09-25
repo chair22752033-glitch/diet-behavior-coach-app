@@ -26,6 +26,13 @@ Capability，包裝Use Case Layer）是完全不同架構位置、互不認識�
   Result，詳見`./orchestration/README.md`。跟前兩者不同的是，這
   不是再包裝一個新的Runtime Runner，而是Capability層級的協調
   邊界。
+- `decision/`（TASK1.83建立）：`createDecisionCapability()`，依照
+  TASK1.82審查結論（選項B：Independent Decision Capability）
+  建立，接收Recommendation Result並產生結構化的Decision
+  Output佔位形狀（`decision`欄位固定為`null`，不含任何判斷/
+  評分/AI推論），詳見`./decision/README.md`。跟`analysis/`/
+  `recommendation/`同一種性質（各自獨立、互不import），差別是
+  目前沒有對應的Runtime Runner，也還沒有被`orchestration/`呼叫。
 
 未來若有其他Runtime層Capability或協調邊界，會以同樣的模式繼續
 新增平行的nested子目錄。
