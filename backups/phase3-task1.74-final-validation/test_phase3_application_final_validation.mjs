@@ -467,8 +467,13 @@ async function run() {
     });
   }
 
-  await test(`（7.runtime isolation）本次審查掃描了整個application/目錄樹共${ALL_APPLICATION_FILES.length}個.js檔案，逐一確認不直接操作Execution Manager/History/Metrics/Events/Governance五個Runtime子系統`, () => {
-    assert.strictEqual(ALL_APPLICATION_FILES.length, 35);
+  await test(`（TASK1.79後更新）（7.runtime isolation）本次審查掃描了整個application/目錄樹共${ALL_APPLICATION_FILES.length}個.js檔案，逐一確認不直接操作Execution Manager/History/Metrics/Events/Governance五個Runtime子系統`, () => {
+    // TASK1.79後更新：application/features/intelligence/新增3個
+    // .js檔案（intelligence_feature.js/intelligence_feature_
+    // result_mapper.js/index.js），35→38，跟TASK1.72新增
+    // behavior/（讓這個數字第一次從既有值變動）同一種「新增合法
+    // Feature domain導致總檔案數增加」的既定模式。
+    assert.strictEqual(ALL_APPLICATION_FILES.length, 38);
   });
 
   await test('（7.runtime isolation）Runtime Execution Layer（execution/、service/、orchestration/、analysis/、recommendation/、data_preparation/、facade/、history/、metrics/、events/、governance/）本次任務完全沒有被修改', () => {
@@ -546,15 +551,19 @@ async function run() {
   // 寫得過度嚴格，這裡移除這個斷言，改由TASK1.76/後續任務自己的
   // 章節驗證真正的禁止清單（worker.js等）維持零異動即可。
 
-  await test('（9.export consistency）application/features/index.js本次任務完全沒有被修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/application/features/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
-
-  await test('（9.export consistency）Application Layer所有production原始碼（application/底下全部35個.js檔案）本次任務完全沒有被修改（唯一新增的是PHASE3_FINAL_VALIDATION.md）', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/intelligence/application/ | grep -v "\\.md " || true'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.79後更新）原本這裡有兩個斷言：「application/
+  // features/index.js本次任務完全沒有被修改」跟「Application Layer
+  // 所有production原始碼（application/底下全部35個.js檔案）本次
+  // 任務完全沒有被修改」，兩者都比對即時的git diff --stat。這是跟
+  // TASK1.39/1.56/1.63/1.67/1.68/1.76同一種「比對即時git diff」的
+  // 脆弱治具：application/整個目錄樹（包含features/index.js）從來
+  // 就不在本任務系列真正的禁止清單裡，TASK1.79合法地在
+  // `src/intelligence/application/features/`底下新增了第三個
+  // Intelligence Application Feature domain
+  // （`intelligence/`，4個新檔案）並在features/index.js新增對應
+  // 一行re-export——這不是TASK1.74造成的回歸，而是斷言本身寫得
+  // 過度嚴格，這裡移除這兩個斷言，改由TASK1.79自己的章節驗證真正
+  // 的禁止清單（worker.js等）維持零異動即可。
 
   console.log('');
 

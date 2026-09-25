@@ -622,10 +622,11 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（4.feature isolation）application/features/index.js本次任務完全沒有被修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/application/features/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.79後更新）原本這裡有一個「application/features/index.js
+  // 本次任務完全沒有被修改」的斷言，比對即時的git diff
+  // --stat。TASK1.79合法地在這個檔案新增了`intelligence`
+  // namespace的re-export，這不是TASK1.77造成的回歸，這裡移除
+  // 這個斷言，理由同下方對application/整個目錄樹的說明。
 
   await test('（4.feature isolation）application/index.js本次任務完全沒有被修改', () => {
     const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/application/index.js'], { cwd: repoRoot, encoding: 'utf8' });
@@ -642,10 +643,16 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（4.feature isolation）Phase 3 Application Layer（application/整個目錄樹）本次任務完全沒有被修改（git diff確認，Phase 3 Application Pattern維持不變）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/application/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.79後更新）原本這裡有一個「Phase 3 Application
+  // Layer（application/整個目錄樹）本次任務完全沒有被修改」的
+  // 斷言，比對即時的git diff --stat。這是跟TASK1.39/1.56/1.63/
+  // 1.67/1.68同一種「比對即時git diff」的脆弱治具：application/
+  // 整個目錄樹從來就不在本任務系列真正的禁止清單裡，TASK1.79合法
+  // 地在`application/features/`底下新增了第三個Intelligence
+  // Application Feature domain（"intelligence"）——這不是TASK1.77
+  // 造成的回歸，而是斷言本身寫得過度嚴格，這裡移除這個斷言，改由
+  // TASK1.79自己的章節驗證真正的禁止清單（worker.js等）維持零
+  // 異動即可。
 
   await test('（4.feature isolation）src/bootstrap/application.js本次任務完全沒有被修改（Recommendation Capability沒有接進既有intelligence物件）', () => {
     const diff = execFileSync('git', ['diff', '--stat', 'src/bootstrap/application.js'], { cwd: repoRoot, encoding: 'utf8' });

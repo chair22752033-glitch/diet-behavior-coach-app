@@ -44,8 +44,21 @@
  * `intelligence.workflow`共用同一份），確保Behavior完全不依賴
  * Insight Feature（見`./behavior/README.md`跟
  * `../EXTENSION_PATTERN.md`第3節說明）。
+ *
+ * Phase 4 TASK1.79新增：`intelligence` namespace，re-export
+ * ./intelligence/index.js——這個nested子目錄跟`insight`/
+ * `behavior`namespace架構位置不同：它完全不呼叫Workflow，而是走
+ * 規格明確畫出的另一條平行路徑（Feature→Capability
+ * Orchestrator→Analysis Capability→Recommendation
+ * Capability→Output），把Phase 4的Analysis Capability
+ * （TASK1.76）+ Recommendation Capability（TASK1.77）+ Capability
+ * Orchestration（TASK1.78）正式接上Feature層級的入口。跟`insight`/
+ * `behavior`一樣是nested子目錄自成一個domain、互不認識，差別只在
+ * 這個domain底下呼叫的下一層是Capability Orchestrator，不是
+ * Workflow（見`./intelligence/README.md`）。
  */
 export { createInsightFeature } from './insight_feature.js';
 export { createFeatureResultBuilder } from './feature_result_builder.js';
 export * as insight from './insight/index.js';
 export * as behavior from './behavior/index.js';
+export * as intelligence from './intelligence/index.js';

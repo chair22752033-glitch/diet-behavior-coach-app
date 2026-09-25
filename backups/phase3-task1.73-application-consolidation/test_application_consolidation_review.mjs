@@ -615,10 +615,17 @@ async function run() {
   // 寫得過度嚴格，這裡移除這個斷言，改由TASK1.76/後續任務自己的
   // 章節驗證真正的禁止清單（worker.js等）維持零異動即可。
 
-  await test('（8.export consistency）application/features/index.js本次審查完全沒有被修改（git diff確認，Behavior的namespace是TASK1.72新增的，本次是純審查）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/application/features/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
-  });
+  // （TASK1.79後更新）原本這裡有一個「application/features/index.js
+  // 完全沒有被本次審查修改」的斷言，比對即時的git diff --stat。這是
+  // 跟TASK1.39/1.56/1.63/1.67/1.68/1.76同一種「比對即時git diff」的
+  // 脆弱治具：application/features/index.js從來就不在本任務系列
+  // 真正的禁止清單裡，TASK1.79合法地在這個檔案新增了第三個
+  // Intelligence Application Feature domain（"intelligence"）的
+  // re-export（`export * as intelligence from './intelligence/index.js'`）
+  // ——這不是TASK1.73造成的回歸，而是斷言本身寫得過度嚴格，這裡
+  // 移除這個斷言，改由TASK1.79自己的章節驗證真正的禁止清單
+  // （worker.js等）維持零異動即可（上方已有一個用`.has()`驗證
+  // insight/behavior namespace仍然存在的斷言，不受本次影響）。
 
   console.log('');
 
@@ -660,10 +667,17 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（9.bootstrap consistency）Application Layer所有production原始碼（application/底下.js檔案）本次審查完全沒有被修改（唯一新增的是CONSOLIDATION_REVIEW.md）', () => {
-    const diff = execFileSync('sh', ['-c', "git diff --name-only -- 'src/intelligence/application/*.js' 'src/intelligence/application/**/*.js' 2>/dev/null | grep -v '^$' || true"], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '', `發現非文件的production程式碼變更：${diff}`);
-  });
+  // （TASK1.79後更新）原本這裡有一個「Application Layer所有
+  // production原始碼（application/底下.js檔案）本次審查完全沒有
+  // 被修改」的斷言，比對即時的git diff --name-only。這是跟
+  // TASK1.39/1.56/1.63/1.67/1.68同一種「比對即時git diff」的脆弱
+  // 治具：application/底下的.js檔案從來就不在本任務系列真正的
+  // 禁止清單裡，TASK1.79合法地在`application/features/`底下新增
+  // 了第三個Intelligence Application Feature domain
+  // （"intelligence"，3個新.js檔案）並修改了features/index.js——
+  // 這不是TASK1.73造成的回歸，而是斷言本身寫得過度嚴格，這裡移除
+  // 這個斷言，改由TASK1.79自己的章節驗證真正的禁止清單
+  // （worker.js等）維持零異動即可。
 
   await test('（9.bootstrap consistency）CONSOLIDATION_REVIEW.md存在於正確路徑且內容非空，記錄TASK1.73', () => {
     const docPath = path.join(applicationDir, 'CONSOLIDATION_REVIEW.md');
