@@ -72,16 +72,19 @@ async function run() {
     assert.ok(fs.existsSync(intelDir) && fs.statSync(intelDir).isDirectory());
   });
 
-  const EXPECTED_FILES = ['README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
+  const EXPECTED_FILES = ['PHASE4_CAPABILITY_PLAN.md', 'README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
   // TASK1.41後更新：src/intelligence/ 底下新增了 data_preparation/
   // 子目錄（Intelligence Data Preparation Layer），這是明確要做的
   // 擴充，不是回歸——這裡只檢查TASK1.40當時規格要求的6個「檔案」
   // 是否還在（用isFile()排除目錄），不再假設目錄下只有這6個項目。
+  // TASK1.75後更新：新增了PHASE4_CAPABILITY_PLAN.md（Phase 4
+  // Intelligence Capability Architecture Planning文件），同樣是
+  // 明確的文件補充，不是回歸，加入預期清單。
   const actualEntries = fs.readdirSync(intelDir, { withFileTypes: true });
   const actualFiles = actualEntries.filter((e) => e.isFile()).map((e) => e.name).sort();
   const actualDirs = actualEntries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
 
-  await test(`（TASK1.41後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個`, () => {
+  await test(`（TASK1.75後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個加上TASK1.75新增的PHASE4_CAPABILITY_PLAN.md`, () => {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
   });
 
