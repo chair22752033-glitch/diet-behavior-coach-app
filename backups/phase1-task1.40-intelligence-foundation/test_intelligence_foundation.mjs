@@ -72,7 +72,10 @@ async function run() {
     assert.ok(fs.existsSync(intelDir) && fs.statSync(intelDir).isDirectory());
   });
 
-  const EXPECTED_FILES = ['PHASE4_CAPABILITY_CONSOLIDATION_REVIEW.md', 'PHASE4_CAPABILITY_PLAN.md', 'PHASE4_CONSOLIDATION_REVIEW.md', 'PHASE4_DECISION_CAPABILITY_REVIEW.md', 'PHASE4_DECISION_CONTRACT_PLAN.md', 'PHASE4_DECISION_FLOW_PLAN.md', 'PHASE4_DECISION_INTEGRATION_PLAN.md', 'PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md', 'PHASE4_DECISION_OUTPUT_EVOLUTION.md', 'PHASE4_FINAL_VALIDATION_AND_PHASE5_PLAN.md', 'PHASE5_PRODUCT_ENTRY_BOUNDARY_PLAN.md', 'PHASE5_PRODUCT_INTEGRATION_PLAN.md', 'README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
+  const EXPECTED_FILES = ['PHASE4_CAPABILITY_CONSOLIDATION_REVIEW.md', 'PHASE4_CAPABILITY_PLAN.md', 'PHASE4_CONSOLIDATION_REVIEW.md', 'PHASE4_DECISION_CAPABILITY_REVIEW.md', 'PHASE4_DECISION_CONTRACT_PLAN.md', 'PHASE4_DECISION_FLOW_PLAN.md', 'PHASE4_DECISION_INTEGRATION_PLAN.md', 'PHASE4_DECISION_ORCHESTRATION_INTEGRATION.md', 'PHASE4_DECISION_OUTPUT_EVOLUTION.md', 'PHASE4_FINAL_VALIDATION_AND_PHASE5_PLAN.md', 'PHASE5_PRODUCT_ADAPTER_PLAN.md', 'PHASE5_PRODUCT_ENTRY_BOUNDARY_PLAN.md', 'PHASE5_PRODUCT_INTEGRATION_PLAN.md', 'README.md', 'analysis_engine.js', 'contracts.js', 'index.js', 'insight_service.js', 'recommendation_engine.js'];
+  // TASK1.92後更新：新增了PHASE5_PRODUCT_ADAPTER_PLAN.md
+  // （Intelligence Product Adapter Architecture Foundation
+  // 文件），同樣是明確的文件補充，不是回歸，加入預期清單。
   // TASK1.91後更新：新增了PHASE5_PRODUCT_ENTRY_BOUNDARY_PLAN.md
   // （Intelligence Product Entry Boundary Foundation文件），同樣
   // 是明確的文件補充，不是回歸，加入預期清單。
@@ -119,7 +122,7 @@ async function run() {
   const actualFiles = actualEntries.filter((e) => e.isFile()).map((e) => e.name).sort();
   const actualDirs = actualEntries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
 
-  await test(`（TASK1.91後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個加上TASK1.75/1.80/1.81/1.82/1.84/1.85/1.86/1.87/1.88/1.89新增的10份Phase 4規劃/審查文件，加上TASK1.90/1.91新增的2份Phase 5規劃文件`, () => {
+  await test(`（TASK1.92後更新）src/intelligence/ 底下的檔案（不含子目錄）恰好是TASK1.40規格要求的6個加上TASK1.75/1.80/1.81/1.82/1.84/1.85/1.86/1.87/1.88/1.89新增的10份Phase 4規劃/審查文件，加上TASK1.90/1.91/1.92新增的3份Phase 5規劃文件`, () => {
     assert.deepStrictEqual(actualFiles, EXPECTED_FILES);
   });
 
