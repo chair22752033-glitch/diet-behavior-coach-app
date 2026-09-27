@@ -467,9 +467,10 @@ async function run() {
     assert.ok(doc.includes('Completion Criteria'));
   });
 
-  await test('（10.Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_ACTIVATION_PLAN.md是本次任務新增的檔案', () => {
-    const status = execFileSync('git', ['status', '--porcelain', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_ACTIVATION_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '));
+  await test('（TASK1.114後更新）（10.Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_ACTIVATION_PLAN.md是TASK1.113自己的commit（19dd3c0）新增的檔案（git show --name-status確認，而不是檢查即時git status——避免被後續任何時間點的執行誤判為失敗，延續TASK1.99~1.112測試套件同樣的修正模式）', () => {
+    const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', '19dd3c0'], { cwd: repoRoot, encoding: 'utf8' });
+    const line = nameStatus.split('\n').find((l) => l.endsWith('\tsrc/intelligence/product/PHASE6_HEALTH_INSIGHT_ACTIVATION_PLAN.md'));
+    assert.ok(line && line.startsWith('A'), `預期該檔案在19dd3c0被新增，實際：${line}`);
   });
 
   await test('（10.Dependency direction）TASK1.106/1.107/1.108/1.109/1.110建立的五份文件依然存在且本次任務完全沒有修改它們', () => {
