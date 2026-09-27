@@ -660,10 +660,11 @@ async function run() {
         assert.strictEqual(diff.trim(), '');
       });
     } else {
-      await test(`（9.dependency direction）${layer}/${file} 是本次任務新增的檔案（git status --porcelain顯示為??）`, () => {
+      await test(`（TASK1.102後更新）（9.dependency direction）${layer}/${file} 是TASK1.101自己的commit（eae66d2）新增的檔案（git show --name-status確認，而不是檢查即時git status——避免被後續任何時間點的執行誤判為失敗，延續TASK1.99/1.100測試套件同樣的修正）`, () => {
         const relPath = path.relative(repoRoot, full);
-        const status = execFileSync('git', ['status', '--porcelain', relPath], { cwd: repoRoot, encoding: 'utf8' });
-        assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '), `預期為新增檔案，實際狀態：${status}`);
+        const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', 'eae66d2'], { cwd: repoRoot, encoding: 'utf8' });
+        const line = nameStatus.split('\n').find((l) => l.endsWith('\t' + relPath));
+        assert.ok(line && line.startsWith('A'), `預期${relPath}在eae66d2被新增，實際：${line}`);
       });
     }
     const src = readSrc(full);
