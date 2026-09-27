@@ -572,9 +572,10 @@ async function run() {
     assert.ok(doc.includes('Completion Criteria'));
   });
 
-  await test('（TASK1.111後更新用注記）（Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_IMPLEMENTATION_ARCHITECTURE_PLAN.md是本次任務新增的檔案', () => {
-    const status = execFileSync('git', ['status', '--porcelain', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_IMPLEMENTATION_ARCHITECTURE_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '));
+  await test('（TASK1.111後更新）（Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_IMPLEMENTATION_ARCHITECTURE_PLAN.md是TASK1.110自己的commit（7094a56）新增的檔案（git show --name-status確認，而不是檢查即時git status——避免被後續任何時間點的執行誤判為失敗，延續TASK1.99~1.109測試套件同樣的修正模式）', () => {
+    const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', '7094a56'], { cwd: repoRoot, encoding: 'utf8' });
+    const line = nameStatus.split('\n').find((l) => l.endsWith('\tsrc/intelligence/product/PHASE6_HEALTH_INSIGHT_IMPLEMENTATION_ARCHITECTURE_PLAN.md'));
+    assert.ok(line && line.startsWith('A'), `預期該檔案在7094a56被新增，實際：${line}`);
   });
 
   for (const layer of ALL_LAYERS) {
@@ -668,7 +669,7 @@ async function run() {
   await test('（Dependency direction）沒有新增任何新的Product Boundary目錄', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
     const dirNames = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
-    assert.deepStrictEqual(dirNames, ['adapter', 'contract', 'entry', 'execution', 'operational']);
+    assert.deepStrictEqual(dirNames, ['adapter', 'contract', 'entry', 'execution', 'features', 'operational']); // TASK1.111後更新：新增features/目錄（Health Insight Feature），這是Feature層，不是第六個Product Boundary，本次任務不需要重跑舊有結論
   });
 
   // 逐檔案重新確認：五個Product Boundary + Phase 4五層Capability，

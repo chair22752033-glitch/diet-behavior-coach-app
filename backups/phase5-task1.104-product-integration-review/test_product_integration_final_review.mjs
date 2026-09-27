@@ -562,7 +562,7 @@ async function run() {
   await test('（7.Dependency direction）沒有新增任何新的邊界目錄（本次任務只審查既有5個邊界，不新增第6個）', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
     const dirNames = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
-    assert.deepStrictEqual(dirNames, ['adapter', 'contract', 'entry', 'execution', 'operational']);
+    assert.deepStrictEqual(dirNames, ['adapter', 'contract', 'entry', 'execution', 'features', 'operational']); // TASK1.111後更新：新增features/目錄（Health Insight Feature），這是Feature層，不是第六個Product Boundary，本次任務不需要重跑舊有結論
   });
 
   console.log('');
