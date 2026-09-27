@@ -411,15 +411,19 @@ async function run() {
   // =========================================================================
   console.log('--- D. Health Insight output mapping ---');
 
-  await test('（4.Health Insight output mapping）端對端：真實Health Insight Integration產出的結果可以被Dashboard正確呈現（healthObservation/recommendation數量對應）', () => {
+  await test('（TASK1.115後更新）（4.Health Insight output mapping）端對端：真實Health Insight Integration產出的結果可以被Dashboard正確呈現（healthObservation/recommendation各自組成一張卡片，卡片內清單筆數對應——TASK1.115把結構從"每筆一張卡"改成"一張卡裡的清單"，見observation_card.js/recommendation_card.js的TASK1.115更新說明，不是回歸，是刻意的視覺重構）', () => {
     const integration = createHealthInsightProductIntegration();
     const result = integration.requestProductEntry({ rawInput: makeInsightRawInput() });
     assert.strictEqual(result.ok, true);
     const html = dashboardPage.renderHealthInsightDashboard(result.result);
     const observationCardCount = (html.match(/hi-observation-card/g) || []).length;
     const recommendationCardCount = (html.match(/hi-recommendation-card/g) || []).length;
-    assert.strictEqual(observationCardCount, result.result.healthObservation.length);
-    assert.strictEqual(recommendationCardCount, result.result.recommendation.length);
+    assert.strictEqual(observationCardCount, 1, '應該恰好一張Observation卡片');
+    assert.strictEqual(recommendationCardCount, 1, '應該恰好一張Recommendation卡片');
+    const observationItemCount = (html.match(/<li class="hi-observation-item">/g) || []).length;
+    const recommendationItemCount = (html.match(/<li class="hi-recommendation-item">/g) || []).length;
+    assert.strictEqual(observationItemCount, result.result.healthObservation.length);
+    assert.strictEqual(recommendationItemCount, result.result.recommendation.length);
   });
 
   await test('（4.Health Insight output mapping）端對端：Dashboard HTML包含每一筆healthObservation的實際數值（value欄位）', () => {
@@ -637,10 +641,10 @@ async function run() {
   }
 
   for (const category of REQUIRED_ERROR_CATEGORIES) {
-    await test(`（7.Error presentation）分類"${category}"對應的錯誤卡片HTML結構正確（含icon/label/explanation三個區塊）`, () => {
+    await test(`（TASK1.115後更新）（7.Error presentation）分類"${category}"對應的錯誤卡片HTML結構正確（含插畫/label/explanation三個區塊——TASK1.115把emoji圖示的hi-card-icon換成真正插畫的hi-illustration，見error_card.js的TASK1.115更新說明）`, () => {
       const reasonByCategory = { missing_data: 'invalid_raw_input', invalid_input: 'missing_field', unavailable_intelligence: 'adapter_unavailable', temporary_failure: 'internal_error' };
       const html = componentsIndex.createErrorCard(reasonByCategory[category]);
-      assert.ok(html.includes('hi-card-icon'));
+      assert.ok(html.includes('hi-illustration'));
       assert.ok(html.includes('hi-card-label'));
       assert.ok(html.includes('hi-card-explanation'));
       assert.ok(html.includes(`hi-error-${category}`));
@@ -738,12 +742,13 @@ async function run() {
     }
   });
 
-  await test('（9.Asset boundary）ASSET_REGISTRY每個插槽都有description跟placeholder兩個欄位，placeholder都是純文字（非圖片路徑）', () => {
+  await test('（TASK1.115後更新）（9.Asset boundary）ASSET_REGISTRY每個插槽都有description/file/alt三個欄位，file必須是真正的.webp插畫檔案（TASK1.115把emoji佔位符升級成使用者提供的真實插畫，見asset_registry.js的TASK1.115更新說明——這裡的斷言方向刻意反過來：現在"是圖片路徑"才是正確狀態）', () => {
     for (const key of Object.keys(assetRegistry.ASSET_REGISTRY)) {
       const entry = assetRegistry.ASSET_REGISTRY[key];
       assert.strictEqual(typeof entry.description, 'string');
-      assert.strictEqual(typeof entry.placeholder, 'string');
-      assert.ok(!/\.(png|jpg|jpeg|svg|gif|webp)$/i.test(entry.placeholder), `插槽${key}的placeholder看起來像圖片路徑`);
+      assert.strictEqual(typeof entry.file, 'string');
+      assert.strictEqual(typeof entry.alt, 'string');
+      assert.ok(/\.webp$/i.test(entry.file), `插槽${key}的file應該是.webp插畫檔案：${entry.file}`);
     }
   });
 
@@ -766,7 +771,7 @@ async function run() {
     }
   });
 
-  await test('（9.Asset boundary）本次任務完全沒有新增任何真實圖片檔案到整個src/ui/health_insight/目錄樹', () => {
+  await test('（TASK1.115後更新）（9.Asset boundary）src/ui/health_insight/assets/illustrations/底下恰好有TASK1.115新增的十個真實插畫檔案，其餘目錄樹依然沒有任何非預期的圖片檔案（TASK1.115明確允許"使用者提供的既有素材"，跟TASK1.114"不產生新圖片"的限制不衝突——見asset_registry.js檔案頭已經說明的區別）', () => {
     function walk(dir) {
       const results = [];
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -776,9 +781,16 @@ async function run() {
       }
       return results;
     }
-    const allFiles = walk(uiDir);
+    const illustrationsDir = path.join(uiDir, 'assets', 'illustrations');
+    const illustrationFiles = fs.readdirSync(illustrationsDir).sort();
+    assert.strictEqual(illustrationFiles.length, 10, `預期illustrations/底下恰好10個檔案，實際：${illustrationFiles.length}`);
+    for (const file of illustrationFiles) {
+      assert.ok(/\.webp$/i.test(file), `illustrations/底下出現非.webp檔案：${file}`);
+    }
+
+    const allFiles = walk(uiDir).filter((f) => !f.includes(`${path.sep}illustrations${path.sep}`));
     for (const file of allFiles) {
-      assert.ok(!/\.(png|jpg|jpeg|gif|webp|ico)$/i.test(file), `發現非預期的圖片檔案：${file}`);
+      assert.ok(!/\.(png|jpg|jpeg|gif|webp|ico)$/i.test(file), `illustrations/以外發現非預期的圖片檔案：${file}`);
     }
   });
 

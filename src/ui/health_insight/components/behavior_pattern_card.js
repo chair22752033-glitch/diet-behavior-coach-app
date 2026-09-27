@@ -1,6 +1,7 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：視覺重構，見下方"TASK1.115更新"區塊）
  * - Behavior Card Placeholder
  *
  * 責任：呈現"行為模式"這個輸出類別的**預留區**——延續
@@ -15,20 +16,33 @@
  * 要顯示（因為V1本來就永遠是空陣列），純粹是一個固定內容的
  * 預留卡片，方便未來Behavior Pattern真的有內容時，只需要替換
  * 這個元件的實作，不影響其他卡片。
+ *
+ * ## TASK1.115更新：視覺重構
+ *
+ * emoji圖示（🧩）換成真正的插畫
+ * （`companion-reflecting.webp`，角色安靜喝茶若有所思），標題
+ * 下方改用純CSS虛線（霧藍色，延續使用者提供的v2 Dashboard
+ * 參考圖觀察到的"功能預留卡片用霧藍色，區別於三張有內容的
+ * 暖色系卡片"這個新規則，見`design_tokens.js`的
+ * `.hi-title-underline--muted`跟`DESIGN_SPECIFICATION.md`
+ * 色彩系統的對應調整），底部新增"敬請期待"行動小標籤。
  */
-import { escapeHtml } from './html_utils.js';
-import { getAssetPlaceholder } from '../assets/asset_registry.js';
+import { createIllustration } from './illustration.js';
+import { createCardHeader } from './card_header.js';
+import { createCardCta } from './card_cta.js';
 
 /**
  * @returns {string}
  */
 export function createBehaviorPatternPlaceholderCard() {
-  const icon = getAssetPlaceholder('behaviorPatternPlaceholder');
   return [
     '<div class="hi-card hi-behavior-pattern-card hi-placeholder-card">',
-    `  <div class="hi-card-icon" aria-hidden="true">${escapeHtml(icon)}</div>`,
-    '  <div class="hi-card-label">行為模式</div>',
-    '  <div class="hi-card-explanation">這個功能還在準備中，之後會幫你找出重複出現的生活習慣</div>',
+    createIllustration('behaviorPatternPlaceholder'),
+    '  <div class="hi-card-body">',
+    createCardHeader({ title: '行為模式', underline: 'muted' }),
+    '    <div class="hi-card-explanation">這個功能還在準備中，之後會幫你找出重複出現的生活習慣</div>',
+    createCardCta({ label: '敬請期待', accent: 'muted', action: 'behavior-pattern-coming-soon' }),
+    '  </div>',
     '</div>',
   ].join('\n');
 }

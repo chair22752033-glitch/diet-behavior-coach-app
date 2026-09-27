@@ -1,6 +1,8 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：新增illustration.js/card_header.js/
+ * card_cta.js三個共用輔助檔案的匯出，見下方）
  * - 統一輸出入口
  *
  * 把 src/ui/health_insight/components/ 底下所有可對外使用的
@@ -15,6 +17,9 @@
  */
 export { escapeHtml } from './html_utils.js';
 export { getObservationLabel, getRecommendationLabel } from './label_map.js';
+export { createIllustration } from './illustration.js';
+export { createCardHeader } from './card_header.js';
+export { createCardCta } from './card_cta.js';
 export { createHealthSummaryCard } from './health_summary_card.js';
 export { createObservationCard, createObservationCardList } from './observation_card.js';
 export { createRecommendationCard, createRecommendationCardList } from './recommendation_card.js';

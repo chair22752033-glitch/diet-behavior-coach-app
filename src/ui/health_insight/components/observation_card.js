@@ -1,15 +1,17 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：視覺重構+結構調整，見下方"TASK1.115
+ * 更新"區塊）
  * - Observation Card（Health Observation Card / Insight Card）
  *
  * 責任：把TASK1.108/1.111/1.112既有輸出`healthObservation`
- * 陣列裡的**單一筆**`{type, value}`項目，呈現成一張"拙趣"風格
- * 的卡片——顯示health observation本身跟簡單的說明文字（延續
- * 規格"Display: health observation, simple explanation"）。
- * 這個元件是純函式：接收資料、回傳HTML字串，**不**呼叫任何
- * Capability/Feature/Integration程式碼，**不**做任何計算/
- * 推論，只做資料格式化跟排版。
+ * 陣列，呈現成**一張**"拙趣"風格的卡片——顯示health
+ * observation本身跟簡單的說明文字（延續規格"Display: health
+ * observation, simple explanation"）。這個元件是純函式：接收
+ * 資料、回傳HTML字串，**不**呼叫任何Capability/Feature/
+ * Integration程式碼，**不**做任何計算/推論，只做資料格式化跟
+ * 排版。
  *
  * ## Intelligence Boundary（規格明確要求）
  *
@@ -24,54 +26,80 @@
  * metadata/internal capability fields/execution
  * information"）
  *
- * 這個元件只讀取`item.type`跟`item.value`兩個欄位——這正好是
+ * 這個元件只讀取每筆項目的`type`跟`value`兩個欄位——這正好是
  * TASK1.111 Health Insight Feature Result Mapper已經過濾過的
  * 安全形狀（`source`/`status`/`capability`標籤已經在Feature
- * 層被拿掉，見TASK1.111/1.112既有結論），元件這裡**不會**、
- * 也**沒有能力**意外顯示這些內部欄位，因為它們根本不存在於
- * 傳入的資料形狀裡。
+ * 層被拿掉），元件這裡**不會**、也**沒有能力**意外顯示這些
+ * 內部欄位，因為它們根本不存在於傳入的資料形狀裡。
+ *
+ * ## TASK1.115更新：視覺重構+結構調整
+ *
+ * TASK1.114的既有實作是"每一筆healthObservation項目各自變成
+ * 一張獨立的`.hi-card`"，跟使用者提供的參考圖（Dashboard只有
+ * **一張**"健康觀察"卡片，裡面放一段整合過的敘述）有落差——
+ * 這正是`DESIGN_SPECIFICATION.md`第7節已經記錄的既知落差。
+ * 本次任務把結構調整成**一張卡片**、內部用精簡的列表呈現
+ * 每一筆觀察（`label：value`），不是N張獨立卡片——這是**呈現
+ * 層的排版調整**，不是新增分析邏輯：每一筆資料的`label`/
+ * `value`依然完全來自既有Analysis Capability，這裡只是把
+ * 「怎麼排版」從「一筆一張卡」改成「一張卡裡的一份清單」。
+ * emoji圖示（🔍）換成真正的插畫
+ * （`companion-observing.webp`，角色拿放大鏡看幼苗），標題
+ * 下方新增鼠尾草綠手繪底線，底部新增"查看更多分析"行動
+ * 小標籤。
  */
 import { escapeHtml } from './html_utils.js';
 import { getObservationLabel } from './label_map.js';
-import { getAssetPlaceholder } from '../assets/asset_registry.js';
+import { createIllustration } from './illustration.js';
+import { createCardHeader } from './card_header.js';
+import { createCardCta } from './card_cta.js';
 
 /**
- * 把單一筆Health Observation項目轉換成一張卡片的HTML字串。
- *
  * @param {{type:*, value:*}} item
  * @returns {string}
  */
-export function createObservationCard(item) {
+function renderObservationItem(item) {
   const safeItem = item && typeof item === 'object' ? item : {};
-  const { label, explanation } = getObservationLabel(safeItem.type);
-  const icon = getAssetPlaceholder('observation');
+  const { label } = getObservationLabel(safeItem.type);
+  return `    <li class="hi-observation-item"><span class="hi-observation-item-label">${escapeHtml(label)}</span><span class="hi-observation-item-value">${escapeHtml(safeItem.value)}</span></li>`;
+}
+
+/**
+ * 把整個`healthObservation`陣列組裝成**一張**Health
+ * Observation Card——陣列為空時顯示友善的空狀態內容（延續
+ * "low pressure"設計原則，不是顯示冷冰冰的"No data"）。
+ *
+ * @param {Array<{type:*, value:*}>} healthObservation
+ * @returns {string}
+ */
+export function createObservationCard(healthObservation) {
+  const items = Array.isArray(healthObservation) ? healthObservation : [];
+
+  const body = items.length === 0
+    ? '    <div class="hi-card-explanation">還沒有足夠的記錄，先從今天開始累積一點點吧</div>'
+    : ['    <ul class="hi-observation-list">', ...items.map((item) => renderObservationItem(item)), '    </ul>'].join('\n');
+
   return [
-    '<div class="hi-card hi-observation-card">',
-    `  <div class="hi-card-icon" aria-hidden="true">${escapeHtml(icon)}</div>`,
-    `  <div class="hi-card-label">${escapeHtml(label)}</div>`,
-    `  <div class="hi-card-value">${escapeHtml(safeItem.value)}</div>`,
-    `  <div class="hi-card-explanation">${escapeHtml(explanation)}</div>`,
+    `<div class="hi-card hi-observation-card${items.length === 0 ? ' hi-empty-state' : ''}">`,
+    createIllustration('observation'),
+    '  <div class="hi-card-body">',
+    createCardHeader({ title: '健康觀察', underline: 'sage' }),
+    body,
+    createCardCta({ label: '查看更多分析', accent: 'sage', action: 'view-observation-details' }),
+    '  </div>',
     '</div>',
   ].join('\n');
 }
 
 /**
- * 把整個`healthObservation`陣列轉換成一組卡片HTML字串——陣列
- * 為空時回傳一個友善的空狀態卡片（延續"low pressure"設計
- * 原則，不是顯示冷冰冰的"No data"）。
+ * @deprecated TASK1.115後：`createObservationCard()`本身已經
+ * 接受完整陣列並組裝成一張卡片，這個函式只是保留舊名稱的
+ * 轉發，避免任何還在使用舊名稱的呼叫端完全失去這個函式。新
+ * 程式碼請直接呼叫`createObservationCard()`。
  *
  * @param {Array<{type:*, value:*}>} healthObservation
  * @returns {string}
  */
 export function createObservationCardList(healthObservation) {
-  const items = Array.isArray(healthObservation) ? healthObservation : [];
-  if (items.length === 0) {
-    return [
-      '<div class="hi-card hi-observation-card hi-empty-state">',
-      `  <div class="hi-card-icon" aria-hidden="true">${escapeHtml(getAssetPlaceholder('greeting'))}</div>`,
-      '  <div class="hi-card-explanation">還沒有足夠的記錄，先從今天開始累積一點點吧</div>',
-      '</div>',
-    ].join('\n');
-  }
-  return items.map((item) => createObservationCard(item)).join('\n');
+  return createObservationCard(healthObservation);
 }

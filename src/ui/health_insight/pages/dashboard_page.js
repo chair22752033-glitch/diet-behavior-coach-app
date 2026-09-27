@@ -1,6 +1,8 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：新增標題區塊+視覺重構，見下方"TASK1.115
+ * 更新"區塊）
  * - Dashboard Page（Health Insight Dashboard）
  *
  * 責任：把TASK1.112 Health Insight
@@ -20,14 +22,41 @@
  * 這個檔案完全不import`src/intelligence/`底下任何檔案——它的
  * 輸入是**已經**執行完Health Insight Integration之後的結果
  * 物件，職責只有"把這個結果排版成畫面"。
+ *
+ * ## TASK1.115更新：新增標題區塊+視覺重構
+ *
+ * 延續使用者提供的Dashboard參考圖，新增畫面最上方的標題
+ * 區塊（主標題"今天的健康小洞察"+副標題"陪你慢慢理解自己"+
+ * 角色歡迎插畫），改用`createObservationCard()`/
+ * `createRecommendationCard()`新的單卡結構（見這兩個元件
+ * 檔案的TASK1.115更新說明，不再是`*List()`的N張卡結構）。
  */
 import { getDesignSystemCSS } from '../design_system/design_tokens.js';
+import { createIllustration } from '../components/illustration.js';
 import { createHealthSummaryCard } from '../components/health_summary_card.js';
-import { createObservationCardList } from '../components/observation_card.js';
-import { createRecommendationCardList } from '../components/recommendation_card.js';
+import { createObservationCard } from '../components/observation_card.js';
+import { createRecommendationCard } from '../components/recommendation_card.js';
 import { createBehaviorPatternPlaceholderCard } from '../components/behavior_pattern_card.js';
 import { createProgressPlaceholderCard } from '../components/progress_card.js';
 import { createErrorCard } from '../components/error_card.js';
+
+/**
+ * 組裝Dashboard最上方的標題區塊——延續使用者提供的參考圖，
+ * 主標題+副標題+角色歡迎插畫，純排版，不讀取任何Health
+ * Insight結果內容（延續"標題區塊背景延續頁面底色，不額外加
+ * 卡片框"的DESIGN_SPECIFICATION.md第6節既有規則）。
+ *
+ * @returns {string}
+ */
+function renderDashboardHeader() {
+  return [
+    '<header class="hi-dashboard-header">',
+    createIllustration('greeting', { className: 'hi-dashboard-header-illustration' }),
+    '  <h1 class="hi-dashboard-title">今天的健康小洞察</h1>',
+    '  <p class="hi-dashboard-subtitle">陪你慢慢理解自己</p>',
+    '</header>',
+  ].join('\n');
+}
 
 /**
  * 把Health Insight Integration**成功**時的`result`欄位（延續
@@ -48,14 +77,15 @@ export function renderHealthInsightDashboard(healthInsightResult) {
   return [
     `<style>${getDesignSystemCSS()}</style>`,
     '<section class="hi-dashboard" data-hi-page="dashboard">',
+    renderDashboardHeader(),
     '  <div class="hi-dashboard-section hi-dashboard-summary">',
     createHealthSummaryCard(result),
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-observation">',
-    createObservationCardList(result.healthObservation),
+    createObservationCard(result.healthObservation),
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-recommendation">',
-    createRecommendationCardList(result.recommendation),
+    createRecommendationCard(result.recommendation),
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-behavior-pattern">',
     createBehaviorPatternPlaceholderCard(),

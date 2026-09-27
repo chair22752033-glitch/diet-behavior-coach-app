@@ -1,6 +1,7 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：視覺重構，見下方"TASK1.115更新"區塊）
  * - Health Summary Card（Today's Insight Summary）
  *
  * 責任：呈現Dashboard最上方的"今日摘要"——一段簡短、友善的
@@ -17,9 +18,19 @@
  * 這類聽起來像是分析結果、但實際上是憑空產生的文字——摘要文字
  * 只依據"陣列是否為空/有幾筆"這個結構性事實產生，空的時候顯示
  * 鼓勵但誠實的引導文字，不假裝有分析內容。
+ *
+ * ## TASK1.115更新：視覺重構
+ *
+ * 延續使用者提供的參考圖跟`DESIGN_SPECIFICATION.md`第7節既有
+ * 對照結論——把emoji圖示（🌱）換成真正的插畫
+ * （`companion-greeting.webp`，角色抱心歡迎），標題下方新增
+ * 赤陶橘手繪底線裝飾，底部新增"查看詳細紀錄"行動小標籤（純
+ * 樣式，未綁定任何互動邏輯）。文字/計數邏輯本身完全沒有改變。
  */
 import { escapeHtml } from './html_utils.js';
-import { getAssetPlaceholder } from '../assets/asset_registry.js';
+import { createIllustration } from './illustration.js';
+import { createCardHeader } from './card_header.js';
+import { createCardCta } from './card_cta.js';
 
 /**
  * @param {{healthObservation?:Array, recommendation?:Array}} healthInsightOutput - TASK1.108/1.111/1.112既有輸出形狀的其中兩個欄位，其餘欄位（behaviorPattern/progressTrend/decision）這個元件不需要
@@ -29,7 +40,6 @@ export function createHealthSummaryCard(healthInsightOutput) {
   const output = healthInsightOutput && typeof healthInsightOutput === 'object' ? healthInsightOutput : {};
   const observationCount = Array.isArray(output.healthObservation) ? output.healthObservation.length : 0;
   const recommendationCount = Array.isArray(output.recommendation) ? output.recommendation.length : 0;
-  const icon = getAssetPlaceholder('greeting');
 
   const summaryText = observationCount === 0
     ? '今天先從記錄一點點開始，我會陪你一起看看'
@@ -37,9 +47,12 @@ export function createHealthSummaryCard(healthInsightOutput) {
 
   return [
     '<div class="hi-card hi-health-summary-card">',
-    `  <div class="hi-card-icon" aria-hidden="true">${escapeHtml(icon)}</div>`,
-    '  <div class="hi-card-label">今日摘要</div>',
-    `  <div class="hi-card-explanation">${escapeHtml(summaryText)}</div>`,
+    createIllustration('greeting'),
+    '  <div class="hi-card-body">',
+    createCardHeader({ title: '今日摘要', underline: 'terracotta' }),
+    `    <div class="hi-card-explanation">${escapeHtml(summaryText)}</div>`,
+    createCardCta({ label: '查看詳細紀錄', accent: 'terracotta', action: 'view-summary-details' }),
+    '  </div>',
     '</div>',
   ].join('\n');
 }

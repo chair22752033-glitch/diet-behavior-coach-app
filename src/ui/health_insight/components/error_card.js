@@ -1,6 +1,7 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：視覺重構，見下方"TASK1.115更新"區塊）
  * - Error Card（Error Presentation）
  *
  * 責任：把Health Insight Integration（TASK1.112）既有的結構化
@@ -22,9 +23,20 @@
  * 也不包含任何例外物件——呼叫端如果需要記錄原始錯誤細節做
  * 除錯，應該另外處理（例如記錄在開發者console，不是這個函式
  * 回傳的HTML裡），這個函式的回傳值本身就是"對外安全"的。
+ *
+ * ## TASK1.115更新：視覺重構
+ *
+ * emoji圖示（🍂）換成真正的插畫
+ * （`companion-apologetic.webp`，角色溫柔低頭、表示暫時遇到
+ * 小狀況——這是使用者提供的參考圖裡明確標註"抱歉"情境的表情，
+ * `DESIGN_SPECIFICATION.md`第5節原本標註這是"參考圖沒有直接
+ * 範例、需要另外設計"的資產，本次任務收到使用者提供的第二批
+ * 參考圖後補齊）。顏色從`caution`（原本偏赭石橘）微調成更
+ * 貼近參考圖角色臉頰暖色調的霧玫瑰色（見
+ * `design_tokens.js`的`COLOR_TOKENS.caution`調整說明）。
  */
 import { escapeHtml } from './html_utils.js';
-import { getAssetPlaceholder } from '../assets/asset_registry.js';
+import { createIllustration } from './illustration.js';
 
 /**
  * 已知reason字串 → 使用者可見錯誤分類的對照表——延續
@@ -99,13 +111,14 @@ export function createErrorCard(failureResultOrReason) {
     : failureResultOrReason;
   const category = classifyErrorReason(reason);
   const { title, body } = CATEGORY_MESSAGES[category];
-  const icon = getAssetPlaceholder('errorGentle');
 
   return [
     `<div class="hi-card hi-error-card hi-error-${escapeHtml(category)}">`,
-    `  <div class="hi-card-icon" aria-hidden="true">${escapeHtml(icon)}</div>`,
-    `  <div class="hi-card-label">${escapeHtml(title)}</div>`,
-    `  <div class="hi-card-explanation">${escapeHtml(body)}</div>`,
+    createIllustration('errorGentle'),
+    '  <div class="hi-card-body">',
+    `    <div class="hi-card-label">${escapeHtml(title)}</div>`,
+    `    <div class="hi-card-explanation">${escapeHtml(body)}</div>`,
+    '  </div>',
     '</div>',
   ].join('\n');
 }

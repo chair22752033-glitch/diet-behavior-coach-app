@@ -1,6 +1,9 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
+ * （TASK1.115後更新：新增ASSET_BASE_PATH/UNDERLINE_REGISTRY/
+ * getAssetUrl/getAssetAlt/getUnderlineUrl/listUnderlineKeys的
+ * 匯出，見下方）
  * - 統一輸出入口
  *
  * 把 src/ui/health_insight/ 底下所有可對外使用的東西集中在這裡
@@ -14,7 +17,10 @@
  * 任務決定。
  */
 export { COLOR_TOKENS, TYPOGRAPHY_TOKENS, SPACING_TOKENS, CARD_STYLE_TOKENS, BREAKPOINT_TOKENS, getDesignSystemCSS } from './design_system/design_tokens.js';
-export { ASSET_REGISTRY, listAssetKeys, getAssetPlaceholder, getAssetDescription } from './assets/asset_registry.js';
+export {
+  ASSET_BASE_PATH, ASSET_REGISTRY, UNDERLINE_REGISTRY,
+  listAssetKeys, listUnderlineKeys, getAssetUrl, getAssetAlt, getUnderlineUrl, getAssetPlaceholder, getAssetDescription,
+} from './assets/asset_registry.js';
 export * from './components/index.js';
 export { renderHealthInsightDashboard, renderHealthInsightDashboardError } from './pages/dashboard_page.js';
 export { renderHealthInsightInputExperience } from './pages/input_page.js';

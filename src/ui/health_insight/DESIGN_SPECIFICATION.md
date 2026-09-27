@@ -593,3 +593,28 @@ TOKENS`（mobile 0px→tablet 680px→desktop 1024px）的漸進式
 ✅ Illustration Rules 已定義（第5節）
 ✅ Component Mapping 已定義（第7節）
 ✅ Responsive Design Direction 已定義（第8節）
+
+---
+
+## Implementation Status Update（TASK1.115後新增）
+
+本文件在TASK1.114-A完成時是**純分析**產出，當時使用者只提供
+五張參考圖，本次任務不實作任何UI程式碼。TASK1.115收到使用者
+補充的三張參考圖（八張全部：喝咖啡比讚、抱歉表情、圖示+底線
+素材表）後，把本文件第2~7節記錄的規則**實際落地**成程式碼，
+更新狀態如下：
+
+| 本文件的規劃 | TASK1.115落地狀態 |
+|---|---|
+| 第2節：新增鼠尾草綠色系token | ✅ 已落地（`COLOR_TOKENS.sage`/`sageDark`/`sageLight`） |
+| 第2節：三色選項Chip語意色階 | 🔄 調整為"依位置循環四色"（赤陶橘/蜂蜜黃/鼠尾草綠/霧玫瑰），不是原本設想的"依語意分正向/中性/負向"——這是實際觀察TASK1.115參考圖v2後修正的規則，避免UI層做語意判斷 |
+| 第4節：Question Card邊框式卡片變體 | ✅ 已落地（`.hi-card--bordered`） |
+| 第4節：Observation/Recommendation彙整呈現 | 🔄 部分落地——已從"每筆一張卡"改成"一張卡裡的清單"，但還不是"一句自然語言敘述"（見README.md Current Limitations） |
+| 第5節：七個插畫插槽的實際插畫內容 | ✅ 已落地（`assets/illustrations/`七個檔案），來源是使用者提供的參考圖裁切而成 |
+| 第5節：ErrorCard的"溫和抱歉"表情插畫 | ✅ 已落地（`companion-apologetic.webp`，來自TASK1.115第二批參考圖） |
+| 第5節：手繪底線裝飾 | ✅ 落地三色（赤陶橘/鼠尾草綠/蜂蜜黃），霧藍色底線本文件原本沒有規劃，是TASK1.115觀察v2 Dashboard參考圖後新增的"功能預留卡片專屬"色彩語言（改用CSS虛線，不是圖片） |
+| 第2節：ErrorCard顏色 | ✅ 已從赭石橘微調成更貼近參考圖角色暖色調的霧玫瑰色 |
+| 第7節：Component Mapping對照表 | ✅ 對照表裡描述的視覺演進方向已經逐一落地，細節見`README.md` |
+
+完整的技術決策說明（一般檔案路徑 vs base64）見
+`assets/asset_registry.js`檔案頭。
