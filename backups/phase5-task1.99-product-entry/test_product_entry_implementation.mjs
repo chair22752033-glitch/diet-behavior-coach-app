@@ -567,10 +567,11 @@ async function run() {
     assert.ok(fs.existsSync(productDir) && fs.statSync(productDir).isDirectory());
   });
 
-  await test('（6.dependency direction）src/intelligence/product/ 底下恰好只有entry/一個子目錄', () => {
+  await test('（TASK1.100後更新）src/intelligence/product/ 底下的子目錄至少包含本次任務建立的entry/（TASK1.100新增了同層的adapter/，是後續任務的合法擴充，不是回歸）', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
-    assert.deepStrictEqual(entries.map((e) => e.name), ['entry']);
-    assert.ok(entries[0].isDirectory());
+    const dirNames = entries.map((e) => e.name);
+    assert.ok(dirNames.includes('entry'));
+    assert.ok(entries.every((e) => e.isDirectory()));
   });
 
   const RUNTIME_FORBIDDEN_SUBDIRS = ['history', 'metrics', 'facade', 'service', 'orchestration', 'data_preparation', 'governance', 'events', 'monitoring', 'execution', 'capabilities', 'analysis', 'recommendation', 'application'];
@@ -583,10 +584,11 @@ async function run() {
         assert.strictEqual(diff.trim(), '');
       });
     } else {
-      await test(`（6.dependency direction）${layer}/${file} 是本次任務新增的檔案（git status --porcelain顯示為??）`, () => {
+      await test(`（TASK1.100後更新）（6.dependency direction）${layer}/${file} 是TASK1.99自己的commit（e6cfd32）新增的檔案（git show --name-status確認，而不是檢查即時git status——這份測試套件本身在TASK1.99當下commit之前就已經完成驗證，commit之後這些檔案自然變成clean，改用歷史commit內容檢查才不會被後續任何時間點的執行誤判為失敗）`, () => {
         const relPath = path.relative(repoRoot, full);
-        const status = execFileSync('git', ['status', '--porcelain', relPath], { cwd: repoRoot, encoding: 'utf8' });
-        assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '), `預期為新增檔案，實際狀態：${status}`);
+        const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', 'e6cfd32'], { cwd: repoRoot, encoding: 'utf8' });
+        const line = nameStatus.split('\n').find((l) => l.endsWith('\t' + relPath));
+        assert.ok(line && line.startsWith('A'), `預期${relPath}在e6cfd32被新增，實際：${line}`);
       });
     }
     const src = readSrc(full);

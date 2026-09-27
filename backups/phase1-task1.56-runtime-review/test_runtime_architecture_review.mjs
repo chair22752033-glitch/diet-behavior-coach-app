@@ -155,10 +155,11 @@ async function run() {
   // 因此把它獨立列出，不跟其餘14個一起套用「必須有index.js/
   // README.md」的規則。
   // TASK1.99後更新：'product/'跟'contracts/'是同樣的結構差異——
-  // `src/intelligence/product/`本身只是一個容器，恰好只有一個
-  // 巢狀子目錄entry/（自己有index.js/README.md），product/本身
-  // 沒有（也不需要）index.js/README.md，同樣不套用「必須有
-  // index.js/README.md」的規則。
+  // `src/intelligence/product/`本身只是一個容器，底下是一個或多個
+  // 巢狀子目錄（TASK1.99新增entry/、TASK1.100新增adapter/，各自
+  // 有自己的index.js/README.md），product/本身沒有（也不需要）
+  // index.js/README.md，同樣不套用「必須有index.js/README.md」的
+  // 規則。
   const NAMESPACE_SUBDIRS = EXPECTED_SUBDIRS.filter((d) => d !== 'contracts' && d !== 'product');
   const rootIndexSrc = readSrc(path.join(intelDir, 'index.js'));
 
