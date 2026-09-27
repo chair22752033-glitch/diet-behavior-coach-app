@@ -458,9 +458,10 @@ async function run() {
     assert.ok(doc.includes('Restrictions Confirmation'));
   });
 
-  await test('（11.Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md本身是本次任務新增的唯一文件（加上測試套件）', () => {
-    const status = execFileSync('git', ['status', '--porcelain', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '));
+  await test('（TASK1.107後更新）（11.Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md是TASK1.106自己的commit（03bf6c7）新增的檔案（git show --name-status確認，而不是檢查即時git status——避免被後續任何時間點的執行誤判為失敗，延續TASK1.99~1.105測試套件同樣的修正模式）', () => {
+    const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', '03bf6c7'], { cwd: repoRoot, encoding: 'utf8' });
+    const line = nameStatus.split('\n').find((l) => l.endsWith('\tsrc/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md'));
+    assert.ok(line && line.startsWith('A'), `預期該檔案在03bf6c7被新增，實際：${line}`);
   });
 
   for (const layer of ALL_LAYERS) {
