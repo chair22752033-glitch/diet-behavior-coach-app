@@ -603,12 +603,12 @@ async function run() {
   // =========================================================================
   console.log('--- G. dependency direction ---');
 
-  await test('（TASK1.101後更新）src/intelligence/product/ 底下至少包含本次任務建立的adapter/（TASK1.101新增了同層的execution/，是後續任務的合法擴充，不是回歸）', () => {
+  await test('（TASK1.104後更新）src/intelligence/product/ 底下至少包含本次任務建立的adapter/（後續任務新增了同層的execution/等子目錄跟TASK1.104新增的PHASE5_PRODUCT_INTEGRATION_FINAL_REVIEW.md檔案，都是合法擴充，不是回歸）', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
-    const dirNames = entries.map((e) => e.name);
+    const dirEntries = entries.filter((e) => e.isDirectory());
+    const dirNames = dirEntries.map((e) => e.name);
     assert.ok(dirNames.includes('adapter'));
     assert.ok(dirNames.includes('entry'));
-    assert.ok(entries.every((e) => e.isDirectory()));
   });
 
   for (const { layer, file, full } of ALL_SCANNED_FILES) {

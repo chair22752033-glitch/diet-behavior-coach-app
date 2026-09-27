@@ -643,13 +643,13 @@ async function run() {
   // =========================================================================
   console.log('--- I. dependency direction ---');
 
-  await test('（9.dependency direction）src/intelligence/product/ 底下現在至少包含entry/、adapter/、execution/三個子目錄', () => {
+  await test('（TASK1.104後更新）src/intelligence/product/ 底下現在至少包含entry/、adapter/、execution/三個子目錄（後續任務新增了同層的operational/等子目錄跟TASK1.104新增的PHASE5_PRODUCT_INTEGRATION_FINAL_REVIEW.md檔案，都是合法擴充，不是回歸）', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
-    const dirNames = entries.map((e) => e.name);
+    const dirEntries = entries.filter((e) => e.isDirectory());
+    const dirNames = dirEntries.map((e) => e.name);
     assert.ok(dirNames.includes('entry'));
     assert.ok(dirNames.includes('adapter'));
     assert.ok(dirNames.includes('execution'));
-    assert.ok(entries.every((e) => e.isDirectory()));
   });
 
   for (const { layer, file, full } of ALL_SCANNED_FILES) {

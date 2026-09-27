@@ -567,11 +567,11 @@ async function run() {
     assert.ok(fs.existsSync(productDir) && fs.statSync(productDir).isDirectory());
   });
 
-  await test('（TASK1.100後更新）src/intelligence/product/ 底下的子目錄至少包含本次任務建立的entry/（TASK1.100新增了同層的adapter/，是後續任務的合法擴充，不是回歸）', () => {
+  await test('（TASK1.104後更新）src/intelligence/product/ 底下的子目錄至少包含本次任務建立的entry/（後續任務新增了同層的adapter/等子目錄跟TASK1.104新增的PHASE5_PRODUCT_INTEGRATION_FINAL_REVIEW.md檔案，都是合法擴充，不是回歸）', () => {
     const entries = fs.readdirSync(productDir, { withFileTypes: true });
-    const dirNames = entries.map((e) => e.name);
+    const dirEntries = entries.filter((e) => e.isDirectory());
+    const dirNames = dirEntries.map((e) => e.name);
     assert.ok(dirNames.includes('entry'));
-    assert.ok(entries.every((e) => e.isDirectory()));
   });
 
   const RUNTIME_FORBIDDEN_SUBDIRS = ['history', 'metrics', 'facade', 'service', 'orchestration', 'data_preparation', 'governance', 'events', 'monitoring', 'execution', 'capabilities', 'analysis', 'recommendation', 'application'];
