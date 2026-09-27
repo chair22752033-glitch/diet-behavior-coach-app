@@ -315,7 +315,7 @@ async function run() {
     assert.strictEqual(cycleEdge, null, `發現循環依賴：${cycleEdge}`);
   });
 
-  await test('（TASK1.76後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有15組已知且合理的例外（facade→runtime、analysis→contracts、context→contracts、service→contracts/execution、application→application/use_cases、application→application/capabilities、application→application/contracts、application→application/workflows、application→application/features、application/features→application/features/insight、application/features/insight→application/features/insight/context、application/features/insight→application/features/insight/output、application/features/insight→application/features/insight/execution、application/features→application/features/behavior、capabilities→capabilities/analysis），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
+  await test('（TASK1.112後更新）（3.dependency boundary）src/intelligence/內部子目錄之間的跨目錄相對路徑import恰好只有既知且合理的例外（既有的index.js re-export nested子目錄慣例，加上TASK1.112新增的product/health_insight_integration.js組合根import），沒有其他未經審查的跨層直接引用（data_preparation→../services/*屬於「依賴既有Domain Service」的已知例外，且target在src/intelligence/之外，不計入這裡的「intelligence內部跨層」檢查，另外在no database dependency類別驗證）', () => {
     const crossDirImports = [];
     for (const f of allFiles) {
       const fDir = path.relative(intelDir, path.dirname(f));
@@ -407,6 +407,28 @@ async function run() {
     // （capabilities/底下這次是decision/這個跟analysis/、
     // recommendation/、orchestration/平行並存的兄弟子目錄），不是
     // 新的違規跨層引用。
+    // TASK1.112新增：product/health_insight_integration.js是
+    // Phase 6 Health Insight Product Integration Foundation新增的
+    // **組合根（Composition Root）**檔案，它的唯一職責就是把
+    // TASK1.99~1.103五個既有Product
+    // Boundary（entry/contract/adapter/execution/operational）跟
+    // TASK1.111 Health Insight Feature（product/features/
+    // health_insight/）、Phase 4 Capability Chain
+    // （capabilities/orchestration、capabilities/analysis、
+    // capabilities/recommendation）、Phase 2 Runtime
+    // （analysis/、recommendation/兩個Runner）**組裝**成一條
+    // 完整的執行路徑——這跟上面每一個既有例外（`xxx/index.js ->
+    // xxx/yyy/index.js`這類"上層index.js認識自己底下nested子
+    // 目錄"）性質不同，是**跟`src/bootstrap/application.js`同一種
+    // 角色**的組合根，本次任務的完整規格明確要求"Connect the
+    // existing Product Integration chain with Health Insight
+    // Feature"，這正是這個組合根檔案存在的唯一理由。這裡新增的
+    // 11條cross-dir import edge，全部只是這個組合根呼叫既有
+    // factory函式所需要的import，沒有一條是重新實作既有Boundary
+    // 邏輯，也沒有一個既有Boundary/Feature/Capability檔案反過來
+    // import這個組合根（單向依賴，符合"每一層只認識自己呼叫的
+    // 下一層"精神——這裡的差異是組合根本身刻意認識多層，因為它的
+    // 職責就是組裝）。
     const allowed = crossDirImports.every((edge) => {
       return (
         edge.includes('facade/intelligence_facade.js -> runtime/index.js') ||
@@ -427,7 +449,18 @@ async function run() {
         edge.includes('capabilities/index.js -> capabilities/recommendation/index.js') ||
         edge.includes('capabilities/index.js -> capabilities/orchestration/index.js') ||
         edge.includes('application/features/index.js -> application/features/intelligence/index.js') ||
-        edge.includes('capabilities/index.js -> capabilities/decision/index.js')
+        edge.includes('capabilities/index.js -> capabilities/decision/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/entry/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/contract/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/adapter/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/execution/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/operational/index.js') ||
+        edge.includes('product/health_insight_integration.js -> product/features/health_insight/index.js') ||
+        edge.includes('product/health_insight_integration.js -> capabilities/orchestration/index.js') ||
+        edge.includes('product/health_insight_integration.js -> capabilities/analysis/index.js') ||
+        edge.includes('product/health_insight_integration.js -> capabilities/recommendation/index.js') ||
+        edge.includes('product/health_insight_integration.js -> analysis/index.js') ||
+        edge.includes('product/health_insight_integration.js -> recommendation/index.js')
       );
     });
     assert.ok(allowed, `發現未預期的跨目錄import：${JSON.stringify(crossDirImports)}`);

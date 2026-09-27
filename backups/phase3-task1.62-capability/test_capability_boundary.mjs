@@ -470,7 +470,24 @@ async function run() {
     assert.strictEqual(typeof createExecutionManager, 'function');
   });
 
-  const allIntelFilesExceptCapabilities = listAllJsFiles(intelDir).filter((f) => !f.includes(path.join('application', 'capabilities')) && f !== path.join(intelDir, 'index.js') && f !== path.join(applicationDir, 'index.js'));
+  // TASK1.112後更新：這裡的正則`/\/capabilities\//`同時會比對到
+  // 這個測試真正想排除的Phase 3巢狀`application/capabilities/`，
+  // 也會比對到Phase 4的`src/intelligence/capabilities/`（TASK1.76
+  // 才新增，寫這個測試的當下還不存在，是完全不同性質的目錄——見
+  // TASK1.56測試套件已經明確記錄的區分："跟application/底下nested
+  // 的application/capabilities/是完全不同的東西"）。既有Phase 4/5
+  // 檔案從來沒有觸發過這個誤判，是因為它們對Phase
+  // 4capabilities/的相對路徑import都不需要顯式拼出"capabilities"
+  // 這幾個字（例如同目錄內用`./xxx.js`、`capabilities/index.js`
+  // 對子目錄用`./analysis/index.js`）。TASK1.112新增的
+  // `product/health_insight_integration.js`是第一個必須用
+  // `../capabilities/orchestration/index.js`這種顯式路徑
+  // （因為它在`product/`這個兩層外的目錄，這是身為Composition
+  // Root、需要組裝Phase 4 Capability Chain的正當理由，不是違規
+  // 繞過Application Service），所以額外排除它，不套用這條
+  // 「不得import application/capabilities/」規則（這條規則的
+  // 真正意圖從來就不是禁止任何人import Phase 4的capabilities/）。
+  const allIntelFilesExceptCapabilities = listAllJsFiles(intelDir).filter((f) => !f.includes(path.join('application', 'capabilities')) && f !== path.join(intelDir, 'index.js') && f !== path.join(applicationDir, 'index.js') && f !== path.join(intelDir, 'product', 'health_insight_integration.js'));
   for (const f of allIntelFilesExceptCapabilities) {
     const relName = path.relative(repoRoot, f);
     await test(`（5.runtime isolation）${relName} 完全不import src/intelligence/application/capabilities/（下層不知道Capability Layer的存在，維持「每一層只認識自己呼叫的下一層」）`, () => {
