@@ -166,8 +166,12 @@ async function run() {
   // Capability Execution Boundary，跟application/底下nested的
   // application/capabilities/是完全不同的東西），同樣是明確的
   // 擴充，加入預期清單。
-  await test('（TASK1.76後更新）src/intelligence/ 底下的子目錄依序是 analysis/application/capabilities/context/contracts/data_preparation/events/execution/facade/governance/history/metrics/monitoring/orchestration/recommendation/runtime/service 十七個', () => {
-    assert.deepStrictEqual(actualDirs, ['analysis', 'application', 'capabilities', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration', 'recommendation', 'runtime', 'service']);
+  // TASK1.99後更新：Phase 5新增了product/（Product Entry Boundary
+  // Minimal Implementation，底下nested著entry/子目錄，這是Phase 5
+  // 系列第一個production code實作），同樣是明確的擴充，加入預期
+  // 清單。
+  await test('（TASK1.99後更新）src/intelligence/ 底下的子目錄依序是 analysis/application/capabilities/context/contracts/data_preparation/events/execution/facade/governance/history/metrics/monitoring/orchestration/product/recommendation/runtime/service 十八個', () => {
+    assert.deepStrictEqual(actualDirs, ['analysis', 'application', 'capabilities', 'context', 'contracts', 'data_preparation', 'events', 'execution', 'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration', 'product', 'recommendation', 'runtime', 'service']);
   });
 
   for (const f of EXPECTED_FILES) {

@@ -341,8 +341,9 @@ async function run() {
     assert.strictEqual(diff.trim(), '', `發現非預期的production程式碼變更：${diff}`);
   });
 
-  await test('（5.dependency direction）本次任務沒有建立任何新目錄（例如src/intelligence/product/）', () => {
-    assert.ok(!fs.existsSync(path.join(intelDir, 'product')));
+  await test('（TASK1.99後更新）（5.dependency direction）TASK1.98自己的commit（ad6bff7）沒有建立任何新目錄（例如src/intelligence/product/）——注意：TASK1.99之後這個目錄已經合法存在（Product Entry Boundary Minimal Implementation），這裡改用git show檢查TASK1.98自己的commit內容，而不是檢查目錄現在是否存在，避免誤判後續任務的合法擴充為本次任務的回歸', () => {
+    const filesInCommit = execFileSync('git', ['show', '--name-only', '--pretty=format:', 'ad6bff7'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(!filesInCommit.split('\n').some((f) => f.startsWith('src/intelligence/product/')));
   });
 
   await test('（5.dependency direction）本次任務沒有建立任何.d.ts/JSON Schema型別定義檔案', () => {

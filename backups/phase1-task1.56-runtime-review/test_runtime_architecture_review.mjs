@@ -137,9 +137,12 @@ async function run() {
   // Capability Execution Boundary，跟application/底下nested的
   // application/capabilities/是完全不同的東西），同樣是明確的
   // 擴充，加入預期清單。
+  // TASK1.99後更新：Phase 5新增了product/子目錄（Product Entry
+  // Boundary Minimal Implementation，底下nested著entry/子目錄），
+  // 同樣是明確的擴充，加入預期清單。
   const EXPECTED_SUBDIRS = [
     'analysis', 'application', 'capabilities', 'context', 'contracts', 'data_preparation', 'events', 'execution',
-    'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration',
+    'facade', 'governance', 'history', 'metrics', 'monitoring', 'orchestration', 'product',
     'recommendation', 'runtime', 'service',
   ];
 
@@ -151,10 +154,15 @@ async function run() {
   // README.md——這不是架構不一致，是刻意的結構差異，這裡的測試
   // 因此把它獨立列出，不跟其餘14個一起套用「必須有index.js/
   // README.md」的規則。
-  const NAMESPACE_SUBDIRS = EXPECTED_SUBDIRS.filter((d) => d !== 'contracts');
+  // TASK1.99後更新：'product/'跟'contracts/'是同樣的結構差異——
+  // `src/intelligence/product/`本身只是一個容器，恰好只有一個
+  // 巢狀子目錄entry/（自己有index.js/README.md），product/本身
+  // 沒有（也不需要）index.js/README.md，同樣不套用「必須有
+  // index.js/README.md」的規則。
+  const NAMESPACE_SUBDIRS = EXPECTED_SUBDIRS.filter((d) => d !== 'contracts' && d !== 'product');
   const rootIndexSrc = readSrc(path.join(intelDir, 'index.js'));
 
-  await test('（TASK1.76後更新）src/intelligence/ 底下的子目錄恰好是規格列出的17個（含TASK1.55新增的governance、TASK1.60新增的application、TASK1.76新增的capabilities）', () => {
+  await test('（TASK1.99後更新）src/intelligence/ 底下的子目錄恰好是規格列出的18個（含TASK1.55新增的governance、TASK1.60新增的application、TASK1.76新增的capabilities、TASK1.99新增的product）', () => {
     assert.deepStrictEqual(subDirs, EXPECTED_SUBDIRS);
   });
 
