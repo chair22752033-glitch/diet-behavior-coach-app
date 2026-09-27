@@ -1,28 +1,30 @@
 /*
- * Phase 6 TASK 1.107｜Health Insight Data Input Boundary
+ * Phase 6 TASK 1.108｜Health Insight Data Output Boundary
  * Definition 測試
  *
  * 本任務是產品架構定義任務——不實作任何production功能、不
- * 建立database schema、不建立UI、不整合任何AI。目的是驗證
- * `PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md`完整涵蓋規格
- * 要求的9個章節，並重新確認Phase 1~5既有架構（五個Product
- * Boundary、Phase 4 Capability Chain、app.intelligence/
- * router/worker.js/database）完全沒有被本次任務影響。
+ * 建立UI、不建立API Response Model、不整合任何AI。目的是
+ * 驗證`PHASE6_HEALTH_INSIGHT_OUTPUT_BOUNDARY_PLAN.md`完整
+ * 涵蓋規格要求的9個章節，並重新確認Phase 1~5既有架構（五個
+ * Product Boundary、Phase 4 Capability Chain、
+ * app.intelligence/router/worker.js/database）完全沒有被
+ * 本次任務影響。
  *
- * 分為以下13個部分：
- * A) Input boundary definition
- * B) User profile data
- * C) Health goal data
- * D) Daily behavior data
- * E) Measurement data
- * F) Required/optional classification
- * G) Validation responsibility
- * H) Privacy boundary
- * I) Intelligence mapping
- * J) Future extension
+ * 分為以下14個部分：
+ * A) Output boundary definition
+ * B) Health observation
+ * C) Behavior pattern
+ * D) Recommendation output
+ * E) Progress trend
+ * F) Product vs internal output separation
+ * G) Responsibility mapping
+ * H) Validation responsibility
+ * I) Intelligence flow mapping
+ * J) Free/Premium direction
  * K) Gemini boundary
- * L) Regression validation
- * M) P1-P6
+ * L) Output version strategy
+ * M) Regression validation
+ * N) P1-P6
  */
 import assert from 'node:assert';
 import fs from 'node:fs';
@@ -52,7 +54,8 @@ const analysisDir = path.join(intelDir, 'analysis');
 const recommendationDir = path.join(intelDir, 'recommendation');
 const orchestrationRuntimeDir = path.join(intelDir, 'orchestration');
 const productPlanDocPath = path.join(productDir, 'PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md');
-const docPath = path.join(productDir, 'PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md');
+const inputBoundaryDocPath = path.join(productDir, 'PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md');
+const docPath = path.join(productDir, 'PHASE6_HEALTH_INSIGHT_OUTPUT_BOUNDARY_PLAN.md');
 
 function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -108,380 +111,344 @@ async function run() {
   const flatDoc = doc.replace(/\n/g, ' ');
 
   // =========================================================================
-  // A. Input boundary definition
+  // A. Output boundary definition
   // =========================================================================
-  console.log('--- A. Input boundary definition ---');
+  console.log('--- A. Output boundary definition ---');
 
-  await test('（1.Input boundary definition）文件存在且非空', () => {
+  await test('（1.Output boundary definition）文件存在且非空', () => {
     const stat = fs.statSync(docPath);
     assert.ok(stat.isFile());
     assert.ok(stat.size > 0);
   });
 
   const REQUIRED_DOC_SECTIONS = [
-    'Input Boundary Goal', 'Input Data Categories', 'Required vs Optional Data Boundary', 'Input Validation Responsibility',
-    'Data Privacy Boundary', 'Intelligence Mapping', 'Future Extension Boundary', 'Free vs Premium Input Direction', 'Gemini Future Boundary',
+    'Output Boundary Goal', 'Output Categories', 'Product Output vs Internal Output Boundary', 'Output Responsibility Mapping',
+    'Output Validation Responsibility', 'Intelligence Flow Mapping', 'Free vs Premium Output Direction', 'Future Gemini Extension Boundary', 'Output Version Strategy',
   ];
   for (const section of REQUIRED_DOC_SECTIONS) {
-    await test(`（1.Input boundary definition）文件包含「${section}」章節`, () => {
+    await test(`（1.Output boundary definition）文件包含「${section}」章節`, () => {
       assert.ok(doc.includes(section), `文件缺少章節：${section}`);
     });
   }
 
-  await test('（1.Input boundary definition）文件記錄"為什麼Health Insight需要輸入資料"（沒有輸入資料就沒有東西可以分析）', () => {
-    assert.ok(/沒有輸入資料/.test(doc) || /沒有\s*輸入資料/.test(flatDoc));
+  await test('（1.Output boundary definition）文件記錄為什麼Health Insight需要輸出邊界（延續TASK1.106"不是AI Chat"的定位）', () => {
+    assert.ok(doc.includes('AI Chat'));
   });
 
-  await test('（1.Input boundary definition）文件記錄使用者資料是Analysis Capability的原料，不是Intelligence Analysis本身', () => {
-    assert.ok(/原料/.test(doc));
+  await test('（1.Output boundary definition）文件明確區分Raw Intelligence Result跟User-Facing Product Output的差異', () => {
+    assert.ok(doc.includes('Raw Intelligence Result'));
+    assert.ok(doc.includes('User-Facing Product Output'));
   });
 
-  await test('（1.Input boundary definition）文件明確區分Raw Data跟Intelligence Input的差異', () => {
-    assert.ok(doc.includes('Raw Data'));
-    assert.ok(doc.includes('Intelligence Input'));
+  await test('（1.Output boundary definition）文件確認轉換動作歸屬Product Layer，不歸屬Phase 4既有Capability層', () => {
+    assert.ok(/歸屬\s*\*{0,2}Product\s*Layer/.test(flatDoc));
+    assert.ok(/不歸屬\*{0,2}Phase\s*4既有的\s*Capability層/.test(flatDoc));
   });
 
-  await test('（1.Input boundary definition）文件確認Raw Data→Intelligence Input轉換歸屬Product Feature層，不歸屬Phase 5既有五個Boundary', () => {
-    assert.ok(/歸屬\s*\*{0,2}Product\s*Feature層/.test(flatDoc));
-    assert.ok(/不歸屬\*{0,2}Phase\s*5既有的五個\s*Product\s*Boundary/.test(flatDoc));
+  await test('（1.Output boundary definition）文件記錄Capability輸出跟Product輸出不是一對一的關係', () => {
+    assert.ok(doc.includes('不是\n一對一') || /不是\s*一對一/.test(flatDoc));
   });
 
-  await test('（1.Input boundary definition）文件記錄跟TASK1.106的關係（延伸TASK1.106第7節的九個欄位）', () => {
+  await test('（1.Output boundary definition）文件記錄跟TASK1.106/1.107的關係', () => {
     assert.ok(doc.includes('TASK1.106'));
+    assert.ok(doc.includes('TASK1.107'));
   });
 
   console.log('');
 
   // =========================================================================
-  // B. User profile data
+  // B. Health observation
   // =========================================================================
-  console.log('--- B. User profile data ---');
+  console.log('--- B. Health observation ---');
 
-  await test('（2.User profile data）文件包含「A. User Profile Data」小節', () => {
-    assert.ok(doc.includes('User Profile Data'));
+  await test('（2.Health observation）文件包含「A. Health Observation」小節', () => {
+    assert.ok(doc.includes('Health Observation'));
   });
 
-  const REQUIRED_PROFILE_FIELDS = ['age', 'gender', 'height', 'weight'];
-  for (const field of REQUIRED_PROFILE_FIELDS) {
-    await test(`（2.User profile data）Required欄位包含"${field}"`, () => {
-      const section = (doc.split('### A. User Profile Data')[1] || '').split('### B. Health Goal Data')[0];
-      const requiredSection = section.split('**Required Fields')[1].split('**Optional Fields')[0];
-      assert.ok(requiredSection.includes(`\`${field}\``), `Required欄位缺少：${field}`);
+  const REQUIRED_OBSERVATION_EXAMPLES = ['behavior observation', 'nutrition observation', 'activity observation', 'lifestyle observation'];
+  for (const example of REQUIRED_OBSERVATION_EXAMPLES) {
+    await test(`（2.Health observation）Examples包含"${example}"`, () => {
+      const section = (doc.split('### A. Health Observation')[1] || '').split('### B. Behavior Pattern')[0];
+      assert.ok(section.includes(example), `Examples缺少：${example}`);
     });
   }
 
-  await test('（2.User profile data）Optional欄位包含body information（bodyInformation）', () => {
-    const section = (doc.split('### A. User Profile Data')[1] || '').split('### B. Health Goal Data')[0];
-    const optionalSection = section.split('**Optional Fields')[1].split('**Future Extension Fields')[0];
-    assert.ok(optionalSection.includes('bodyInformation'));
+  await test('（2.Health observation）文件記錄Purpose：把已分析的資料轉換成使用者看得懂的觀察', () => {
+    const section = (doc.split('### A. Health Observation')[1] || '').split('### B. Behavior Pattern')[0];
+    assert.ok(section.includes('Purpose'));
+    assert.ok(/轉換成使用者看得懂的\s*觀察/.test(section.replace(/\n/g, ' ')));
   });
 
-  await test('（2.User profile data）文件記錄Future Extension Fields的存在（病史/過敏/用藥等，但不具體列出強制清單）', () => {
-    const section = (doc.split('### A. User Profile Data')[1] || '').split('### B. Health Goal Data')[0];
-    assert.ok(section.includes('Future Extension Fields'));
-    assert.ok(section.includes('病史'));
+  await test('（2.Health observation）文件定義What User Can See跟What Remains Internal', () => {
+    const section = (doc.split('### A. Health Observation')[1] || '').split('### B. Behavior Pattern')[0];
+    assert.ok(section.includes('What User Can See'));
+    assert.ok(section.includes('What Remains Internal'));
   });
 
-  await test('（2.User profile data）文件解釋age/gender/height/weight歸屬Required的理由（計算基礎健康指標的必要輸入）', () => {
-    const section = (doc.split('### A. User Profile Data')[1] || '').split('### B. Health Goal Data')[0];
-    assert.ok(section.includes('BMI') || section.includes('基礎代謝率'));
+  await test('（2.Health observation）文件記錄source欄位跟status欄位屬於系統內部、不呈現給使用者', () => {
+    const section = (doc.split('### A. Health Observation')[1] || '').split('### B. Behavior Pattern')[0];
+    assert.ok(section.includes('`source`'));
+    assert.ok(section.includes('`status`'));
   });
 
   console.log('');
 
   // =========================================================================
-  // C. Health goal data
+  // C. Behavior pattern
   // =========================================================================
-  console.log('--- C. Health goal data ---');
+  console.log('--- C. Behavior pattern ---');
 
-  await test('（3.Health goal data）文件包含「B. Health Goal Data」小節', () => {
-    assert.ok(doc.includes('Health Goal Data'));
+  await test('（3.Behavior pattern）文件包含「B. Behavior Pattern」小節', () => {
+    assert.ok(doc.includes('### B. Behavior Pattern'));
   });
 
-  const REQUIRED_GOALS = ['weight loss', 'weight maintenance', 'muscle gain', 'healthy lifestyle'];
-  for (const goal of REQUIRED_GOALS) {
-    await test(`（3.Health goal data）Possible Goals包含"${goal}"`, () => {
-      const section = (doc.split('### B. Health Goal Data')[1] || '').split('### C. Daily Behavior Data')[0];
-      assert.ok(section.includes(goal), `Goals清單缺少：${goal}`);
+  const REQUIRED_PATTERN_EXAMPLES = ['eating pattern', 'activity pattern', 'sleep pattern'];
+  for (const example of REQUIRED_PATTERN_EXAMPLES) {
+    await test(`（3.Behavior pattern）Examples包含"${example}"`, () => {
+      const section = (doc.split('### B. Behavior Pattern')[1] || '').split('### C. Recommendation Output')[0];
+      assert.ok(section.includes(example), `Examples缺少：${example}`);
     });
   }
 
-  await test('（3.Health goal data）文件記錄Goal Ownership：目標由使用者自己設定，系統不替使用者決定', () => {
-    const section = (doc.split('### B. Health Goal Data')[1] || '').split('### C. Daily Behavior Data')[0];
-    assert.ok(section.includes('Goal Ownership'));
-    assert.ok(/由使用者自己設定/.test(section.replace(/\n/g, ' ')));
+  await test('（3.Behavior pattern）文件記錄User Value：讓使用者發現沒有意識到的規律性行為', () => {
+    const section = (doc.split('### B. Behavior Pattern')[1] || '').split('### C. Recommendation Output')[0];
+    assert.ok(section.includes('User Value'));
   });
 
-  await test('（3.Health goal data）文件記錄Goal Impact on Recommendation：不同Goal影響Recommendation解讀方向，但不修改Recommendation Runner', () => {
-    const section = (doc.split('### B. Health Goal Data')[1] || '').split('### C. Daily Behavior Data')[0];
-    assert.ok(section.includes('Goal Impact on Recommendation'));
-    assert.ok(section.includes('Recommendation Runner'));
+  await test('（3.Behavior pattern）文件明確記錄Behavior Pattern目前不屬於V1範圍，需要新增Analysis模組', () => {
+    const section = (doc.split('### B. Behavior Pattern')[1] || '').split('### C. Recommendation Output')[0];
+    assert.ok(section.includes('Future Extension Possibility'));
+    assert.ok(/目前不屬於V1範圍/.test(section.replace(/\n/g, ' ')));
+    assert.ok(section.includes('TASK1.43'));
   });
 
   console.log('');
 
   // =========================================================================
-  // D. Daily behavior data
+  // D. Recommendation output
   // =========================================================================
-  console.log('--- D. Daily behavior data ---');
+  console.log('--- D. Recommendation output ---');
 
-  await test('（4.Daily behavior data）文件包含「C. Daily Behavior Data」小節', () => {
-    assert.ok(doc.includes('Daily Behavior Data'));
+  await test('（4.Recommendation output）文件包含「C. Recommendation Output」小節', () => {
+    assert.ok(doc.includes('### C. Recommendation Output'));
   });
 
-  const REQUIRED_FOOD_FIELDS = ['breakfast', 'lunch', 'dinner', 'snacks'];
-  for (const field of REQUIRED_FOOD_FIELDS) {
-    await test(`（4.Daily behavior data）Food欄位包含"${field}"`, () => {
-      const section = (doc.split('### C. Daily Behavior Data')[1] || '').split('### D. Measurement Data')[0];
-      const foodSection = section.split('**Food')[1].split('**Activity')[0];
-      assert.ok(foodSection.includes(`\`${field}\``), `Food欄位缺少：${field}`);
+  const REQUIRED_RECOMMENDATION_EXAMPLES = ['behavior improvement suggestion', 'habit adjustment suggestion'];
+  for (const example of REQUIRED_RECOMMENDATION_EXAMPLES) {
+    await test(`（4.Recommendation output）Examples包含"${example}"`, () => {
+      const section = (doc.split('### C. Recommendation Output')[1] || '').split('### D. Progress Trend')[0];
+      assert.ok(section.includes(example), `Examples缺少：${example}`);
     });
   }
 
-  await test('（4.Daily behavior data）Activity欄位包含exercise跟walking/activityLevel', () => {
-    const section = (doc.split('### C. Daily Behavior Data')[1] || '').split('### D. Measurement Data')[0];
-    const activitySection = section.split('**Activity')[1].split('**Lifestyle')[0];
-    assert.ok(activitySection.includes('exercise'));
-    assert.ok(activitySection.includes('walking'));
-  });
-
-  await test('（4.Daily behavior data）Lifestyle欄位包含sleep跟waterIntake', () => {
-    const section = (doc.split('### C. Daily Behavior Data')[1] || '').split('### D. Measurement Data')[0];
-    const lifestyleSection = section.split('**Lifestyle')[1] || '';
-    assert.ok(lifestyleSection.includes('sleep'));
-    assert.ok(lifestyleSection.includes('waterIntake'));
-  });
-
-  await test('（4.Daily behavior data）文件明確聲明本次任務不建立任何database表', () => {
-    const section = (doc.split('### C. Daily Behavior Data')[1] || '').split('### D. Measurement Data')[0].replace(/\n/g, ' ');
-    assert.ok(/不建立任何\s*database表/.test(section) || /不\*{0,2}建立任何\s*database表/.test(section));
+  await test('（4.Recommendation output）文件記錄跟Recommendation Capability的關係（TASK1.77既有輸出）', () => {
+    const section = (doc.split('### C. Recommendation Output')[1] || '').split('### D. Progress Trend')[0];
+    assert.ok(section.includes('Relationship with Recommendation Capability'));
+    assert.ok(section.includes('TASK1.77'));
   });
 
   console.log('');
 
   // =========================================================================
-  // E. Measurement data
+  // E. Progress trend
   // =========================================================================
-  console.log('--- E. Measurement data ---');
+  console.log('--- E. Progress trend ---');
 
-  await test('（5.Measurement data）文件包含「D. Measurement Data」小節', () => {
-    assert.ok(doc.includes('Measurement Data'));
+  await test('（5.Progress trend）文件包含「D. Progress Trend」小節', () => {
+    assert.ok(doc.includes('### D. Progress Trend'));
   });
 
-  const REQUIRED_MEASUREMENTS = ['weightTrend', 'bodyMeasurement', 'progressTracking'];
-  for (const m of REQUIRED_MEASUREMENTS) {
-    await test(`（5.Measurement data）Possible Measurements包含"${m}"`, () => {
-      const section = (doc.split('### D. Measurement Data')[1] || '').split('## 3.')[0];
-      assert.ok(section.includes(m), `Measurements清單缺少：${m}`);
+  const REQUIRED_TREND_EXAMPLES = ['weight trend', 'habit progress', 'consistency trend'];
+  for (const example of REQUIRED_TREND_EXAMPLES) {
+    await test(`（5.Progress trend）Examples包含"${example}"`, () => {
+      const section = (doc.split('### D. Progress Trend')[1] || '').split('## 3.')[0];
+      assert.ok(section.includes(example), `Examples缺少：${example}`);
     });
   }
 
-  await test('（5.Measurement data）文件明確區分V1 Requirement（只需要weightTrend）跟Future Extension（bodyMeasurement/progressTracking）', () => {
-    const section = (doc.split('### D. Measurement Data')[1] || '').split('## 3.')[0];
-    assert.ok(section.includes('Current V1 Requirement') || section.includes('V1需求'));
-    assert.ok(section.includes('Future Extension'));
+  await test('（5.Progress trend）文件明確定義Current V1 Boundary只有weight trend', () => {
+    const section = (doc.split('### D. Progress Trend')[1] || '').split('## 3.')[0];
+    assert.ok(section.includes('Current V1 Boundary'));
+    assert.ok(section.includes('只有`weight'));
   });
 
-  await test('（5.Measurement data）文件解釋weightTrend不需要額外輸入（衍生自User Profile Data既有的weight欄位）', () => {
-    const section = (doc.split('### D. Measurement Data')[1] || '').split('## 3.')[0].replace(/\n/g, ' ');
-    assert.ok(/weight.*既有\s*欄位/.test(section) || section.includes('不是一個全新的輸入項目'));
-  });
-
-  console.log('');
-
-  // =========================================================================
-  // F. Required/optional classification
-  // =========================================================================
-  console.log('--- F. Required/optional classification ---');
-
-  await test('（6.Required/optional classification）文件包含「3. Required vs Optional Data Boundary」章節', () => {
-    assert.ok(doc.includes('Required vs Optional Data Boundary'));
-  });
-
-  await test('（6.Required/optional classification）文件定義Required = 產生最小可用Health Insight所必須的資料', () => {
-    assert.ok(/最小可用Health\s*Insight/.test(doc));
-  });
-
-  await test('（6.Required/optional classification）文件定義Optional = 能提升分析品質、但非必要的資料', () => {
-    assert.ok(/能提升分析品質/.test(doc));
-  });
-
-  await test('（6.Required/optional classification）文件定義Future = 保留給未來擴充、V1完全不收集的資料', () => {
-    assert.ok(/V1完全不收集/.test(doc) || /V1完全\s*不收集/.test(flatDoc));
-  });
-
-  await test('（6.Required/optional classification）文件包含歸屬理由的總結表格（含age/gender/height/weight等資料類別）', () => {
-    const section = doc.split('## 3. Required vs Optional Data Boundary')[1] || '';
-    assert.ok(section.includes('| 資料類別 | 層級 | 理由 |'));
-    assert.ok(section.includes('age/gender/height/weight'));
-  });
-
-  await test('（6.Required/optional classification）文件解釋Daily Behavior Data歸類為Optional的理由：Analysis Capability既有設計允許部分資料缺席', () => {
-    assert.ok(/允許部分資料缺席/.test(doc) || /允許\s*部分資料缺席/.test(flatDoc));
+  await test('（5.Progress trend）文件記錄Future Expansion（habit progress/consistency trend留給未來）', () => {
+    const section = (doc.split('### D. Progress Trend')[1] || '').split('## 3.')[0];
+    assert.ok(section.includes('Future Expansion'));
   });
 
   console.log('');
 
   // =========================================================================
-  // G. Validation responsibility
+  // F. Product vs internal output separation
   // =========================================================================
-  console.log('--- G. Validation responsibility ---');
+  console.log('--- F. Product vs internal output separation ---');
 
-  await test('（7.Validation responsibility）文件包含「4. Input Validation Responsibility」章節', () => {
-    assert.ok(doc.includes('Input Validation Responsibility'));
+  await test('（6.Product vs internal output separation）文件包含「3. Product Output vs Internal Output Boundary」章節', () => {
+    assert.ok(doc.includes('Product Output vs Internal Output Boundary'));
+  });
+
+  const REQUIRED_USER_VISIBLE = ['health observation', 'behavior pattern', 'recommendation', 'progress information'];
+  for (const item of REQUIRED_USER_VISIBLE) {
+    await test(`（6.Product vs internal output separation）User Visible清單包含"${item}"`, () => {
+      const section = (doc.split('### User Visible')[1] || '').split('### Internal Only')[0];
+      assert.ok(section.includes(item), `User Visible清單缺少：${item}`);
+    });
+  }
+
+  const REQUIRED_INTERNAL_ONLY = ['runtime metadata', 'execution state', 'capability internal structure', 'system debug information', 'internal processing details'];
+  for (const item of REQUIRED_INTERNAL_ONLY) {
+    await test(`（6.Product vs internal output separation）Internal Only清單包含"${item}"`, () => {
+      const section = (doc.split('### Internal Only')[1] || '').split('## 4.')[0];
+      assert.ok(section.includes(item), `Internal Only清單缺少：${item}`);
+    });
+  }
+
+  await test('（6.Product vs internal output separation）文件解釋runtime metadata屬於Internal的理由：延續TASK1.102 Operational Boundary的Allowed Metadata清單', () => {
+    const section = (doc.split('### Internal Only')[1] || '').split('## 4.')[0];
+    assert.ok(section.includes('TASK1.102'));
+  });
+
+  await test('（6.Product vs internal output separation）文件解釋execution state屬於Internal的理由：延續TASK1.101五階段Lifecycle概念', () => {
+    const section = (doc.split('### Internal Only')[1] || '').split('## 4.')[0];
+    assert.ok(section.includes('TASK1.101'));
+    for (const stage of ['request_received', 'validation_completed', 'execution_started', 'execution_completed', 'execution_failed']) {
+      assert.ok(section.includes(stage), `缺少階段名稱：${stage}`);
+    }
+  });
+
+  console.log('');
+
+  // =========================================================================
+  // G. Responsibility mapping
+  // =========================================================================
+  console.log('--- G. Responsibility mapping ---');
+
+  await test('（7.Responsibility mapping）文件包含「4. Output Responsibility Mapping」章節', () => {
+    assert.ok(doc.includes('Output Responsibility Mapping'));
+  });
+
+  await test('（7.Responsibility mapping）Capability Layer產出analysis result跟recommendation result', () => {
+    const section = (doc.split('### Capability Layer（既有，完全不修改）')[1] || '').split('### Feature Layer')[0];
+    assert.ok(section.includes('analysis result'));
+    assert.ok(section.includes('recommendation result'));
+  });
+
+  await test('（7.Responsibility mapping）Feature Layer轉換intelligence result', () => {
+    const section = (doc.split('### Feature Layer（既有Feature Intelligence Integration')[1] || '').split('### Product Layer')[0];
+    assert.ok(section.includes('intelligence result'));
+  });
+
+  await test('（7.Responsibility mapping）Product Layer呈現user-facing output', () => {
+    const section = (doc.split('### Product Layer（未來的Health Insight呈現層')[1] || '').split('### 為什麼各層擁有不同責任')[0];
+    assert.ok(section.includes('user-facing output'));
+  });
+
+  await test('（7.Responsibility mapping）文件解釋為什麼各層擁有不同責任（避免Capability層被綁定在單一產品的呈現需求上）', () => {
+    const section = doc.split('### 為什麼各層擁有不同責任')[1] || '';
+    assert.ok(section.includes('綁定在單一產品'));
+    assert.ok(section.includes('Personal Intelligence'));
+  });
+
+  console.log('');
+
+  // =========================================================================
+  // H. Validation responsibility
+  // =========================================================================
+  console.log('--- H. Validation responsibility ---');
+
+  await test('（8.Validation responsibility）文件包含「5. Output Validation Responsibility」章節', () => {
+    assert.ok(doc.includes('Output Validation Responsibility'));
   });
 
   const VALIDATION_LAYERS = [
-    { name: 'Product Layer', keyword: 'user input format' },
-    { name: 'Contract Layer', keyword: 'request structure validation' },
-    { name: 'Adapter Layer', keyword: 'product format conversion' },
-    { name: 'Feature Layer', keyword: 'feature-specific requirement validation' },
-    { name: 'Capability Layer', keyword: 'intelligence processing requirement' },
+    { name: 'Contract Layer', keyword: 'response structure validation' },
+    { name: 'Adapter Layer', keyword: 'product response conversion' },
+    { name: 'Feature Layer', keyword: 'feature output requirement' },
+    { name: 'Capability Layer', keyword: 'intelligence generation' },
   ];
   for (const layer of VALIDATION_LAYERS) {
-    await test(`（7.Validation responsibility）${layer.name}的責任是"${layer.keyword}"`, () => {
-      assert.ok(doc.includes(layer.name), `文件缺少${layer.name}小節`);
-      assert.ok(doc.includes(layer.keyword), `文件缺少關鍵字：${layer.keyword}`);
+    await test(`（8.Validation responsibility）${layer.name}的責任是"${layer.keyword}"`, () => {
+      const section = doc.split('## 5. Output Validation Responsibility')[1] || '';
+      const excerpt = section.split('## 6.')[0];
+      assert.ok(excerpt.includes(layer.name), `文件缺少${layer.name}小節`);
+      assert.ok(excerpt.includes(layer.keyword), `文件缺少關鍵字：${layer.keyword}`);
     });
   }
 
-  await test('（7.Validation responsibility）文件包含五層驗證分工的Flow示意圖', () => {
+  await test('（8.Validation responsibility）文件包含四層驗證分工的Flow示意圖', () => {
     const section = doc.split('### 分工總結')[1] || '';
-    assert.ok(section.includes('使用者原始輸入'));
     assert.ok(section.includes('Analysis/Recommendation結果'));
+    assert.ok(section.includes('使用者最終看到的Health Insight輸出'));
   });
 
-  await test('（7.Validation responsibility）文件明確聲明本次任務不實作任何一層的驗證器', () => {
-    assert.ok(/不實作任何一層的驗證器/.test(doc) || /不\*{0,2}實作任何一層的驗證器/.test(flatDoc));
+  await test('（8.Validation responsibility）文件明確聲明本次任務不實作任何一層的驗證器', () => {
+    const section = (doc.split('## 5. Output Validation Responsibility')[1] || '').split('## 6.')[0];
+    assert.ok(/不實作任何一層的驗證器/.test(section) || /不\*{0,2}實作任何一層的驗證器/.test(section.replace(/\n/g, ' ')));
   });
 
-  await test('（7.Validation responsibility）文件確認Contract Layer的驗證邏輯延續TASK1.103既有的validateProductRequestShape()實作，不重新驗證Health Insight特定欄位', () => {
-    const section = (doc.split('### Contract Layer')[1] || '').split('### Adapter Layer')[0];
+  await test('（8.Validation responsibility）文件確認Contract Layer延續TASK1.103既有的validateProductResponseShape()實作', () => {
+    const section = (doc.split('### Contract Layer（Product Contract，TASK1.103既有）')[1] || '').split('### Adapter Layer')[0];
     assert.ok(section.includes('TASK1.103'));
-    assert.ok(section.includes('validateProductRequestShape'));
+    assert.ok(section.includes('validateProductResponseShape'));
   });
 
   console.log('');
 
   // =========================================================================
-  // H. Privacy boundary
+  // I. Intelligence flow mapping
   // =========================================================================
-  console.log('--- H. Privacy boundary ---');
+  console.log('--- I. Intelligence flow mapping ---');
 
-  await test('（8.Privacy boundary）文件包含「5. Data Privacy Boundary」章節', () => {
-    assert.ok(doc.includes('Data Privacy Boundary'));
+  await test('（9.Intelligence flow mapping）文件包含「6. Intelligence Flow Mapping」章節', () => {
+    assert.ok(doc.includes('## 6. Intelligence Flow Mapping'));
   });
 
-  await test('（8.Privacy boundary）Allowed Usage包含intelligence analysis input', () => {
-    const section = (doc.split('### Allowed Usage')[1] || '').split('### Forbidden')[0];
-    assert.ok(section.includes('intelligence analysis input'));
-  });
-
-  const FORBIDDEN_ITEMS = ['unnecessary personal information', 'authentication data', 'private system data'];
-  for (const item of FORBIDDEN_ITEMS) {
-    await test(`（8.Privacy boundary）Forbidden清單包含"${item}"`, () => {
-      const section = (doc.split('### Forbidden（禁止事項')[1] || '').split('### 確認')[0];
-      assert.ok(section.includes(item), `Forbidden清單缺少：${item}`);
-    });
-  }
-
-  await test('（8.Privacy boundary）文件明確確認Health Insight不直接存取auth/oauth/session/database層', () => {
-    const section = doc.split('### 確認：Health Insight不直接存取')[1] || '';
-    assert.ok(section.includes('src/auth/'));
-    assert.ok(section.includes('src/oauth/'));
-    assert.ok(section.includes('src/db/'));
-  });
-
-  await test('（8.Privacy boundary）文件確認userId由呼叫端（未來的route/controller）提供，Health Insight Feature不直接呼叫Auth模組', () => {
-    const section = doc.split('### 確認：Health Insight不直接存取')[1] || '';
-    assert.ok(section.includes('userId'));
-  });
-
-  console.log('');
-
-  // =========================================================================
-  // I. Intelligence mapping
-  // =========================================================================
-  console.log('--- I. Intelligence mapping ---');
-
-  await test('（9.Intelligence mapping）文件包含「6. Intelligence Mapping」章節', () => {
-    assert.ok(doc.includes('## 6. Intelligence Mapping'));
-  });
-
-  await test('（9.Intelligence mapping）文件記錄完整五層映射（User Input→Health Insight Feature→Analysis→Recommendation→Future Decision Capability）', () => {
-    const section = (doc.split('## 6. Intelligence Mapping')[1] || '').split('### 各類資料被哪個Capability消費')[0];
-    for (const kw of ['User Input', 'Health Insight Feature', 'Analysis Capability', 'Recommendation Capability', 'Future Decision Capability']) {
+  await test('（9.Intelligence flow mapping）文件記錄完整五層映射（Input Boundary→Health Insight Feature→Analysis→Recommendation→Output Boundary）', () => {
+    const section = (doc.split('## 6. Intelligence Flow Mapping')[1] || '').split('### Analysis跟Recommendation如何變成')[0];
+    for (const kw of ['Input Boundary', 'Health Insight Feature', 'Analysis Capability', 'Recommendation Capability', 'Output Boundary']) {
       assert.ok(section.includes(kw), `映射缺少層級：${kw}`);
     }
   });
 
-  await test('（9.Intelligence mapping）文件記錄User Profile Data跟metadata欄位的對應', () => {
-    const section = (doc.split('### 各類資料被哪個Capability消費')[1] || '').split('## 7.')[0];
-    assert.ok(section.includes('metadata'));
+  await test('（9.Intelligence flow mapping）文件解釋insights本身還不是Health Observation，需要經過Product Layer的呈現轉換', () => {
+    const section = doc.split('### Analysis跟Recommendation如何變成')[1] || '';
+    assert.ok(section.includes('還不是'));
+    assert.ok(section.includes('Health\n  Observation') || section.includes('Health Observation'));
   });
 
-  await test('（9.Intelligence mapping）文件記錄Daily Behavior Data對應既有Insight Context欄位（nutritionContext/activityContext/behaviorContext）', () => {
-    const section = (doc.split('### 各類資料被哪個Capability消費')[1] || '').split('## 7.')[0];
-    for (const field of ['nutritionContext', 'activityContext', 'behaviorContext']) {
-      assert.ok(section.includes(field), `映射缺少欄位：${field}`);
-    }
-  });
-
-  await test('（9.Intelligence mapping）文件記錄Health Goal Data不直接被Analysis Capability消費，而是影響Recommendation方向性', () => {
-    const section = (doc.split('### 各類資料被哪個Capability消費')[1] || '').split('## 7.')[0];
-    assert.ok(section.includes('不直接被Analysis'));
-  });
-
-  await test('（9.Intelligence mapping）文件確認V1完全不使用Decision Capability（延續TASK1.106 Feature Scope的Exclude範圍）', () => {
-    const section = (doc.split('### 各類資料被哪個Capability消費')[1] || '').split('## 7.')[0];
-    assert.ok(section.includes('V1完全不使用') || /V1完全\s*不使用/.test(section.replace(/\n/g, ' ')));
-    assert.ok(section.includes('TASK1.106'));
+  await test('（9.Intelligence flow mapping）文件確認完全複用Phase 4/Phase 5既有Capability Chain跟五個Product Boundary，延續TASK1.104/1.105已驗證的鏈路', () => {
+    const section = doc.split('### Analysis跟Recommendation如何變成')[1] || '';
+    assert.ok(/TASK1\.104\/1\.105/.test(section) || (section.includes('TASK1.104') && section.includes('1.105')));
   });
 
   console.log('');
 
   // =========================================================================
-  // J. Future extension
+  // J. Free/Premium direction
   // =========================================================================
-  console.log('--- J. Future extension ---');
+  console.log('--- J. Free/Premium direction ---');
 
-  await test('（10.Future extension）文件包含「7. Future Extension Boundary」章節', () => {
-    assert.ok(doc.includes('## 7. Future Extension Boundary'));
+  await test('（10.Free/Premium direction）文件包含「7. Free vs Premium Output Direction」章節', () => {
+    assert.ok(doc.includes('Free vs Premium Output Direction'));
   });
 
-  const REQUIRED_FUTURE_ITEMS = ['wearable devices', 'health devices', 'medical records', 'nutrition database', 'activity tracking'];
-  for (const item of REQUIRED_FUTURE_ITEMS) {
-    await test(`（10.Future extension）Future Extension清單包含"${item}"`, () => {
-      const section = (doc.split('## 7. Future Extension Boundary')[1] || '').split('## 8.')[0];
-      assert.ok(section.includes(item), `Future Extension清單缺少：${item}`);
-    });
-  }
-
-  await test('（10.Future extension）文件明確聲明第7節內容"只記錄可能性、不實作"', () => {
-    const section = (doc.split('## 7. Future Extension Boundary')[1] || '').split('## 8.')[0].replace(/\n/g, ' ');
-    assert.ok(/只\s*記錄可能性、不實作/.test(section) || section.includes('只**記錄可能性、不實作**'));
+  await test('（10.Free/Premium direction）Free層級包含basic health observation跟basic recommendation', () => {
+    const section = (doc.split('### Free（免費層級，未來規劃，Possible）')[1] || doc.split('### Free（免費層級，未來規劃')[1] || doc.split('### Free（免費層級')[1] || '').split('### Premium')[0];
+    assert.ok(section.includes('basic health observation'));
+    assert.ok(section.includes('basic recommendation'));
   });
 
-  await test('（10.Future extension）文件包含「8. Free vs Premium Input Direction」章節', () => {
-    assert.ok(doc.includes('Free vs Premium Input Direction'));
-  });
-
-  await test('（10.Future extension）Free層級包含basic profile跟manual daily input', () => {
-    const section = (doc.split('### Free（免費層級）')[1] || '').split('### Premium')[0];
-    assert.ok(section.includes('basic profile'));
-    assert.ok(section.includes('manual daily input'));
-  });
-
-  const REQUIRED_PREMIUM_INPUT_ITEMS = ['richer history', 'connected devices', 'advanced analysis'];
-  for (const item of REQUIRED_PREMIUM_INPUT_ITEMS) {
-    await test(`（10.Future extension）Premium層級包含"${item}"`, () => {
+  const REQUIRED_PREMIUM_OUTPUT_ITEMS = ['advanced behavior analysis', 'deeper progress interpretation', 'Gemini enhanced explanation'];
+  for (const item of REQUIRED_PREMIUM_OUTPUT_ITEMS) {
+    await test(`（10.Free/Premium direction）Premium層級包含"${item}"`, () => {
       const section = (doc.split('### Premium（付費層級')[1] || '').split('### 明確的範圍限制')[0];
       assert.ok(section.includes(item), `Premium清單缺少：${item}`);
     });
   }
 
-  await test('（10.Future extension）文件明確聲明本次任務不實作任何會員機制', () => {
-    const section = (doc.split('## 8. Free vs Premium Input Direction')[1] || '').split('## 9.')[0].replace(/\n/g, ' ');
+  await test('（10.Free/Premium direction）文件明確聲明本次任務不實作任何會員機制', () => {
+    const section = (doc.split('## 7. Free vs Premium Output Direction')[1] || '').split('## 8.')[0].replace(/\n/g, ' ');
     assert.ok(/不實作任何\s*會員機制/.test(section) || /不\*{0,2}實作任何\s*會員機制/.test(section));
   });
 
@@ -492,54 +459,88 @@ async function run() {
   // =========================================================================
   console.log('--- K. Gemini boundary ---');
 
-  await test('（11.Gemini boundary）文件包含「9. Gemini Future Boundary」章節', () => {
-    assert.ok(doc.includes('Gemini Future Boundary'));
+  await test('（11.Gemini boundary）文件包含「8. Future Gemini Extension Boundary」章節', () => {
+    assert.ok(doc.includes('Future Gemini Extension Boundary'));
   });
 
-  await test('（11.Gemini boundary）文件明確確認Gemini不會收到未經限制的原始使用者資料', () => {
-    assert.ok(doc.includes('不會收到未經限制的原始使用者資料') || /不會\s*收到未經限制的原始使用者資料/.test(flatDoc));
+  await test('（11.Gemini boundary）文件明確定義Gemini角色僅為Enhancement Layer', () => {
+    assert.ok(doc.includes('Enhancement Layer'));
+    assert.ok(/僅限於\*{0,2}\s*Enhancement\s*Layer/.test(flatDoc) || doc.includes('僅限於'));
   });
 
-  await test('（11.Gemini boundary）文件記錄未來Flow：Validated Intelligence Input→Analysis Capability→Gemini Enhancement Layer', () => {
-    const section = (doc.split('### 未來的Flow')[1] || '').split('### Gemini依然只是Enhancement Layer')[0];
-    assert.ok(section.includes('Validated Intelligence Input'));
-    assert.ok(section.includes('Analysis Capability'));
-    assert.ok(section.includes('Gemini Enhancement Layer'));
+  await test('（11.Gemini boundary）文件記錄未來Flow：Structured Health Insight Output→Gemini Enhancement→Natural Language Explanation', () => {
+    const section = (doc.split('### 未來的Flow')[1] || '').split('### 確認：Gemini不會取代既有架構')[0];
+    assert.ok(section.includes('Structured Health Insight Output'));
+    assert.ok(section.includes('Gemini Enhancement'));
+    assert.ok(section.includes('Natural Language Explanation'));
   });
 
-  await test('（11.Gemini boundary）文件重申Gemini依然只是Enhancement Layer，不取代Analysis/Recommendation Capability/Runtime', () => {
-    const section = doc.split('### Gemini依然只是Enhancement Layer')[1] || '';
-    assert.ok(/不會取代\*{0,2}\s*Analysis\s*Capability/.test(section.replace(/\n/g, ' ')));
-    assert.ok(/不會取代\*{0,2}\s*Recommendation\s*Capability/.test(section.replace(/\n/g, ' ')));
-    assert.ok(/不會取代\*{0,2}\s*Runtime/.test(section.replace(/\n/g, ' ')));
+  await test('（11.Gemini boundary）文件重申Gemini不會取代Analysis/Recommendation Capability/Runtime', () => {
+    const section = doc.split('### 確認：Gemini不會取代既有架構')[1] || '';
+    const flatSection = section.replace(/\n/g, ' ');
+    assert.ok(/不會取代\*{0,2}\s*Analysis\s*Capability/.test(flatSection));
+    assert.ok(/不會取代\*{0,2}\s*Recommendation\s*Capability/.test(flatSection));
+    assert.ok(/不會取代\*{0,2}\s*Runtime/.test(flatSection));
   });
 
-  await test('（11.Gemini boundary）文件確認即使Gemini non-deterministic也不影響既有Intelligence Chain的正確性', () => {
-    assert.ok(doc.includes('non-deterministic'));
-    assert.ok(/不會影響既有\s*Intelligence\s*Chain/.test(flatDoc) || doc.includes('不會影響既有'));
-  });
-
-  await test('（11.Gemini boundary）TASK1.106建立的PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md依然存在且本次任務完全沒有修改它', () => {
-    assert.ok(fs.existsSync(productPlanDocPath));
-    const diff = execFileSync('git', ['diff', '--stat', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（11.Gemini boundary）文件確認Gemini不會接觸原始Capability輸出或TASK1.107定義的原始輸入資料', () => {
+    const section = doc.split('### 確認：Gemini不會取代既有架構')[1] || '';
+    assert.ok(section.includes('不會接觸'));
+    assert.ok(section.includes('TASK1.107'));
   });
 
   console.log('');
 
   // =========================================================================
-  // L. Dependency direction (regression-adjacent structural checks)
+  // L. Output version strategy
   // =========================================================================
-  console.log('--- L. Dependency direction ---');
+  console.log('--- L. Output version strategy ---');
+
+  await test('（12.Output version strategy）文件包含「9. Output Version Strategy」章節', () => {
+    assert.ok(doc.includes('Output Version Strategy'));
+  });
+
+  const REQUIRED_VERSION_RULES = ['additive extension preferred', 'avoid breaking existing output', 'preserve existing consumers'];
+  for (const rule of REQUIRED_VERSION_RULES) {
+    await test(`（12.Output version strategy）Future Compatibility Rules包含"${rule}"`, () => {
+      const section = (doc.split('## 9. Output Version Strategy')[1] || '').split('### 明確的範圍限制')[0];
+      assert.ok(section.includes(rule), `規則清單缺少：${rule}`);
+    });
+  }
+
+  await test('（12.Output version strategy）文件明確聲明本次任務不建立任何JSON Schema', () => {
+    const section = (doc.split('## 9. Output Version Strategy')[1] || '').split('---')[0].replace(/\n/g, ' ');
+    assert.ok(/不建立任何\s*JSON\s*Schema/.test(section) || /不\*{0,2}建立任何\s*JSON\s*Schema/.test(section));
+  });
+
+  await test('（12.Output version strategy）文件延續TASK1.94 Version Strategy的既有原則', () => {
+    const section = (doc.split('## 9. Output Version Strategy')[1] || '').split('---')[0];
+    assert.ok(section.includes('TASK1.94'));
+  });
+
+  await test('（12.Output version strategy）TASK1.106/1.107建立的文件依然存在且本次任務完全沒有修改它們', () => {
+    assert.ok(fs.existsSync(productPlanDocPath));
+    assert.ok(fs.existsSync(inputBoundaryDocPath));
+    const diff1 = execFileSync('git', ['diff', '--stat', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_PRODUCT_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.strictEqual(diff1.trim(), '');
+    const diff2 = execFileSync('git', ['diff', '--stat', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.strictEqual(diff2.trim(), '');
+  });
+
+  console.log('');
+
+  // =========================================================================
+  // Dependency direction (structural checks, part of Regression/AI boundary coverage)
+  // =========================================================================
+  console.log('--- Dependency direction ---');
 
   await test('（Dependency direction）Restrictions Confirmation章節存在', () => {
     assert.ok(doc.includes('Restrictions Confirmation'));
   });
 
-  await test('（TASK1.108後更新）（Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md是TASK1.107自己的commit（15053ef）新增的檔案（git show --name-status確認，而不是檢查即時git status——避免被後續任何時間點的執行誤判為失敗，延續TASK1.99~1.106測試套件同樣的修正模式）', () => {
-    const nameStatus = execFileSync('git', ['show', '--name-status', '--pretty=format:', '15053ef'], { cwd: repoRoot, encoding: 'utf8' });
-    const line = nameStatus.split('\n').find((l) => l.endsWith('\tsrc/intelligence/product/PHASE6_HEALTH_INSIGHT_INPUT_BOUNDARY_PLAN.md'));
-    assert.ok(line && line.startsWith('A'), `預期該檔案在15053ef被新增，實際：${line}`);
+  await test('（Dependency direction）src/intelligence/product/PHASE6_HEALTH_INSIGHT_OUTPUT_BOUNDARY_PLAN.md是本次任務新增的檔案', () => {
+    const status = execFileSync('git', ['status', '--porcelain', 'src/intelligence/product/PHASE6_HEALTH_INSIGHT_OUTPUT_BOUNDARY_PLAN.md'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().startsWith('??') || status.trim().startsWith('A '));
   });
 
   for (const layer of ALL_LAYERS) {
@@ -755,7 +756,7 @@ async function run() {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) walk(full);
-        else if (entry.isFile() && /^test_.*\.mjs$/.test(entry.name) && !full.includes('phase6-task1.107-health-insight-input-boundary')) {
+        else if (entry.isFile() && /^test_.*\.mjs$/.test(entry.name) && !full.includes('phase6-task1.108-health-insight-output-boundary')) {
           allSuites.push(full);
         }
       }
@@ -764,7 +765,7 @@ async function run() {
     allSuites.sort();
 
     await test(`（Regression validation）backups/ 目錄下共找到 ${allSuites.length} 個既有任務的測試檔案（動態掃描，含Phase 1/Phase 2/Phase 3/Phase 4/Phase 5/Phase 6全部）`, () => {
-      assert.ok(allSuites.length >= 98, `預期至少98個既有測試檔案，實際 ${allSuites.length}`);
+      assert.ok(allSuites.length >= 99, `預期至少99個既有測試檔案，實際 ${allSuites.length}`);
     });
 
     for (const suite of allSuites) {
