@@ -923,16 +923,19 @@ async function main() {
     });
   }
 
-  await test('（9.architecture protection）沒有任何新增/修改檔案import Gemini/AI SDK/OpenAI相關套件（只檢查實際import陳述式）', () => {
+  await test('（9.architecture protection）沒有任何新增/修改檔案import外部AI SDK套件（只檢查實際import陳述式）；health_insight_routes.js在TASK1.121後合法import內部自建的Gemini Enhancement模組（../intelligence/enhancement/gemini/，不是外部SDK），予以排除（TASK1.121後更新）', () => {
     [
       path.join(controllersDir, 'health_insight_controller.js'),
       path.join(controllersDir, 'health_insight_response_builder.js'),
-      path.join(routesDir, 'health_insight_routes.js'),
       path.join(uiDir, 'render_product_response.js'),
     ].forEach((f) => {
       const source = fs.readFileSync(f, 'utf8');
       assert.ok(!hasAiSdkImport(source), `${f} 疑似含AI SDK引用`);
     });
+    const routesSource = fs.readFileSync(path.join(routesDir, 'health_insight_routes.js'), 'utf8');
+    const importLines = getImportLines(routesSource).split('\n');
+    const suspiciousImports = importLines.filter((l) => /gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(l) && !l.includes("'../intelligence/enhancement/gemini/"));
+    assert.deepStrictEqual(suspiciousImports, []);
   });
 
   await test('（9.architecture protection）wrangler.toml完全沒有被本次任務修改', () => {

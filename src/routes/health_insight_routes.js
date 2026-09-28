@@ -4,7 +4,9 @@
  * Renderer轉接步驟，見下方"TASK1.117更新"區塊；TASK1.119後更新：
  * POST /api/health-insight新增身份解析步驟，見下方"TASK1.119
  * 更新"區塊；TASK1.120後更新：POST /api/health-insight新增
- * persistence步驟，見下方"TASK1.120更新"區塊）
+ * persistence步驟，見下方"TASK1.120更新"區塊；TASK1.121後更新：
+ * POST /api/health-insight新增Gemini Enhancement步驟，見下方
+ * "TASK1.121更新"區塊）
  * - Health Insight Routes
  *
  * 建立 GET /health-insight（Input Experience頁面）與
@@ -81,11 +83,29 @@
  * 使用者的`{ok:true, data:{html}}`，這是規格明確要求的"Failure
  * to save must NOT break the user's Health Insight experience"
  * 在route層的具體落地。
+ *
+ * ## TASK1.121更新：POST /api/health-insight新增Gemini Enhancement步驟
+ *
+ * 延續規格目標架構"Health Insight Result → Gemini Enhancement
+ * Layer → Enhanced Explanation → User Presentation"，這裡在
+ * `saveHealthInsightRecord()`之後、回傳response之前，額外呼叫
+ * 一次TASK1.121新增的`enhanceHealthInsightResult()`（見
+ * `src/intelligence/enhancement/gemini/`），嘗試把這次的結構化
+ * Product Response改寫成一段更口語化的說明文字。**Gemini不是
+ * 智慧來源**——只有在Gemini增強成功時，才把`enhancedExplanation`
+ * 加進回應的`data`裡（`{html, enhancedExplanation}`）；沒有設定
+ * `GEMINI_API_KEY`、Gemini API呼叫失敗、或任何其他原因導致增強
+ * 失敗時，`data`維持跟TASK1.120之前完全相同的`{html}`形狀——這是
+ * 規格明確要求的"Gemini failure must NOT break Health Insight"
+ * 在route層的具體落地，使用者永遠拿得到原本算好的Health Insight
+ * 結果。這個呼叫**不會**影響`saveHealthInsightRecord()`存進D1的
+ * 內容（Persistence Service持續只存原始`structuredResponse`）。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
 import { resolveHealthInsightIdentity } from '../identity/health_insight/index.js';
 import { saveHealthInsightRecord } from '../persistence/health_insight/index.js';
+import { enhanceHealthInsightResult } from '../intelligence/enhancement/gemini/index.js';
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -136,6 +156,11 @@ export function registerHealthInsightRoutes(router) {
     const structuredResponse = submitHealthInsightController(req.payload, { identity });
     const html = renderHealthInsightProductResponse(structuredResponse);
     await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
-    return { ok: true, data: { html } };
+    const enhancement = await enhanceHealthInsightResult(structuredResponse, { env: ctx.env });
+    const data = { html };
+    if (enhancement && enhancement.ok) {
+      data.enhancedExplanation = enhancement.enhancedExplanation;
+    }
+    return { ok: true, data };
   });
 }

@@ -777,9 +777,14 @@ async function main() {
     assert.ok(routesSource.includes("from '../controllers/health_insight_controller.js'"));
   });
 
-  await test('（6.integration connection）route層完全不import src/intelligence/底下任何檔案', () => {
+  await test('（6.integration connection）route層完全不import src/intelligence/底下Product Integration/Capability/Analysis/Recommendation任何檔案（TASK1.121後更新：唯一被授權的例外是../intelligence/enhancement/gemini/index.js，那是獨立的Enhancement Layer，不是Product/Capability本身）', () => {
     const routesSource = fs.readFileSync(path.join(routesDir, 'health_insight_routes.js'), 'utf8');
-    assert.ok(!routesSource.includes("from '../intelligence/"));
+    const intelligenceImports = routesSource.split('\n').filter((line) => line.includes("from '../intelligence/"));
+    for (const line of intelligenceImports) {
+      assert.ok(line.includes('enhancement/gemini/'), `route層import了非授權的intelligence內部檔案：${line}`);
+    }
+    assert.ok(!routesSource.includes("from '../intelligence/product/"));
+    assert.ok(!routesSource.includes("from '../intelligence/capabilities/"));
   });
 
   await test('（6.integration connection）真實鏈路成功時，result恰好符合TASK1.111既有輸出形狀（healthObservation/behaviorPattern/recommendation/progressTrend/decision）', () => {
@@ -1037,16 +1042,19 @@ async function main() {
     });
   });
 
-  await test('（10.architecture protection）沒有任何新增檔案import Gemini/AI SDK/OpenAI相關套件', () => {
+  await test('（10.architecture protection）沒有任何新增檔案import外部AI SDK套件（Gemini/OpenAI/Anthropic官方npm套件）；health_insight_routes.js在TASK1.121後合法import內部自建的Gemini Enhancement模組（../intelligence/enhancement/gemini/，純fetch實作、不是外部SDK），這個內部路徑本身包含"gemini"字樣，予以排除（TASK1.121後更新）', () => {
     const filesToCheck = [
       path.join(controllersDir, 'health_insight_controller.js'),
-      path.join(routesDir, 'health_insight_routes.js'),
       path.join(clientDir, 'interaction_script.js'),
     ];
     filesToCheck.forEach((f) => {
       const source = fs.readFileSync(f, 'utf8');
       assert.ok(!/gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(source), `${f} 疑似含AI SDK引用`);
     });
+    const routesSource = fs.readFileSync(path.join(routesDir, 'health_insight_routes.js'), 'utf8');
+    const importLines = routesSource.split('\n').filter((l) => /^import\b/.test(l.trim()));
+    const suspiciousImports = importLines.filter((l) => /gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(l) && !l.includes("'../intelligence/enhancement/gemini/"));
+    assert.deepStrictEqual(suspiciousImports, []);
   });
 
   await test('（10.architecture protection）wrangler.toml完全沒有被本次任務修改', () => {

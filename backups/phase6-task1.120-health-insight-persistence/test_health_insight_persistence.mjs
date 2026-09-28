@@ -293,10 +293,11 @@ async function main() {
     assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（2.migration boundary）src/db/index.js的diff只有小幅新增（不是整檔重寫）', () => {
-    const diff = execFileSync('git', ['diff', '--', 'src/db/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    const addedLines = diff.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++'));
-    assert.ok(addedLines.length > 0 && addedLines.length <= 5, `預期只新增1-5行，實際 ${addedLines.length} 行`);
+  await test('（2.migration boundary）src/db/index.js只有小幅新增（不是整檔重寫）——改用檔案目前內容本身當作永久依據，而不是git diff（diff-based檢查會在commit後變成假性失敗，TASK1.121後更新，理由同其他"控制組"斷言）', () => {
+    const lineCount = dbIndexSource.split('\n').length;
+    assert.ok(lineCount <= 55, `預期整檔不超過55行（本次任務只新增2行），實際 ${lineCount} 行`);
+    const importOccurrences = (dbIndexSource.match(/bindHealthInsightRecords/g) || []).length;
+    assert.strictEqual(importOccurrences, 2, 'bindHealthInsightRecords應該恰好出現2次（1次import、1次使用）');
   });
 
   await test('（2.migration boundary）src/persistence/目錄總共恰好3個檔案（health_insight_persistence_service.js/index.js/README.md）', () => {
@@ -1020,11 +1021,17 @@ async function main() {
     await assert.doesNotReject(async () => listHealthInsightRecordsForUser(fakeDb, 'u1'));
   });
 
-  for (const file of [persistenceServiceSource, tableSource, routesSource]) {
+  for (const file of [persistenceServiceSource, tableSource]) {
     await test('（11.future compatibility）新增/修改檔案完全不import任何AI SDK/Gemini/OpenAI相關套件（只檢查實際import陳述式）', () => {
       assert.ok(!/gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(getImportLines(file)));
     });
   }
+
+  await test('（11.future compatibility）health_insight_routes.js完全不import外部AI SDK套件；TASK1.121後合法import內部自建的Gemini Enhancement模組（../intelligence/enhancement/gemini/，不是外部SDK），予以排除（TASK1.121後更新）', () => {
+    const importLines = getImportLines(routesSource).split('\n');
+    const suspiciousImports = importLines.filter((l) => /gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(l) && !l.includes("'../intelligence/enhancement/gemini/"));
+    assert.deepStrictEqual(suspiciousImports, []);
+  });
 
   await test('（11.future compatibility）migration的實際SQL程式碼（不含註解）完全不提及Gemini/OpenAI/AI SDK（不提前決定未來AI供應商；註解裡提到"Gemini Enhancement Layer"只是說明未來方向，延續TASK1.117已確立的"doc comment可以提未來方向，但實際程式碼/SQL不行"既有慣例）', () => {
     const codeOnly = migrationSource.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n');

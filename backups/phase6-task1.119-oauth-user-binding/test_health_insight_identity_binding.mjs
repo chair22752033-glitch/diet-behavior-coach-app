@@ -901,14 +901,14 @@ async function main() {
     });
   }
 
-  await test('（P1-P6）新增/修改檔案完全不import任何AI SDK/Gemini/OpenAI相關套件（只檢查實際import陳述式）', () => {
-    [
-      path.join(controllersDir, 'health_insight_controller.js'),
-      path.join(routesDir, 'health_insight_routes.js'),
-    ].forEach((f) => {
-      const source = fs.readFileSync(f, 'utf8');
-      assert.ok(!/gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(getImportLines(source)), `${f} 疑似import AI SDK`);
-    });
+  await test('（P1-P6）新增/修改檔案完全不import外部AI SDK套件（只檢查實際import陳述式）；health_insight_routes.js在TASK1.121後合法import內部自建的Gemini Enhancement模組（../intelligence/enhancement/gemini/，不是外部SDK），予以排除（TASK1.121後更新）', () => {
+    const controllerSourceCheck = fs.readFileSync(path.join(controllersDir, 'health_insight_controller.js'), 'utf8');
+    assert.ok(!/gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(getImportLines(controllerSourceCheck)), 'controller疑似import AI SDK');
+
+    const routesSourceCheck = fs.readFileSync(path.join(routesDir, 'health_insight_routes.js'), 'utf8');
+    const importLines = getImportLines(routesSourceCheck).split('\n');
+    const suspiciousImports = importLines.filter((l) => /gemini|generative-ai|openai|anthropic-ai|@google\/genai/i.test(l) && !l.includes("'../intelligence/enhancement/gemini/"));
+    assert.deepStrictEqual(suspiciousImports, []);
   });
 
   console.log('');
