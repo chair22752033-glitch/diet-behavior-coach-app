@@ -160,10 +160,10 @@ async function main() {
     assert.ok(html.includes('hi-recommendation-card'));
   });
 
-  await test('（1.dashboard rendering）renderHealthInsightDashboard輸出包含行為模式跟進度預留卡片（既有，未被本次任務移除）', () => {
+  await test('（1.dashboard rendering）renderHealthInsightDashboard輸出包含行為模式卡片（既有，未被本次任務移除）；進度區塊TASK1.124後改為動態Progress Summary Card取代原本固定內容的Progress Placeholder Card（progress_card.js本身仍是零diff，只是Dashboard換了呼叫對象，見該檔案TASK1.124更新說明）（TASK1.124後更新）', () => {
     const html = renderHealthInsightDashboard(SAMPLE_RESULT);
     assert.ok(html.includes('hi-behavior-pattern-card'));
-    assert.ok(html.includes('hi-progress-card'));
+    assert.ok(html.includes('hi-progress-summary-card'));
   });
 
   await test('（1.dashboard rendering）renderHealthInsightDashboard(data, undefined)跟renderHealthInsightDashboard(data)輸出完全相同', () => {
@@ -218,14 +218,14 @@ async function main() {
       assert.ok(html.length > 0);
     });
 
-    await test(`（1.dashboard rendering）情境=${c.label}：輸出依然包含data-hi-page="dashboard"跟核心卡片`, () => {
+    await test(`（1.dashboard rendering）情境=${c.label}：輸出依然包含data-hi-page="dashboard"跟核心卡片（TASK1.124後更新：Progress/History兩個區塊改用動態的hi-progress-summary-card/hi-history-card取代原本固定的hi-progress-card/hi-history-placeholder-card，見dashboard_page.js該檔案TASK1.124更新說明）`, () => {
       const html = renderHealthInsightDashboard(SAMPLE_RESULT, c.context);
       assert.ok(html.includes('data-hi-page="dashboard"'));
       assert.ok(html.includes('hi-observation-card'));
       assert.ok(html.includes('hi-recommendation-card'));
       assert.ok(html.includes('hi-behavior-pattern-card'));
-      assert.ok(html.includes('hi-progress-card'));
-      assert.ok(html.includes('hi-history-placeholder-card'));
+      assert.ok(html.includes('hi-progress-summary-card'));
+      assert.ok(html.includes('hi-history-card'));
     });
 
     await test(`（1.dashboard rendering）情境=${c.label}：renderHealthInsightDashboard()是deterministic`, () => {
@@ -688,11 +688,11 @@ async function main() {
     assert.ok(!('enhancedExplanation' in body.data));
   });
 
-  await test('（7.anonymous experience）匿名使用者依然看得到History Placeholder卡片（基本體驗完整）', async () => {
+  await test('（7.anonymous experience）匿名使用者依然看得到History卡片（基本體驗完整；TASK1.124後改用動態hi-history-card取代hi-history-placeholder-card，見dashboard_page.js該檔案TASK1.124更新說明）（TASK1.124後更新）', async () => {
     const router = createAppRouter();
     const res = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {} });
     const body = await res.json();
-    assert.ok(body.data.html.includes('hi-history-placeholder-card'));
+    assert.ok(body.data.html.includes('hi-history-card'));
   });
 
   await test('（7.anonymous experience）匿名使用者依然看得到健康觀察/建議卡片（基本Health Insight功能不受影響）', async () => {
@@ -838,12 +838,12 @@ async function main() {
     assert.ok(createHistoryPlaceholderCard().includes('持續累積'));
   });
 
-  await test('（9.history placeholder）任何情境（匿名/free/premium）Dashboard都會顯示History Placeholder卡片（不因身份不同而有無）', () => {
+  await test('（9.history placeholder）任何情境（匿名/free/premium）Dashboard都會顯示History卡片（不因身份不同而有無；TASK1.124後改用動態hi-history-card取代hi-history-placeholder-card，見dashboard_page.js該檔案TASK1.124更新說明）（TASK1.124後更新）', () => {
     const htmlAnon = renderHealthInsightDashboard(SAMPLE_RESULT, { isAuthenticated: false, geminiPermitted: false });
     const htmlFree = renderHealthInsightDashboard(SAMPLE_RESULT, { isAuthenticated: true, geminiPermitted: false });
     const htmlPremium = renderHealthInsightDashboard(SAMPLE_RESULT, { isAuthenticated: true, geminiPermitted: true, enhancedExplanation: 'x' });
     for (const html of [htmlAnon, htmlFree, htmlPremium]) {
-      assert.ok(html.includes('hi-history-placeholder-card'));
+      assert.ok(html.includes('hi-history-card'));
     }
   });
 
@@ -1009,7 +1009,9 @@ async function main() {
     'src/ui/health_insight/design_system/design_tokens.js',
     'src/ui/health_insight/client/interaction_script.js',
     'src/ui/health_insight/assets/asset_registry.js',
-    'src/worker.js',
+    // TASK1.124後更新：src/worker.js從這個清單移除——History API
+    // 明確授權新增GET /api/health-insight/history一個if區塊，不再
+    // 要求整個檔案零diff，改成下方的marker-based檢查。
   ];
 
   console.log('--- K2. Architecture protection ---');
@@ -1088,9 +1090,10 @@ async function main() {
     assert.ok(fs.existsSync(path.join(__dirname, 'p1-p6-check', 'run.js')));
   });
 
-  await test('（P1-P6）src/worker.js完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/worker.js既有GET /health-insight、POST /api/health-insight兩個if區塊依然逐字存在（TASK1.124後更新：TASK1.124合法在檔案末尾新增GET /api/health-insight/history一個if區塊，這是History API的明確授權範圍，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在，理由跟TASK1.116/1.119當時的既有先例完全相同）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/health-insight')"));
+    assert.ok(workerSource.includes("if (method === 'POST' && pathname === '/api/health-insight')"));
   });
 
   await test('（P1-P6）src/worker.js既有legacy getHTML()/handle()前端邏輯完全沒有被修改', () => {
@@ -1104,9 +1107,9 @@ async function main() {
     assert.strictEqual(Object.keys(app.intelligence).length, 24);
   });
 
-  await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
+  await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24，這裡驗證的是"這個既有任務本身沒有意外改變路由數量"，不是"路由數量永遠固定23"）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 23);
+    assert.strictEqual(app.router.routes.length, 24);
   });
 
   await test('（P1-P6）migrations/、src/db/完全沒有新增或修改任何檔案（本次任務不修改D1 schema）', () => {
@@ -1159,10 +1162,19 @@ async function main() {
     'src/ui/health_insight/render_product_response.js',
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/index.js',
+    // TASK1.124後更新：History API明確授權新增GET
+    // /api/health-insight/history一個if區塊
+    'src/worker.js',
   ];
   const TASK1123_NEWLY_CREATED_FILES = [
     'src/ui/health_insight/components/gemini_insight_card.js',
     'src/ui/health_insight/components/history_placeholder_card.js',
+    // TASK1.124後更新：History/Progress Product Completion明確
+    // 授權新增的4個檔案
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+    'src/history/health_insight/history_service.js',
+    'src/history/health_insight/index.js',
   ];
 
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })

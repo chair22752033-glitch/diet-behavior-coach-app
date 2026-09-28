@@ -233,6 +233,21 @@ export default {
           { db: app.db, env, services: app.services }
         );
       }
+
+      // TASK1.124：正式啟用 GET /api/health-insight/history——讓
+      // 使用者不需要送出新的Input Experience答案，也能單獨查看
+      // 自己過去的Health Insight紀錄摘要（History Retrieval
+      // Boundary，見src/history/health_insight/）。跟其餘兩條
+      // Health Insight路由同一套安全模型：**不**要求登入，只是
+      // 選填讀取真正的Cookie標頭做身份辨識，匿名使用者安全拿到
+      // 空紀錄清單，不會被擋下。
+      if (method === 'GET' && pathname === '/api/health-insight/history') {
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle(
+          { method, pathname, cookieHeader, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
     }
 
     const gateway = createRouteGateway({ app, legacyHandler: handle });

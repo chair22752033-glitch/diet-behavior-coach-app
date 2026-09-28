@@ -136,6 +136,38 @@
  * `enhanceHealthInsightResult()`三者的**呼叫順序完全沒有改變**
  * （延續TASK1.121/1.122已經確認的既有順序），持久化依然只存
  * 原始`structuredResponse`，不受這次html組裝時機調整影響。
+ *
+ * ## TASK1.124更新：POST /api/health-insight新增History/Progress
+ * Context；新增GET /api/health-insight/history唯讀路由
+ *
+ * 延續規格目標架構"User Identity → History Service → Persistence
+ * Layer"，在Gemini Enhancement判斷完、組html之前，額外呼叫一次
+ * TASK1.124新增的`getHealthInsightHistoryForIdentity()`（見
+ * `src/history/health_insight/`），取得這個使用者**先前**的
+ * Health Insight紀錄摘要——用剛才`saveHealthInsightRecord()`
+ * 回傳的`id`（若有成功寫入）把這次剛存的紀錄從清單裡過濾掉，
+ * 確保「先前紀錄」不包含這次本身。這個呼叫**不會**改變
+ * `saveHealthInsightRecord()`→`canUseFeature()`→
+ * `enhanceHealthInsightResult()`三者原有的呼叫順序/相對位置
+ * （History查詢完全獨立於Gemini/Membership，插在這三者之後、
+ * html組裝之前）。查到的安全摘要（`previousRecords`）跟這次
+ * 填寫的`healthGoal`（`currentHealthGoal`，供Progress比對方向
+ * 用）一併放進`presentationContext`交給UI Renderer——**UI層
+ * 完全不直接查詢db**，符合規格"Do NOT query database directly
+ * from UI"的明確要求。匿名使用者的`identity.authenticated`為
+ * false，`getHealthInsightHistoryForIdentity()`結構性地安全回傳
+ * 空紀錄清單，不會觸發任何D1查詢。
+ *
+ * 新增的`GET /api/health-insight/history`是純讀取的獨立路由，
+ * 讓使用者不需要送出新的Input Experience答案，也能單獨查看自己
+ * 過去的紀錄摘要（規格PART5"Return later → View previous
+ * records"）——這條路由完全不呼叫
+ * `submitHealthInsightController()`/`saveHealthInsightRecord()`/
+ * `canUseFeature()`/`enhanceHealthInsightResult()`，只做身份解析
+ * + History Service查詢兩件事，回傳`{ok:true, data:{authenticated,
+ * records}}`。跟既有兩條路由一樣**不**要求登入（不掛
+ * `requireAuth()`），匿名使用者呼叫這條路由會安全拿到
+ * `{authenticated:false, records:[]}`，不會被擋下。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
@@ -143,6 +175,16 @@ import { resolveHealthInsightIdentity } from '../identity/health_insight/index.j
 import { saveHealthInsightRecord } from '../persistence/health_insight/index.js';
 import { enhanceHealthInsightResult } from '../intelligence/enhancement/gemini/index.js';
 import { canUseFeature } from '../membership/index.js';
+import { getHealthInsightHistoryForIdentity } from '../history/health_insight/index.js';
+
+/**
+ * History Card呈現層一次顯示的先前紀錄筆數上限——刻意獨立於
+ * `src/ui/health_insight/components/history_card.js`同名常數
+ * （延續整個系列"不共用內部實作細節，各自對公開行為負責"的既有
+ * 原則）。查詢時多抓一筆（`+1`）是為了扣掉「這次剛存的紀錄本身」
+ * 之後，仍然能湊滿這個顯示上限。
+ */
+const HISTORY_DISPLAY_LIMIT = 5;
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -191,7 +233,7 @@ export function registerHealthInsightRoutes(router) {
     const req = ctx.req || {};
     const identity = await resolveHealthInsightIdentity(ctx.db, req.cookieHeader, {});
     const structuredResponse = submitHealthInsightController(req.payload, { identity });
-    await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
+    const saveResult = await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
     const geminiPermitted = canUseFeature(identity, 'gemini_enhancement', req.options);
     let enhancedExplanation = null;
     if (geminiPermitted) {
@@ -200,15 +242,38 @@ export function registerHealthInsightRoutes(router) {
         enhancedExplanation = enhancement.enhancedExplanation;
       }
     }
+    const newRecordId = saveResult && saveResult.ok ? saveResult.id : null;
+    const historyResult = await getHealthInsightHistoryForIdentity(ctx.db, identity, { limit: HISTORY_DISPLAY_LIMIT + 1 });
+    const previousRecords = historyResult.records
+      .filter((record) => !newRecordId || record.id !== newRecordId)
+      .slice(0, HISTORY_DISPLAY_LIMIT);
+    const currentHealthGoal = req.payload && typeof req.payload.healthGoal === 'string' ? req.payload.healthGoal : null;
+    const previousHealthGoal = previousRecords.length > 0 ? previousRecords[0].healthGoal : null;
     const html = renderHealthInsightProductResponse(structuredResponse, {
       isAuthenticated: !!(identity && identity.authenticated),
       geminiPermitted,
       enhancedExplanation,
+      previousRecords,
+      previousHealthGoal,
+      currentHealthGoal,
     });
     const data = { html };
     if (enhancedExplanation) {
       data.enhancedExplanation = enhancedExplanation;
     }
     return { ok: true, data };
+  });
+
+  router.add('GET', '/api/health-insight/history', async (ctx) => {
+    const req = ctx.req || {};
+    const identity = await resolveHealthInsightIdentity(ctx.db, req.cookieHeader, {});
+    const historyResult = await getHealthInsightHistoryForIdentity(ctx.db, identity, { limit: HISTORY_DISPLAY_LIMIT });
+    return {
+      ok: true,
+      data: {
+        authenticated: historyResult.authenticated,
+        records: historyResult.records,
+      },
+    };
   });
 }

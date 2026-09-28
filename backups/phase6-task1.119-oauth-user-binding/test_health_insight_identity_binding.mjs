@@ -879,7 +879,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 23);
+    assert.strictEqual(app.router.routes.length, 24);
   });
 
   await test('（P1-P6）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新）', () => {

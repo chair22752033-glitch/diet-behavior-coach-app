@@ -49,6 +49,24 @@
  * 新增`createHistoryPlaceholderCard()`區塊（規格"History
  * Experience Preparation"，純預留卡片，不接受任何真實歷史資料，
  * 見該元件檔案說明），固定顯示在Dashboard最下方。
+ *
+ * ## TASK1.124更新：History/Progress改用真實資料呈現
+ *
+ * `presentationContext`新增三個選填欄位：`previousRecords`
+ * （History Retrieval Boundary查到的安全摘要陣列，見
+ * `src/history/health_insight/`）、`previousHealthGoal`/
+ * `currentHealthGoal`（供Progress比對方向用）。History/Progress
+ * 兩個區塊分別改呼叫TASK1.124新增的`createHistoryCard()`/
+ * `createProgressSummaryCard()`取代原本固定內容的
+ * `createHistoryPlaceholderCard()`/`createProgressPlaceholderCard()`
+ * ——原本這兩個元件檔案本身**完全沒有被修改**（繼續零diff，仍然
+ * 可以被獨立import/呼叫），這裡只是Dashboard换了要呼叫的元件，
+ * 延續TASK1.123處理Gemini卡片時已經確立的"新增元件取代舊呼叫、
+ * 不動舊元件本身"既有模式。省略`presentationContext`時
+ * （`undefined`），效果等同於傳入`{}`——`createHistoryCard({})`/
+ * `createProgressSummaryCard({})`都會安全回傳"匿名/請先登入"
+ * 狀態的卡片（因為`isAuthenticated`預設是falsy），這是刻意的
+ * 安全預設，不是巧合。
  */
 import { getDesignSystemCSS } from '../design_system/design_tokens.js';
 import { createIllustration } from '../components/illustration.js';
@@ -56,9 +74,9 @@ import { createHealthSummaryCard } from '../components/health_summary_card.js';
 import { createObservationCard } from '../components/observation_card.js';
 import { createRecommendationCard } from '../components/recommendation_card.js';
 import { createBehaviorPatternPlaceholderCard } from '../components/behavior_pattern_card.js';
-import { createProgressPlaceholderCard } from '../components/progress_card.js';
 import { createGeminiInsightCard } from '../components/gemini_insight_card.js';
-import { createHistoryPlaceholderCard } from '../components/history_placeholder_card.js';
+import { createHistoryCard } from '../components/history_card.js';
+import { createProgressSummaryCard } from '../components/progress_summary_card.js';
 import { createErrorCard } from '../components/error_card.js';
 
 /**
@@ -90,12 +108,24 @@ function renderDashboardHeader() {
  * "不暴露internal capability structure"既有原則）。
  *
  * @param {{healthObservation?:Array, behaviorPattern?:Array, recommendation?:Array, progressTrend?:object}} healthInsightResult
- * @param {{isAuthenticated?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null}} [presentationContext] - TASK1.123新增，選填，見上方"TASK1.123更新"說明
+ * @param {{isAuthenticated?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null, previousRecords?:Array, previousHealthGoal?:string|null, currentHealthGoal?:string|null}} [presentationContext] - TASK1.123新增，TASK1.124擴充，選填，見上方"TASK1.123更新"/"TASK1.124更新"說明
  * @returns {string}
  */
 export function renderHealthInsightDashboard(healthInsightResult, presentationContext) {
   const result = healthInsightResult && typeof healthInsightResult === 'object' ? healthInsightResult : {};
-  const geminiCard = createGeminiInsightCard(presentationContext);
+  const safeContext = presentationContext && typeof presentationContext === 'object' ? presentationContext : {};
+  const geminiCard = createGeminiInsightCard(safeContext);
+  const previousRecords = Array.isArray(safeContext.previousRecords) ? safeContext.previousRecords : [];
+  const historyCard = createHistoryCard({
+    isAuthenticated: safeContext.isAuthenticated,
+    previousRecords,
+  });
+  const progressCard = createProgressSummaryCard({
+    isAuthenticated: safeContext.isAuthenticated,
+    previousRecordCount: previousRecords.length,
+    previousHealthGoal: safeContext.previousHealthGoal,
+    currentHealthGoal: safeContext.currentHealthGoal,
+  });
 
   return [
     `<style>${getDesignSystemCSS()}</style>`,
@@ -117,10 +147,10 @@ export function renderHealthInsightDashboard(healthInsightResult, presentationCo
     createBehaviorPatternPlaceholderCard(),
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-progress">',
-    createProgressPlaceholderCard(),
+    progressCard,
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-history">',
-    createHistoryPlaceholderCard(),
+    historyCard,
     '  </div>',
     '</section>',
   ].filter((line) => line !== '').join('\n');

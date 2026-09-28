@@ -170,9 +170,9 @@ async function main() {
   // =========================================================================
   console.log('--- B. Route activation ---');
 
-  await test('（2.route）createAppRouter()回傳app.router.routes總數為23（既有21條+Health Insight新增2條）', () => {
+  await test('（2.route）createAppRouter()回傳app.router.routes總數為23（既有21條+Health Insight新增2條；TASK1.124後更新：TASK1.124再新增GET /api/health-insight/history一條，23+1=24）', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 23);
+    assert.strictEqual(router.routes.length, 24);
   });
 
   await test('（2.route）GET /health-insight route已註冊', () => {
@@ -1030,9 +1030,9 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（10.architecture protection）app.router.routes數量為23（21個既有+2個Health Insight新增，明確被授權的Route connection）', () => {
+  await test('（10.architecture protection）app.router.routes數量為23（21個既有+2個Health Insight新增，明確被授權的Route connection；TASK1.124後更新：TASK1.124再新增GET /api/health-insight/history一條，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 23);
+    assert.strictEqual(app.router.routes.length, 24);
   });
 
   await test('（10.architecture protection）既有20條route（auth/user/data/dashboard/profile/timeline）在新router裡依然全部存在', () => {

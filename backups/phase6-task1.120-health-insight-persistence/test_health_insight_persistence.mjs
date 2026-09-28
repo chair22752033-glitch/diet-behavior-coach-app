@@ -845,7 +845,9 @@ async function main() {
     'src/controllers/health_insight_controller.js',
     // TASK1.123後更新：render_product_response.js從這個清單移除
     // ——Product Experience Upgrade明確授權它轉發presentationContext。
-    'src/worker.js',
+    // TASK1.124後更新：src/worker.js從這個清單移除——History API
+    // 明確授權新增GET /api/health-insight/history一個if區塊，不再
+    // 要求整個檔案零diff，改成下方的marker-based檢查。
   ];
 
   for (const relFile of PRODUCT_BOUNDARY_FILES) {
@@ -854,6 +856,12 @@ async function main() {
       assert.strictEqual(diff.trim(), '');
     });
   }
+
+  await test('（9.product integration）src/worker.js既有GET /health-insight、POST /api/health-insight兩個if區塊依然逐字存在（TASK1.124後更新：TASK1.124合法在檔案末尾新增GET /api/health-insight/history一個if區塊，這是History API的明確授權範圍，不再要求整個檔案零diff）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/health-insight')"));
+    assert.ok(workerSource.includes("if (method === 'POST' && pathname === '/api/health-insight')"));
+  });
 
   for (const relFile of PRODUCT_BOUNDARY_FILES) {
     await test(`（9.product integration）既有檔案依然通過node --check語法驗證：${relFile}`, () => {
@@ -883,11 +891,20 @@ async function main() {
     'src/ui/health_insight/render_product_response.js',
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/index.js',
+    // TASK1.124後更新：History API明確授權新增GET
+    // /api/health-insight/history一個if區塊
+    'src/worker.js',
   ];
   const TASK1120_NEWLY_CREATED_FILES = [
     'src/db/tables/health_insight_records.js',
     'src/persistence/health_insight/health_insight_persistence_service.js',
     'src/persistence/health_insight/index.js',
+    // TASK1.124後更新：History/Progress Product Completion明確
+    // 授權新增的4個檔案
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+    'src/history/health_insight/history_service.js',
+    'src/history/health_insight/index.js',
   ];
 
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
@@ -1126,9 +1143,10 @@ async function main() {
     assert.ok(fs.existsSync(path.join(__dirname, 'p1-p6-check', 'run.js')));
   });
 
-  await test('（P1-P6）src/worker.js完全沒有被本次任務修改（TASK1.120不需要新的HTTP層資料，TASK1.119已經完成cookieHeader轉發）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/worker.js既有legacy/既有Health Insight if區塊依然逐字存在（TASK1.124後更新：TASK1.124合法新增GET /api/health-insight/history一個if區塊，不再要求整個檔案零diff）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/health-insight')"));
+    assert.ok(workerSource.includes("if (method === 'POST' && pathname === '/api/health-insight')"));
   });
 
   await test('（P1-P6）src/worker.js既有legacy getHTML()/handle()前端邏輯完全沒有被修改', () => {
@@ -1142,9 +1160,9 @@ async function main() {
     assert.strictEqual(Object.keys(app.intelligence).length, 24);
   });
 
-  await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
+  await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 23);
+    assert.strictEqual(app.router.routes.length, 24);
   });
 
   await test('（P1-P6）src/db/整個目錄除了index.js新增一行binding、跟health_insight_records.js新增檔案之外，沒有其他改動', () => {

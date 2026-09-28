@@ -4,7 +4,9 @@
  * （TASK1.115後更新：新增illustration.js/card_header.js/
  * card_cta.js三個共用輔助檔案的匯出，見下方；TASK1.123後更新：
  * 新增gemini_insight_card.js/history_placeholder_card.js兩個
- * 呈現層元件的匯出，見下方）
+ * 呈現層元件的匯出，見下方；TASK1.124後更新：新增
+ * history_card.js/progress_summary_card.js兩個呈現層元件的
+ * 匯出，見下方）
  * - 統一輸出入口
  *
  * 把 src/ui/health_insight/components/ 底下所有可對外使用的
@@ -31,3 +33,5 @@ export { createChoiceQuestionCard, createInputQuestionCard } from './question_ca
 export { classifyErrorReason, createErrorCard } from './error_card.js';
 export { createGeminiInsightCard } from './gemini_insight_card.js';
 export { createHistoryPlaceholderCard } from './history_placeholder_card.js';
+export { createHistoryCard } from './history_card.js';
+export { createProgressSummaryCard } from './progress_summary_card.js';

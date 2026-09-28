@@ -763,9 +763,9 @@ async function main() {
     assert.strictEqual(Object.keys(app.intelligence).length, 24);
   });
 
-  await test('（9.architecture protection）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
+  await test('（9.architecture protection）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 23);
+    assert.strictEqual(app.router.routes.length, 24);
   });
 
   await test('（9.architecture protection）src/worker.js的既有TASK1.21~1.38路由分派邏輯/legacy handler完全沒有被修改（本次任務不需要新增/修改worker.js的任何判斷式，路由路徑完全沒有變化；TASK1.119後更新：TASK1.119合法新增了POST /api/health-insight讀取Cookie標頭的一行，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在，理由跟TASK1.116/1.111~1.115其餘suite同一段落完全相同）', () => {
