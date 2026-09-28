@@ -6,7 +6,9 @@
  * 更新"區塊；TASK1.120後更新：POST /api/health-insight新增
  * persistence步驟，見下方"TASK1.120更新"區塊；TASK1.121後更新：
  * POST /api/health-insight新增Gemini Enhancement步驟，見下方
- * "TASK1.121更新"區塊）
+ * "TASK1.121更新"區塊；TASK1.122後更新：POST /api/health-insight
+ * 新增Premium Feature Permission Check，見下方"TASK1.122更新"
+ * 區塊）
  * - Health Insight Routes
  *
  * 建立 GET /health-insight（Input Experience頁面）與
@@ -100,12 +102,31 @@
  * 在route層的具體落地，使用者永遠拿得到原本算好的Health Insight
  * 結果。這個呼叫**不會**影響`saveHealthInsightRecord()`存進D1的
  * 內容（Persistence Service持續只存原始`structuredResponse`）。
+ *
+ * ## TASK1.122更新：POST /api/health-insight新增Premium Feature Permission Check
+ *
+ * 延續規格目標架構"Identity → Membership Resolver → Feature
+ * Permission Check → Gemini Enhancement"，這裡在
+ * `saveHealthInsightRecord()`之後、呼叫`enhanceHealthInsightResult()`
+ * 之前，插入一次TASK1.122新增的`canUseFeature(identity,
+ * 'gemini_enhancement', req.options)`（見`src/membership/`）權限
+ * 判斷——只有回傳`true`才會呼叫Gemini Enhancement，回傳`false`時
+ * **完全不會呼叫Gemini**（連API都不會打），直接回傳跟TASK1.121
+ * 之前完全相同的`{html}`形狀。**Permission邏輯完全不活在Gemini
+ * 程式碼裡**——`src/intelligence/enhancement/gemini/`底下的
+ * `gemini_client.js`/`gemini_provider.js`/`gemini_enhancer.js`
+ * 三個檔案完全沒有被這次任務修改。`req.options`延續TASK1.13B/
+ * 1.29起既有的「單一請求層級選填覆寫」慣例，原樣轉發給
+ * `canUseFeature()`——`src/worker.js`真正的HTTP dispatch永遠只會
+ * 傳空物件，所以目前沒有任何真實使用者能通過這個權限檢查（見
+ * `src/membership/README.md`"Future Payment Compatibility"）。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
 import { resolveHealthInsightIdentity } from '../identity/health_insight/index.js';
 import { saveHealthInsightRecord } from '../persistence/health_insight/index.js';
 import { enhanceHealthInsightResult } from '../intelligence/enhancement/gemini/index.js';
+import { canUseFeature } from '../membership/index.js';
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -156,10 +177,12 @@ export function registerHealthInsightRoutes(router) {
     const structuredResponse = submitHealthInsightController(req.payload, { identity });
     const html = renderHealthInsightProductResponse(structuredResponse);
     await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
-    const enhancement = await enhanceHealthInsightResult(structuredResponse, { env: ctx.env });
     const data = { html };
-    if (enhancement && enhancement.ok) {
-      data.enhancedExplanation = enhancement.enhancedExplanation;
+    if (canUseFeature(identity, 'gemini_enhancement', req.options)) {
+      const enhancement = await enhanceHealthInsightResult(structuredResponse, { env: ctx.env });
+      if (enhancement && enhancement.ok) {
+        data.enhancedExplanation = enhancement.enhancedExplanation;
+      }
     }
     return { ok: true, data };
   });

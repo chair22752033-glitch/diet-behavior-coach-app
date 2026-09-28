@@ -840,12 +840,13 @@ async function main() {
     assert.deepStrictEqual(input, original);
   });
 
-  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應的html跟Gemini失敗時的html完全相同', async () => {
+  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應的html跟Gemini失敗時的html完全相同（TASK1.122後更新：改用已授權premium身份，匿名/free使用者已經不會觸發Gemini）', async () => {
     const router = createAppRouter();
+    const db = makeValidSessionDb({ userId: 'preserve-html-user', isGuest: false, authProvider: 'google' });
     const resSuccess = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('增強說明'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {}, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
-    const resFailure = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {} });
+    const resFailure = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
     const bodySuccess = await resSuccess.json();
     const bodyFailure = await resFailure.json();
     assert.strictEqual(bodySuccess.data.html, bodyFailure.data.html);
@@ -869,12 +870,13 @@ async function main() {
     assert.strictEqual(body.ok, true);
   });
 
-  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應多了enhancedExplanation但html不變且status/ok不變', async () => {
+  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應多了enhancedExplanation但html不變且status/ok不變（TASK1.122後更新：改用已授權premium身份）', async () => {
     const router = createAppRouter();
-    const resBase = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {} });
+    const db = makeValidSessionDb({ userId: 'preserve-explanation-user', isGuest: false, authProvider: 'google' });
+    const resBase = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
     const bodyBase = await resBase.json();
     const resEnhanced = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('增強說明文字'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {}, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const bodyEnhanced = await resEnhanced.json();
     assert.strictEqual(resEnhanced.status, 200);
@@ -1070,11 +1072,11 @@ async function main() {
     assert.ok(saveIdx < enhanceIdx);
   });
 
-  await test('（8.persistence compatibility）真實端對端：即使Gemini增強成功，D1裡存的紀錄完全不含enhancedExplanation欄位', async () => {
+  await test('（8.persistence compatibility）真實端對端：即使Gemini增強成功，D1裡存的紀錄完全不含enhancedExplanation欄位（TASK1.122後更新：改用已授權premium身份）', async () => {
     const router = createAppRouter();
     const { db, inserted } = makeCaptureDb({ userId: 'gemini-persist-user', isGuest: false, authProvider: 'google' });
     await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('這段不應該被存進D1'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     assert.strictEqual(inserted.length, 1);
     assert.ok(!('enhancedExplanation' in inserted[0]));
@@ -1097,13 +1099,13 @@ async function main() {
     assert.strictEqual(inserted.length, 1);
   });
 
-  await test('（8.persistence compatibility）真實端對端：D1裡存的input_snapshot/output_snapshot內容跟Gemini是否成功完全無關（比對兩種情境下的欄位集合一致）', async () => {
+  await test('（8.persistence compatibility）真實端對端：D1裡存的input_snapshot/output_snapshot內容跟Gemini是否成功完全無關（比對兩種情境下的欄位集合一致；TASK1.122後更新：改用已授權premium身份）', async () => {
     const router = createAppRouter();
     const { db: db1, inserted: inserted1 } = makeCaptureDb({ userId: 'compare-user', isGuest: false, authProvider: 'google' });
     const { db: db2, inserted: inserted2 } = makeCaptureDb({ userId: 'compare-user', isGuest: false, authProvider: 'google' });
     await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db: db1 });
     await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('說明'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db: db2, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db: db2, env: { GEMINI_API_KEY: 'fake' } })
     );
     assert.deepStrictEqual(Object.keys(inserted1[0]).sort(), Object.keys(inserted2[0]).sort());
     assert.strictEqual(inserted1[0].output_snapshot, inserted2[0].output_snapshot);
@@ -1138,42 +1140,42 @@ async function main() {
     assert.ok(!/identity|userId/i.test(stripComments(clientSource)));
   });
 
-  await test('（9.identity compatibility）真實端對端：匿名使用者也可以拿到Gemini增強說明（Gemini增強不要求登入）', async () => {
+  await test('（9.identity compatibility）真實端對端：匿名使用者無法拿到Gemini增強說明，即使Gemini API本身會成功（TASK1.122後更新：Permission Boundary在匿名身份時一律解析成unknown tier，Gemini enhancement要求premium，匿名使用者結構性地不可能通過；即使測試環境刻意注入lookupTier也一樣，因為匿名身份在到達lookupTier之前就已經被擋下）', async () => {
     const router = createAppRouter();
-    const res = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('匿名也拿得到的說明'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, { db: {}, env: { GEMINI_API_KEY: 'fake' } })
+    const res = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('不應該出現的說明'), async () =>
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: { lookupTier: () => 'premium' } }, { db: {}, env: { GEMINI_API_KEY: 'fake' } })
     );
     const body = await res.json();
-    assert.strictEqual(body.data.enhancedExplanation, '匿名也拿得到的說明');
+    assert.ok(!('enhancedExplanation' in body.data));
   });
 
-  await test('（9.identity compatibility）真實端對端：已登入使用者也可以拿到Gemini增強說明，且內容跟匿名使用者一致（同樣的payload/mock回應，增強結果不受身份影響）', async () => {
+  await test('（9.identity compatibility）真實端對端：已登入premium使用者可以拿到Gemini增強說明（TASK1.122後更新：需要permission允許）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'identity-compat-user', isGuest: false, authProvider: 'google' });
     const res = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('一致的說明文字'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const body = await res.json();
     assert.strictEqual(body.data.enhancedExplanation, '一致的說明文字');
   });
 
   for (const providerLabel of ['google', 'guest', 'apple']) {
-    await test(`（9.identity compatibility）身份provider=${providerLabel}時，Gemini增強依然正常運作（增強邏輯完全不區分provider種類）`, async () => {
+    await test(`（9.identity compatibility）身份provider=${providerLabel}時，premium使用者的Gemini增強依然正常運作（增強邏輯完全不區分provider種類；TASK1.122後更新：需要premium permission）`, async () => {
       const router = createAppRouter();
       const db = makeValidSessionDb({ userId: `identity-variant-${providerLabel}`, isGuest: providerLabel === 'guest', authProvider: providerLabel === 'guest' ? null : providerLabel });
       const res = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('相同的說明文字'), async () =>
-        router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+        router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
       );
       const body = await res.json();
       assert.strictEqual(body.data.enhancedExplanation, '相同的說明文字');
     });
   }
 
-  await test('（9.identity compatibility）已登入使用者的userId/provider完全不出現在enhancedExplanation裡（延續既有Capability isolation保證）', async () => {
+  await test('（9.identity compatibility）已登入使用者的userId/provider完全不出現在enhancedExplanation裡（延續既有Capability isolation保證；TASK1.122後更新：需要premium permission才會觸發Gemini）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'must-not-leak-into-gemini-99999', isGuest: false, authProvider: 'google' });
     const res = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('正常的說明文字'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const body = await res.json();
     assert.ok(!body.data.enhancedExplanation.includes('must-not-leak-into-gemini-99999'));
@@ -1393,14 +1395,14 @@ async function main() {
     });
   });
 
-  await test('（P1-P6）真實端對端：已登入使用者連續呼叫POST兩次（Gemini都成功）得到一致結果（deterministic，沒有共用可變狀態）', async () => {
+  await test('（P1-P6）真實端對端：已登入premium使用者連續呼叫POST兩次（Gemini都成功）得到一致結果（deterministic，沒有共用可變狀態；TASK1.122後更新：需要premium permission）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'p1p6-gemini-user', isGuest: false, authProvider: 'google' });
     const res1 = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('一致的說明'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const res2 = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('一致的說明'), async () =>
-      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db, env: { GEMINI_API_KEY: 'fake' } })
+      router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const body1 = await res1.json();
     const body2 = await res2.json();
