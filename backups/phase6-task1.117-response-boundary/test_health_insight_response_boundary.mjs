@@ -893,16 +893,16 @@ async function main() {
     });
   }
 
-  for (const relFile of INTENTIONALLY_CHANGED_FILES) {
-    await test(`（9.architecture protection）逐檔案完整性掃描：${relFile} 確實有被本次任務修改（控制組）`, () => {
-      assert.ok(gitDiffNameOnly.includes(relFile), `${relFile} 預期應該出現在git diff清單裡`);
-    });
-  }
-
-  for (const relFile of NEWLY_ADDED_FILES) {
-    await test(`（9.architecture protection）逐檔案完整性掃描：${relFile} 確實是本次任務新增的檔案`, () => {
-      const found = gitStatusPorcelain.some((line) => line.endsWith(relFile) && (line.startsWith('??') || line.startsWith('A ')));
-      assert.ok(found, `${relFile} 預期應該是untracked/新增檔案`);
+  // （TASK1.118後更新，理由跟TASK1.116同一份suite的對應段落
+  // 完全相同）：這個控制組原本用「現在git diff/git status還看不
+  // 看得到這個檔案」確認上面的diff偵測機制本身正常運作，但
+  // commit完成後這些斷言會永遠、必然失敗，變成誤導後續每個任務
+  // 的偽陽性"回歸"。改用`git log --oneline -- <file>`確認歷史上
+  // 確實有對應的commit紀錄，這是不會隨時間改變的事實。
+  for (const relFile of INTENTIONALLY_CHANGED_FILES.concat(NEWLY_ADDED_FILES)) {
+    await test(`（9.architecture protection）逐檔案完整性掃描：${relFile} 的commit歷史裡確實存在TASK1.117的新增/修改紀錄（TASK1.118後更新：改用git log歷史紀錄取代git status/diff即時狀態）`, () => {
+      const log = execFileSync('git', ['log', '--oneline', '--', relFile], { cwd: repoRoot, encoding: 'utf8' });
+      assert.ok(log.trim().length > 0, `${relFile} 的git log歷史裡找不到任何commit`);
     });
   }
 

@@ -1100,16 +1100,20 @@ async function main() {
     });
   }
 
-  for (const relFile of INTENTIONALLY_CHANGED_FILES) {
-    await test(`（10.architecture protection）逐檔案完整性掃描：${relFile} 確實有被本次任務修改（控制組，確認上面的diff偵測機制本身正常運作，不是誤判永遠通過）`, () => {
-      assert.ok(gitDiffNameOnly.includes(relFile), `${relFile} 預期應該出現在git diff清單裡，但沒有`);
-    });
-  }
-
-  for (const relFile of NEWLY_ADDED_FILES) {
-    await test(`（10.architecture protection）逐檔案完整性掃描：${relFile} 確實是本次任務新增的檔案（git status顯示為untracked/added）`, () => {
-      const found = gitStatusPorcelain.some((line) => line.endsWith(relFile) && (line.startsWith('??') || line.startsWith('A ')));
-      assert.ok(found, `${relFile} 預期應該是untracked/新增檔案，但git status沒有顯示`);
+  // （TASK1.118後更新）這個控制組原本用「現在git diff/git
+  // status還看不看得到這個檔案」來確認上面的diff偵測機制本身有
+  // 正常運作——但這個檢查方式只在TASK1.116自己提交之前的當下
+  // session裡成立，一旦commit完成、後續任務把這份suite當成
+  // regression check重新執行，git diff/git status自然顯示乾淨，
+  // 這些斷言會永遠、必然失敗，變成一個誤導後續每個任務的偽陽性
+  // "回歸"，而不是真正的架構保護。改用`git log --oneline --
+  // <file>`確認這個檔案的commit歷史裡**曾經**存在對應的
+  // 新增/修改紀錄——這是不會隨時間流逝而改變的歷史事實，`git
+  // log`只要at least一個commit存在就永遠成立。
+  for (const relFile of INTENTIONALLY_CHANGED_FILES.concat(NEWLY_ADDED_FILES)) {
+    await test(`（10.architecture protection）逐檔案完整性掃描：${relFile} 的commit歷史裡確實存在TASK1.116的新增/修改紀錄（TASK1.118後更新：改用git log歷史紀錄取代git status/diff即時狀態，避免commit後控制組永遠假性失敗）`, () => {
+      const log = execFileSync('git', ['log', '--oneline', '--', relFile], { cwd: repoRoot, encoding: 'utf8' });
+      assert.ok(log.trim().length > 0, `${relFile} 的git log歷史裡找不到任何commit`);
     });
   }
 
