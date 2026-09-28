@@ -22,6 +22,18 @@
 > 這條規則在 TASK1.39 的架構審查中被逐條程式化驗證過（見
 > `backups/phase1-task1.39-review/test_architecture_review.mjs`）。
 > 以下內容保留原始設計記錄，僅此處更正現況。
+>
+> **更新記錄（TASK1.116 Health Insight Product Activation）**：
+> `createAppRouter()`現在共註冊**23條**路由——新增
+> `src/routes/health_insight_routes.js`（`registerHealthInsightRoutes`）
+> 的`GET /health-insight`（Health Insight Input Experience頁面
+> 入口）跟`POST /api/health-insight`（送出答案、取得結果的API）。
+> 這兩條路由刻意**不**要求`requireAuth()`——Health Insight Product
+> Integration（TASK1.112）本身明確設計成不接受auth/db依賴，見
+> `src/controllers/health_insight_controller.js`檔案頭說明。這是
+> 本系列第一次有正式的Health Insight route掛在`app.router`上，
+> `src/worker.js`同步新增了對應的判斷式（延續TASK1.29起既有的
+> "針對每一條已上線路徑直接解析真正HTTP輸入"慣例）。
 
 ## 目錄結構
 

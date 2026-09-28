@@ -1,12 +1,15 @@
-# Health Insight UI/UX Implementation Foundation（Phase 6 TASK1.114，TASK1.115更新視覺資產整合）
+# Health Insight UI/UX Implementation Foundation（Phase 6 TASK1.114，TASK1.115更新視覺資產整合，TASK1.116更新Product Activation）
 
 ## 目的
 
 在Phase 6產品架構（TASK1.106~1.113）完成之後，建立Health
 Insight**第一個使用者可見**的UI/UX基礎——視覺結構、元件基礎、
-設計系統、互動基礎、未來資產整合邊界。本次任務**不**整合
-Gemini、**不**修改Intelligence架構、**不**產生最終插畫資產、
-**不**建立route/controller、**不**把這些檔案接進worker.js。
+設計系統、互動基礎、未來資產整合邊界。TASK1.114/1.115本身
+**不**整合Gemini、**不**修改Intelligence架構、**不**產生最終
+插畫資產、**不**建立route/controller、**不**把這些檔案接進
+worker.js——這些限制到TASK1.116才第一次解除（見下方"TASK1.116
+更新"），但TASK1.116同樣**不**整合Gemini、**不**修改
+Intelligence架構、**不**重新設計視覺呈現。
 
 ## TASK1.115更新：真實插畫資產整合
 
@@ -58,7 +61,16 @@ src/ui/health_insight/
   pages/
     dashboard_page.js      組裝完整Health Insight Dashboard（TASK1.115：新增標題區塊）
     input_page.js          組裝完整Input Experience畫面（TASK1.115：新增標題區塊+送出按鈕）
-  index.js                 統一輸出入口
+  client/
+    interaction_script.js  TASK1.116新增：瀏覽器端互動腳本（純字串，chip選取/輸入狀態/送出/loading/success/error）
+  index.js                 統一輸出入口（TASK1.116新增getHealthInsightClientScript匯出）
+```
+
+對應TASK1.116新增的真實route/controller（在這個目錄之外）：
+
+```
+src/controllers/health_insight_controller.js   GET頁面/POST送出的橋接邏輯
+src/routes/health_insight_routes.js            GET /health-insight、POST /api/health-insight
 ```
 
 ## 元件責任（Intelligence Boundary）
@@ -113,23 +125,47 @@ illustrations/`底下一個真實的`.webp`檔案（使用者提供的參考圖
 靜態資產伺服機制，要嘛在接上路由的任務裡調整這個常數，元件
 程式碼本身完全不需要改動。
 
+## TASK1.116更新：Product Activation（第一次真正接線）
+
+TASK1.114/1.115建立的是"純樣式、未接線"的UI Foundation。
+TASK1.116第一次把這個目錄接上真正的route/controller：新增
+`src/controllers/health_insight_controller.js`（把Input
+Experience答案透過既有`createInsightContextBuilder()`
+（TASK1.42純函式，不接受db）轉成Insight Context，呼叫既有
+`createHealthInsightProductIntegration().requestProductEntry()`
+（TASK1.112，完全沒有被修改），把結果交給這個目錄既有的
+`renderHealthInsightDashboard()`/`renderHealthInsightDashboardError()`
+排版）跟`src/routes/health_insight_routes.js`（`GET
+/health-insight`頁面入口＋`POST /api/health-insight`
+API），並新增`client/interaction_script.js`（瀏覽器端純字串
+腳本——chip選取/輸入狀態管理/送出/loading/success/error
+狀態），第一次讓`data-field`/`data-hi-action`這些既有標記
+真正綁定事件監聽。這個目錄本身完全沒有反向import任何
+route/controller，元件/頁面組裝函式本身也完全沒有被重新設計
+（design_tokens.js只新增互動狀態CSS：`.hi-chip--selected`/
+`.hi-primary-button--loading`）。
+
 ## Current Limitations（目前限制）
 
-- **沒有接進worker.js/route/controller**：延續整個Phase 4~6
-  系列一貫的"建立但不接線"模式，本次任務只用測試證明這些UI
-  元件/頁面組裝函式可以被安全地呼叫、正確地反映輸入資料，
-  實際接上真實Health Insight Integration/UI互動邏輯
-  （data-field/data-hi-action屬性目前只是靜態標記，沒有任何
-  JS事件監聽）留給未來任務決定。`ASSET_BASE_PATH`約定路徑
-  同樣還沒有接上真正的靜態檔案伺服機制。
 - **behaviorPattern/progressTrend固定顯示預留卡片**：延續
-  TASK1.111/1.113已確認的"V1不產生實際內容"既有結論。
+  TASK1.111/1.113已確認的"V1不產生實際內容"既有結論，
+  TASK1.116沒有新增任何Intelligence邏輯，這個限制依然存在。
 - **Observation/Recommendation目前是"一張卡+精簡清單"，還不是
-  "一句彙整敘述"**：TASK1.115已經把結構從"每筆一張卡"改成
-  "一張卡裡的清單"，但清單裡每一行依然是`label：value`這種
-  結構化呈現，還不是`DESIGN_SPECIFICATION.md`第7節提到的
-  "彙整成一句自然語言敘述"，這類文字生成邏輯留給未來任務評估
-  （避免在UI層引入近似NLG的邏輯）。
-- **沒有任何前端互動JS（事件監聽/表單提交邏輯）**：這是"UI
-  Structure"跟"Component Foundation"層級的基礎，互動邏輯的
-  真正串接留給未來任務。
+  "一句彙整敘述"**：延續TASK1.115已經確認的既有限制，
+  `DESIGN_SPECIFICATION.md`第7節提到的"彙整成一句自然語言
+  敘述"這類文字生成邏輯依然留給未來任務評估（避免在UI/Route
+  層引入近似NLG的邏輯）。
+- **`ASSET_BASE_PATH`依然只是約定路徑，沒有接上真正的靜態
+  檔案伺服機制**：TASK1.116沒有新增任何static asset route，
+  插畫`<img>`標籤的`src`目前無法真的在瀏覽器載入圖片（Dashboard
+  的排版/互動邏輯不受影響），留給未來任務接上。
+- **Input Experience只收集使用者當下填寫的輪廓答案，不查詢/
+  不寫入任何既有domain資料表**：延續本次任務"D1 domain tables
+  維持0筆"的驗證要求，五個`xxxContext`固定是`{count:0,
+  items:[]}`，這代表目前不同使用者填寫不同答案，Analysis/
+  Recommendation產出的內容目前完全相同（延續V1既有限制，不是
+  TASK1.116的回歸）。
+- **GET /health-insight、POST /api/health-insight刻意不要求
+  登入**：Health Insight Product Integration本身明確設計成
+  不接受auth依賴，這兩條路由也沒有掛`requireAuth()`，延續
+  "低壓力、不製造使用門檻"既有設計原則。

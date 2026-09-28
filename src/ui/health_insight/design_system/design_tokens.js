@@ -319,6 +319,17 @@ export function getDesignSystemCSS() {
     '.hi-chip--honey { background: var(--hi-color-chip-honey); }',
     '.hi-chip--sage { background: var(--hi-color-chip-sage); }',
     '.hi-chip--rose { background: var(--hi-color-chip-rose); }',
+    // TASK1.116新增：Chip現在是真的可以點選的互動元件（見
+    // client/interaction_script.js），這裡補上"已選取"的視覺
+    // 狀態——用內縮陰影標示，不改變Chip本身的底色（延續"依位置
+    // 循環四色，不做語意判斷"既有規則，選取狀態純粹是"這個被
+    // 選了"的中性標示）。
+    '.hi-chip {',
+    '  cursor: pointer;',
+    '}',
+    '.hi-chip--selected {',
+    '  box-shadow: inset 0 0 0 3px var(--hi-color-primary-dark);',
+    '}',
     '.hi-empty-state {',
     '  align-items: center;',
     '}',
@@ -436,6 +447,14 @@ export function getDesignSystemCSS() {
     '  font-weight: 700;',
     '  font-family: var(--hi-font-family);',
     '  min-height: var(--hi-touch-target);',
+    '  cursor: pointer;',
+    '}',
+    // TASK1.116新增：主按鈕現在是真的會觸發送出動作的互動元件
+    // （見client/interaction_script.js），這裡補上loading/disabled
+    // 視覺狀態——降低透明度＋游標恢復預設，不新增任何動畫/圖示，
+    // 延續"低壓力、不製造等待焦慮"的既有設計原則。
+    '.hi-primary-button:disabled, .hi-primary-button--loading {',
+    '  opacity: 0.6;',
     '  cursor: default;',
     '}',
     `@media (min-width: ${BREAKPOINT_TOKENS.tablet}) {`,

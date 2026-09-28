@@ -15,6 +15,7 @@ import { registerDataRoutes } from './data_routes.js';
 import { registerDashboardRoutes } from './dashboard_routes.js';
 import { registerProfileRoutes } from './profile_routes.js';
 import { registerTimelineRoutes } from './timeline_routes.js';
+import { registerHealthInsightRoutes } from './health_insight_routes.js';
 import { registerLegacyRoutes } from './legacy_routes.js';
 
 /**
@@ -31,6 +32,7 @@ export function createAppRouter(legacyHandler) {
   registerDashboardRoutes(router);
   registerProfileRoutes(router);
   registerTimelineRoutes(router);
+  registerHealthInsightRoutes(router);
   if (typeof legacyHandler === 'function') {
     registerLegacyRoutes(router, legacyHandler);
   }
@@ -44,4 +46,5 @@ export { registerDataRoutes } from './data_routes.js';
 export { registerDashboardRoutes } from './dashboard_routes.js';
 export { registerProfileRoutes } from './profile_routes.js';
 export { registerTimelineRoutes } from './timeline_routes.js';
+export { registerHealthInsightRoutes } from './health_insight_routes.js';
 export { registerLegacyRoutes } from './legacy_routes.js';

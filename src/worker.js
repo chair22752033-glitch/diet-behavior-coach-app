@@ -201,6 +201,31 @@ export default {
           { db: app.db, env, services: app.services }
         );
       }
+
+      // TASK1.116：正式啟用 GET /health-insight（Health Insight
+      // Input Experience頁面）與 POST /api/health-insight（送出
+      // Input Experience答案、取得Health Insight結果）——這是
+      // Health Insight產品線第一個真正的application entry。跟
+      // 既有二十條路由不同的是：這兩條路由刻意**不**要求登入
+      // （不讀取Cookie標頭），因為Health Insight Product
+      // Integration（TASK1.112）本身明確設計成不接受db/auth依賴
+      // （見src/intelligence/product/health_insight_integration.js
+      // 檔案頭），Input Experience只收集使用者當下填寫的輪廓
+      // 答案，不查詢/不寫入任何既有使用者資料表。GET
+      // /health-insight完全不需要解析任何真正的HTTP輸入，POST
+      // /api/health-insight額外解析真正的HTTP body成payload（跟
+      // 其餘POST路由一致的解析方式）。
+      if (method === 'GET' && pathname === '/health-insight') {
+        return app.router.handle({ method, pathname, options: {} }, { db: app.db, env, services: app.services });
+      }
+
+      if (method === 'POST' && pathname === '/api/health-insight') {
+        const payload = await parseJsonBody(request);
+        return app.router.handle(
+          { method, pathname, payload, options: {} },
+          { db: app.db, env, services: app.services }
+        );
+      }
     }
 
     const gateway = createRouteGateway({ app, legacyHandler: handle });

@@ -801,9 +801,12 @@ async function run() {
   // =========================================================================
   console.log('--- J. Existing architecture protection ---');
 
-  await test('（10.Existing architecture protection）src/worker.js完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（10.Existing architecture protection）src/worker.js既有TASK1.21~1.38路由分派邏輯/legacy handler完全沒有被修改（TASK1.116後更新：TASK1.116在檔案末尾新增GET /health-insight、POST /api/health-insight兩個if區塊，這是本次任務明確授權的Route connection範圍，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes('const DATA_API_PATHS = new Set(['));
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/api/timeline')"));
+    assert.ok(workerSource.includes('async function handle(r,env){'));
+    assert.ok(workerSource.includes("if(p==='/api/qlive'){"));
   });
 
   await test('（10.Existing architecture protection）src/bootstrap/application.js完全沒有被修改', () => {
@@ -817,15 +820,15 @@ async function run() {
     assert.strictEqual(Object.keys(app.intelligence).length, 24);
   });
 
-  await test('（10.Existing architecture protection）app.router.routes 數量沒有因為本次任務而改變（維持21個既有route）', async () => {
+  await test('（10.Existing architecture protection）app.router.routes 數量沒有因為本次任務而改變（維持21個既有route；TASK1.116後更新：TASK1.116是本系列第一個明確被授權做"Route connection"的任務，正式新增GET /health-insight、POST /api/health-insight兩條路由，21+2=23）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 21);
+    assert.strictEqual(app.router.routes.length, 23);
   });
 
-  await test('（10.Existing architecture protection）src/routes/、src/controllers/目錄本次任務完全沒有新增或修改任何檔案', () => {
-    const status = execFileSync('sh', ['-c', 'git status --porcelain -- src/routes/ src/controllers/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+  await test('（10.Existing architecture protection）src/routes/、src/controllers/既有檔案完全沒有被修改，只新增Health Insight專屬的新檔案（TASK1.116後更新：TASK1.116新增src/routes/health_insight_routes.js、src/controllers/health_insight_controller.js，並在src/routes/index.js新增對應的import/register一行，這是本次任務明確授權的Route connection範圍，這裡改成驗證既有路由/controller檔案本身逐一沒有被修改）', () => {
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/routes/auth_routes.js src/routes/user_routes.js src/routes/data_routes.js src/routes/dashboard_routes.js src/routes/profile_routes.js src/routes/timeline_routes.js src/routes/legacy_routes.js src/routes/router.js src/controllers/auth_controller.js src/controllers/dashboard_controller.js src/controllers/data_controller.js src/controllers/profile_controller.js src/controllers/timeline_controller.js src/controllers/user_controller.js src/controllers/response.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.strictEqual(diff.trim(), '');
   });
 
   await test('（10.Existing architecture protection）src/auth/、src/oauth/、src/middleware/目錄本次任務完全沒有新增或修改任何檔案', () => {
@@ -980,9 +983,10 @@ async function run() {
     assert.ok(fs.existsSync(path.join(__dirname, 'p1-p6-check', 'run.js')));
   });
 
-  await test('（P1-P6）src/worker.js 完全沒有被本次任務修改（git diff確認，既有UI維持不變）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/worker.js既有legacy getHTML()/handle()前端邏輯完全沒有被修改（TASK1.116後更新：見上方"Existing architecture protection"章節已經改用內容標記比對，這裡額外確認legacy getHTML()函式本身逐字沒有被修改，既有UI維持不變）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes('function getHTML(){return ['));
+    assert.ok(workerSource.includes('function getManifest(){return'));
   });
 
   await test('（P1-P6）wrangler.toml 完全沒有被本次任務修改', () => {
@@ -995,8 +999,8 @@ async function run() {
     assert.strictEqual(statusOutput.trim(), '');
   });
 
-  await test('（P1-P6）src/routes/、src/controllers/、src/auth/、src/oauth/ 完全沒有被本次任務修改', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/routes/*.js src/controllers/*.js src/auth/*.js src/oauth/*.js'], { cwd: repoRoot, encoding: 'utf8' });
+  await test('（P1-P6）src/auth/、src/oauth/ 完全沒有被本次任務修改，src/routes/、src/controllers/既有檔案也沒有被修改（TASK1.116後更新：見上方"Existing architecture protection"章節已針對routes/controllers做過檔案範圍限定的diff檢查，這裡額外確認src/auth/、src/oauth/兩個目錄完全沒有被觸碰）', () => {
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/auth/*.js src/oauth/*.js'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(diff.trim(), '');
   });
 

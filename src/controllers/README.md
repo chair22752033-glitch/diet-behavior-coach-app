@@ -18,6 +18,18 @@
 > 參數，一律來自 `requireAuth()` 驗證後放進 `ctx.user.id`，從不讀取
 > payload/query 裡的 `user_id`。以下內容保留原始設計記錄，僅此處
 > 更正現況。
+>
+> **更新記錄（TASK1.116 Health Insight Product Activation）**：新增
+> `health_insight_controller.js`（`getHealthInsightPageController`/
+> `submitHealthInsightController`），服務`GET /health-insight`/
+> `POST /api/health-insight`。跟其餘controller不同的是：這個
+> controller**刻意不要求登入**（沒有`requireAuth()`，`userId`
+> 完全不出現在它組出的request裡），因為它呼叫的
+> `createHealthInsightProductIntegration()`（TASK1.112）本身明確
+> 設計成不接受auth/db依賴。它也是第一個直接呼叫
+> `src/intelligence/`（`health_insight_integration.js`/
+> `insight_context_builder.js`）的controller，其餘既有controller
+> 完全不受影響。
 
 ## 目錄結構
 
