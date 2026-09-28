@@ -4,7 +4,9 @@
  * （TASK1.115後更新：新增ASSET_BASE_PATH/UNDERLINE_REGISTRY/
  * getAssetUrl/getAssetAlt/getUnderlineUrl/listUnderlineKeys的
  * 匯出，見下方；TASK1.116後更新：新增
- * getHealthInsightClientScript()的匯出，見下方）
+ * getHealthInsightClientScript()的匯出，見下方；TASK1.117後
+ * 更新：新增renderHealthInsightProductResponse()的匯出——
+ * Structured Product Response → HTML的連接點）
  * - 統一輸出入口
  *
  * 把 src/ui/health_insight/ 底下所有可對外使用的東西集中在這裡
@@ -27,3 +29,4 @@ export * from './components/index.js';
 export { renderHealthInsightDashboard, renderHealthInsightDashboardError } from './pages/dashboard_page.js';
 export { renderHealthInsightInputExperience } from './pages/input_page.js';
 export { getHealthInsightClientScript } from './client/interaction_script.js';
+export { renderHealthInsightProductResponse } from './render_product_response.js';

@@ -30,6 +30,22 @@
 > `src/intelligence/`（`health_insight_integration.js`/
 > `insight_context_builder.js`）的controller，其餘既有controller
 > 完全不受影響。
+>
+> **更新記錄（TASK1.117 Health Insight Response Boundary
+> Refinement）**：新增`health_insight_response_builder.js`——把
+> `health_insight_controller.js`原本"直接呼叫UI元件產生HTML"的
+> 職責拆開，`submitHealthInsightController()`現在回傳跟呈現方式
+> 無關的**結構化Product Response**（`{ok:true, data:{...}}`/
+> `{ok:false, error:{type:'friendly_error', category}}`），不再
+> import/呼叫任何`src/ui/health_insight/`底下的render函式。「把
+> 結構化回應轉成HTML」的責任移到`src/routes/
+> health_insight_routes.js`（呼叫新增的UI
+> Renderer`renderHealthInsightProductResponse()`），`POST
+> /api/health-insight`對外的JSON回應形狀完全沒有改變。這是為了
+> 未來User Identity/Gemini Enhancement/Premium能有一個跟HTML
+> 呈現無關的資料邊界可以掛勾，本次任務**沒有**實作這些功能。
+> `getHealthInsightPageController()`不受影響（Input Experience
+> 頁面本身不是Product Response）。
 
 ## 目錄結構
 

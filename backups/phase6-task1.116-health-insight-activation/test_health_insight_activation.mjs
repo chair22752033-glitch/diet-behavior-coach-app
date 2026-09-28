@@ -90,7 +90,21 @@ async function main() {
   } = await loadModules();
 
   const { getHealthInsightPageController, submitHealthInsightController } = controllerModule;
-  const { getHealthInsightClientScript, renderHealthInsightInputExperience, renderHealthInsightDashboard, renderHealthInsightDashboardError } = uiModule;
+  const { getHealthInsightClientScript, renderHealthInsightInputExperience, renderHealthInsightDashboard, renderHealthInsightDashboardError, renderHealthInsightProductResponse } = uiModule;
+
+  // （TASK1.117後更新）submitHealthInsightController()的回傳值從
+  // TASK1.117起改成「結構化Product Response」（`{ok, data|error}`），
+  // 不再直接回傳HTML（見TASK1.117的Response Boundary重構）。這份
+  // TASK1.116當時寫的測試套件大量假設「呼叫controller就直接拿到
+  // `{ok:true, data:{html}}`」——這裡用一個小wrapper重現舊有的
+  // 端對端行為（controller→UI Renderer→html），讓底下每一個既有
+  // 斷言完全不用個別修改就能繼續驗證「同樣的輸入最終還是產生同樣
+  // 的HTML」這個核心語意（真正的controller/response
+  // builder/UI連接邊界的斷言另外在TASK1.117自己的測試套件驗證）。
+  function submitAndRenderHtml(payload, dependencies) {
+    const structuredResponse = submitHealthInsightController(payload, dependencies);
+    return { ok: true, data: { html: renderHealthInsightProductResponse(structuredResponse) } };
+  }
 
   // =========================================================================
   // A. Health Insight entry
@@ -454,7 +468,7 @@ async function main() {
 
   for (const field of PROFILE_FIELDS) {
     await test(`（4.input state）POST payload的${field}欄位會被收進context.user`, () => {
-      const result = submitHealthInsightController({ [field]: field === 'age' ? 28 : 'sample' });
+      const result = submitAndRenderHtml({ [field]: field === 'age' ? 28 : 'sample' });
       assert.ok(result.ok);
       assert.ok(typeof result.data.html === 'string');
     });
@@ -468,7 +482,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ gender: longString }, { integration: fakeIntegration });
+    submitAndRenderHtml({ gender: longString }, { integration: fakeIntegration });
   });
 
   await test('（4.input state）數字型欄位（age/height/weight）保留為number', () => {
@@ -480,7 +494,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ age: 28, height: 165, weight: 60 }, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: 28, height: 165, weight: 60 }, { integration: fakeIntegration });
   });
 
   await test('（4.input state）NaN/Infinity數值被安全捨棄（不會進入context.user）', () => {
@@ -490,8 +504,8 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ age: NaN }, { integration: fakeIntegration });
-    submitHealthInsightController({ age: Infinity }, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: NaN }, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: Infinity }, { integration: fakeIntegration });
   });
 
   const WRONG_TYPE_VALUES = [
@@ -513,7 +527,7 @@ async function main() {
             return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
           },
         };
-        assert.doesNotThrow(() => submitHealthInsightController({ [field]: value }, { integration: fakeIntegration }));
+        assert.doesNotThrow(() => submitAndRenderHtml({ [field]: value }, { integration: fakeIntegration }));
       });
     }
   }
@@ -528,7 +542,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ admin: true, userId: 'hacker', __proto__: { polluted: true } }, { integration: fakeIntegration });
+    submitAndRenderHtml({ admin: true, userId: 'hacker', __proto__: { polluted: true } }, { integration: fakeIntegration });
   });
 
   await test('（4.input state）payload是null時安全視為空答案（context.user為null）', () => {
@@ -538,7 +552,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController(null, { integration: fakeIntegration });
+    submitAndRenderHtml(null, { integration: fakeIntegration });
   });
 
   await test('（4.input state）payload是陣列時安全視為空答案', () => {
@@ -548,7 +562,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController([1, 2, 3], { integration: fakeIntegration });
+    submitAndRenderHtml([1, 2, 3], { integration: fakeIntegration });
   });
 
   await test('（4.input state）payload是字串/數字（非物件）時安全視為空答案', () => {
@@ -558,8 +572,8 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController('not an object', { integration: fakeIntegration });
-    submitHealthInsightController(42, { integration: fakeIntegration });
+    submitAndRenderHtml('not an object', { integration: fakeIntegration });
+    submitAndRenderHtml(42, { integration: fakeIntegration });
   });
 
   await test('（4.input state）payload有至少一個有效欄位時context.user是物件（不是null）', () => {
@@ -570,7 +584,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ gender: 'female' }, { integration: fakeIntegration });
+    submitAndRenderHtml({ gender: 'female' }, { integration: fakeIntegration });
   });
 
   await test('（4.input state）client script對空字串input會delete STATE[field]（不會送出空字串）', () => {
@@ -600,7 +614,7 @@ async function main() {
         return createInsightContextBuilder().buildInsightContext(preparedContext);
       },
     };
-    submitHealthInsightController({ age: 28 }, { contextBuilder: fakeContextBuilder });
+    submitAndRenderHtml({ age: 28 }, { contextBuilder: fakeContextBuilder });
     assert.ok(called);
   });
 
@@ -616,7 +630,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ age: 28, gender: 'female', healthGoal: 'weight_loss' }, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: 28, gender: 'female', healthGoal: 'weight_loss' }, { integration: fakeIntegration });
   });
 
   await test('（5.request flow）context.metadata是物件且含totalRecords:0', () => {
@@ -627,7 +641,7 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({}, { integration: fakeIntegration });
+    submitAndRenderHtml({}, { integration: fakeIntegration });
   });
 
   await test('（5.request flow）context通過既有validateInsightContext()驗證（真正的Insight Context形狀）', async () => {
@@ -639,9 +653,9 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ age: 28 }, { integration: fakeIntegration });
-    submitHealthInsightController({}, { integration: fakeIntegration });
-    submitHealthInsightController(null, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: 28 }, { integration: fakeIntegration });
+    submitAndRenderHtml({}, { integration: fakeIntegration });
+    submitAndRenderHtml(null, { integration: fakeIntegration });
   });
 
   await test('（5.request flow）submitHealthInsightController()呼叫integration.requestProductEntry({rawInput})，不傳遞userId（延續Product Integration不接受db/auth依賴的既有邊界）', () => {
@@ -652,14 +666,14 @@ async function main() {
         return { ok: true, boundary: 'product-entry', result: { healthObservation: [], behaviorPattern: [], recommendation: [], progressTrend: {}, decision: null } };
       },
     };
-    submitHealthInsightController({ age: 28 }, { integration: fakeIntegration });
+    submitAndRenderHtml({ age: 28 }, { integration: fakeIntegration });
     assert.ok(!('userId' in capturedRequest));
     assert.ok('rawInput' in capturedRequest);
   });
 
   await test('（5.request flow）contextBuilder拋出例外時安全轉成友善錯誤卡片，不往上傳播', () => {
     const throwingBuilder = { buildInsightContext: () => { throw new Error('secret internal detail'); } };
-    const result = submitHealthInsightController({ age: 28 }, { contextBuilder: throwingBuilder });
+    const result = submitAndRenderHtml({ age: 28 }, { contextBuilder: throwingBuilder });
     assert.strictEqual(result.ok, true);
     assert.ok(!result.data.html.includes('secret internal detail'));
     assert.ok(result.data.html.includes('hi-error-card'));
@@ -667,7 +681,7 @@ async function main() {
 
   await test('（5.request flow）integration拋出例外時安全轉成友善錯誤卡片，不往上傳播', () => {
     const throwingIntegration = { requestProductEntry: () => { throw new Error('secret stack trace'); } };
-    const result = submitHealthInsightController({ age: 28 }, { integration: throwingIntegration });
+    const result = submitAndRenderHtml({ age: 28 }, { integration: throwingIntegration });
     assert.strictEqual(result.ok, true);
     assert.ok(!result.data.html.includes('secret stack trace'));
     assert.ok(result.data.html.includes('hi-error-card'));
@@ -675,20 +689,20 @@ async function main() {
 
   await test('（5.request flow）integration回傳非物件（例如undefined）時安全轉成友善錯誤卡片', () => {
     const brokenIntegration = { requestProductEntry: () => undefined };
-    const result = submitHealthInsightController({ age: 28 }, { integration: brokenIntegration });
+    const result = submitAndRenderHtml({ age: 28 }, { integration: brokenIntegration });
     assert.strictEqual(result.ok, true);
     assert.ok(result.data.html.includes('hi-error-card'));
   });
 
   await test('（5.request flow）不提供dependencies時，預設用真正的createHealthInsightProductIntegration()/createInsightContextBuilder()（端對端真實鏈路）', () => {
-    const result = submitHealthInsightController({ age: 28, gender: 'female', height: 165, weight: 60, healthGoal: 'weight_loss' });
+    const result = submitAndRenderHtml({ age: 28, gender: 'female', height: 165, weight: 60, healthGoal: 'weight_loss' });
     assert.strictEqual(result.ok, true);
     assert.ok(result.data.html.includes('data-hi-page="dashboard"'));
   });
 
   await test('（5.request flow）端對端：不同的profile答案，Analysis modules讀到的counts一致固定為0（V1不做個人化分析，延續既有限制）', () => {
-    const r1 = submitHealthInsightController({ age: 20, gender: 'male' });
-    const r2 = submitHealthInsightController({ age: 80, gender: 'other', healthGoal: 'muscle_gain' });
+    const r1 = submitAndRenderHtml({ age: 20, gender: 'male' });
+    const r2 = submitAndRenderHtml({ age: 80, gender: 'other', healthGoal: 'muscle_gain' });
     const countObservation = (html) => (html.match(/hi-observation-item"/g) || []).length;
     assert.strictEqual(countObservation(r1.data.html), countObservation(r2.data.html));
   });
@@ -782,7 +796,7 @@ async function main() {
   });
 
   await test('（6.integration connection）真實鏈路產出恰好6項healthObservation、3項recommendation（延續TASK1.111既有Analysis/Recommendation modules固定輸出數量）', () => {
-    const result = submitHealthInsightController({ age: 28 });
+    const result = submitAndRenderHtml({ age: 28 });
     const observationCount = (result.data.html.match(/hi-observation-item"/g) || []).length;
     const recommendationCount = (result.data.html.match(/hi-recommendation-item"/g) || []).length;
     assert.strictEqual(observationCount, 6);
@@ -799,40 +813,40 @@ async function main() {
   await test('（7.result rendering）controller成功時使用既有renderHealthInsightDashboard()（不重新實作排版）', () => {
     const fakeResult = { healthObservation: [{ type: 'a', value: 1 }], behaviorPattern: [], recommendation: [{ type: 'b', value: 2 }], progressTrend: {}, decision: null };
     const fakeIntegration = { requestProductEntry: () => ({ ok: true, boundary: 'product-entry', result: fakeResult }) };
-    const result = submitHealthInsightController({}, { integration: fakeIntegration });
+    const result = submitAndRenderHtml({}, { integration: fakeIntegration });
     assert.strictEqual(result.data.html, renderHealthInsightDashboard(fakeResult));
   });
 
   await test('（7.result rendering）成功結果含data-hi-page="dashboard"', () => {
-    const result = submitHealthInsightController({ age: 28 });
+    const result = submitAndRenderHtml({ age: 28 });
     assert.ok(result.data.html.includes('data-hi-page="dashboard"'));
   });
 
   await test('（7.result rendering）成功結果含Today Summary/Observation/Recommendation/Behavior Placeholder/Progress Placeholder五個區塊', () => {
-    const html = submitHealthInsightController({ age: 28 }).data.html;
+    const html = submitAndRenderHtml({ age: 28 }).data.html;
     ['hi-dashboard-summary', 'hi-dashboard-observation', 'hi-dashboard-recommendation', 'hi-dashboard-behavior-pattern', 'hi-dashboard-progress'].forEach((cls) => {
       assert.ok(html.includes(cls), `缺少 ${cls}`);
     });
   });
 
   await test('（7.result rendering）成功結果含Dashboard標題區塊（今天的健康小洞察）', () => {
-    const html = submitHealthInsightController({ age: 28 }).data.html;
+    const html = submitAndRenderHtml({ age: 28 }).data.html;
     assert.ok(html.includes('今天的健康小洞察'));
   });
 
   await test('（7.result rendering）Behavior Pattern/Progress依然是既定的placeholder（V1不產生實際內容，延續既有限制，本次任務沒有新增任何Intelligence邏輯）', () => {
-    const html = submitHealthInsightController({ age: 28 }).data.html;
+    const html = submitAndRenderHtml({ age: 28 }).data.html;
     assert.ok(html.includes('敬請期待'));
   });
 
   await test('（7.result rendering）decision欄位完全不出現在渲染的HTML裡（延續TASK1.114既有結論：decision目前固定null，UI不呈現）', () => {
-    const html = submitHealthInsightController({ age: 28 }).data.html;
+    const html = submitAndRenderHtml({ age: 28 }).data.html;
     assert.ok(!html.includes('"decision"'));
   });
 
   await test('（7.result rendering）result為空物件（{}）時依然安全渲染，不拋出例外', () => {
     const fakeIntegration = { requestProductEntry: () => ({ ok: true, boundary: 'product-entry', result: {} }) };
-    assert.doesNotThrow(() => submitHealthInsightController({}, { integration: fakeIntegration }));
+    assert.doesNotThrow(() => submitAndRenderHtml({}, { integration: fakeIntegration }));
   });
 
   const { listAssetKeys, getAssetUrl, getAssetAlt } = uiModule;
@@ -845,7 +859,7 @@ async function main() {
   }
 
   await test('（7.result rendering）Dashboard渲染出的每一個<img>標籤都指向listAssetKeys()裡的某個真實資產路徑（沒有殘留的emoji佔位符或壞掉的路徑）', () => {
-    const html = submitHealthInsightController({ age: 28 }).data.html;
+    const html = submitAndRenderHtml({ age: 28 }).data.html;
     const imgSrcs = Array.from(html.matchAll(/<img[^>]*src="([^"]+)"/g)).map((m) => m[1]);
     assert.ok(imgSrcs.length > 0, 'Dashboard應該至少含一張插畫');
     imgSrcs.forEach((src) => {
@@ -871,7 +885,7 @@ async function main() {
   for (const reason of KNOWN_REASONS) {
     await test(`（8.error presentation）reason=${reason}時，回傳的HTML不含這個reason字串本身（不洩漏內部細節）`, () => {
       const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry', reason, field: 'some_internal_field', stage: 'some_internal_stage' }) };
-      const result = submitHealthInsightController({ age: 28 }, { integration: fakeIntegration });
+      const result = submitAndRenderHtml({ age: 28 }, { integration: fakeIntegration });
       assert.strictEqual(result.ok, true);
       assert.ok(!result.data.html.includes(reason));
       assert.ok(!result.data.html.includes('some_internal_field'));
@@ -882,7 +896,7 @@ async function main() {
   for (const reason of KNOWN_REASONS) {
     await test(`（8.error presentation）reason=${reason}時，回傳的HTML不含field/stage的實際內容值（用不同field/stage組合逐一測試，不只測一組固定值）`, () => {
       const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry', reason, field: `unique_field_marker_${reason}`, stage: `unique_stage_marker_${reason}` }) };
-      const result = submitHealthInsightController({}, { integration: fakeIntegration });
+      const result = submitAndRenderHtml({}, { integration: fakeIntegration });
       assert.ok(!result.data.html.includes(`unique_field_marker_${reason}`));
       assert.ok(!result.data.html.includes(`unique_stage_marker_${reason}`));
     });
@@ -891,7 +905,7 @@ async function main() {
   await test('（8.error presentation）任何失敗reason都渲染出hi-error-card class', () => {
     KNOWN_REASONS.forEach((reason) => {
       const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry', reason }) };
-      const result = submitHealthInsightController({}, { integration: fakeIntegration });
+      const result = submitAndRenderHtml({}, { integration: fakeIntegration });
       assert.ok(result.data.html.includes('hi-error-card'), `reason=${reason}未渲染hi-error-card`);
     });
   });
@@ -899,25 +913,25 @@ async function main() {
   await test('（8.error presentation）失敗結果一律用既有renderHealthInsightDashboardError()（不重新實作錯誤呈現邏輯）', () => {
     const failureResult = { ok: false, boundary: 'product-entry', reason: 'capability_execution_failed', field: 'x', stage: 'y' };
     const fakeIntegration = { requestProductEntry: () => failureResult };
-    const result = submitHealthInsightController({}, { integration: fakeIntegration });
+    const result = submitAndRenderHtml({}, { integration: fakeIntegration });
     assert.strictEqual(result.data.html, renderHealthInsightDashboardError(failureResult));
   });
 
   await test('（8.error presentation）失敗結果含data-hi-page="dashboard-error"', () => {
     const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry', reason: 'internal_error' }) };
-    const result = submitHealthInsightController({}, { integration: fakeIntegration });
+    const result = submitAndRenderHtml({}, { integration: fakeIntegration });
     assert.ok(result.data.html.includes('data-hi-page="dashboard-error"'));
   });
 
   await test('（8.error presentation）未知reason（不在對照表裡）安全分類成temporary_failure，不拋出例外', () => {
     const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry', reason: 'some_totally_new_reason_never_seen_before' }) };
-    const result = submitHealthInsightController({}, { integration: fakeIntegration });
+    const result = submitAndRenderHtml({}, { integration: fakeIntegration });
     assert.ok(result.data.html.includes('hi-error-temporary_failure'));
   });
 
   await test('（8.error presentation）reason為undefined（integration回傳{ok:false}但沒有reason）時依然安全渲染', () => {
     const fakeIntegration = { requestProductEntry: () => ({ ok: false, boundary: 'product-entry' }) };
-    assert.doesNotThrow(() => submitHealthInsightController({}, { integration: fakeIntegration }));
+    assert.doesNotThrow(() => submitAndRenderHtml({}, { integration: fakeIntegration }));
   });
 
   console.log('');

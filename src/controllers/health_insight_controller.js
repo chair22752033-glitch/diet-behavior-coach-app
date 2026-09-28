@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.116｜Health Insight Product Activation Implementation
+ * （TASK1.117後更新：Response Boundary Refinement，見下方
+ * "TASK1.117更新"區塊）
  * - Health Insight Controller
  *
  * 責任：第一次把TASK1.114/1.115的UI Foundation跟TASK1.112的
@@ -30,22 +32,35 @@
  * tables維持0筆"的驗證要求，這個檔案完全不import`src/db/`，
  * 完全不接受db參數）。
  *
- * ## Error Boundary
+ * ## TASK1.117更新：Controller不再直接產生HTML
+ *
+ * TASK1.116原本的`submitHealthInsightController()`直接呼叫
+ * `renderHealthInsightDashboard()`/`renderHealthInsightDashboardError()`
+ * 回傳HTML字串。TASK1.117把這個職責拆出去——`submitHealthInsight
+ * Controller()`現在改呼叫`health_insight_response_builder.js`
+ * （TASK1.117新增），回傳一個跟呈現方式無關的**結構化Product
+ * Response**（`{ok, data}`或`{ok:false, error:{type, category}}`），
+ * 不再import/呼叫任何`src/ui/health_insight/`底下的render函式。
+ * 「把結構化回應轉成HTML」的責任交給呼叫端（`src/routes/
+ * health_insight_routes.js`）在拿到這個回應之後，另外呼叫
+ * `src/ui/health_insight/render_product_response.js`（TASK1.117
+ * 新增的UI Renderer連接點）完成——這個檔案完全不知道HTML長怎樣，
+ * 也完全不知道呼叫端最終會不會把它渲染成HTML（延續"未來可能有
+ * 非HTML的API消費者"的設計方向）。
+ *
+ * ## Error Boundary（TASK1.117後：分類邊界前移到Response Builder）
  *
  * 不論失敗發生在哪一層（Entry/Adapter/Execution/Operational/
- * Feature/Capability/Analysis/Recommendation），這裡一律只讀取
- * 失敗結果的`reason`欄位轉交給既有的`renderHealthInsightDashboardError()`
- * （TASK1.114/1.115既有邏輯，內部呼叫`error_card.js`的
- * `classifyErrorReason()`過濾成使用者可見的友善分類），完全不會把
- * `field`/`stage`/例外物件本身外洩到回傳的HTML裡。
+ * Feature/Capability/Analysis/Recommendation），這裡一律只把
+ * 失敗結果原樣轉交給`responseBuilder.buildFailureResponse()`
+ * （TASK1.117新增，內部做`reason → category`分類），這個
+ * controller本身完全不讀取/不解讀`reason`字串本身，也完全不會把
+ * `field`/`stage`/例外物件本身放進回傳值裡。
  */
 import { createHealthInsightProductIntegration } from '../intelligence/product/health_insight_integration.js';
 import { createInsightContextBuilder } from '../intelligence/context/insight_context_builder.js';
-import {
-  renderHealthInsightInputExperience,
-  renderHealthInsightDashboard,
-  renderHealthInsightDashboardError,
-} from '../ui/health_insight/index.js';
+import { createHealthInsightResponseBuilder } from './health_insight_response_builder.js';
+import { renderHealthInsightInputExperience } from '../ui/health_insight/index.js';
 
 /**
  * Input Experience目前收集的使用者輪廓欄位白名單——延續
@@ -105,22 +120,26 @@ export function getHealthInsightPageController() {
 /**
  * POST /api/health-insight controller——把Input Experience答案
  * 轉成Insight Context、呼叫Health Insight Product
- * Integration、把結果組裝成HTML回傳。刻意永遠回傳`ok:true`（HTTP
- * 200）：不論Health Insight內部流程成功或失敗，對外都是一次
- * "成功處理完成的請求"，差別只在回傳的`data.html`是Dashboard還是
- * 友善錯誤卡片——延續TASK1.113/1.114已確認的"Error Experience
- * Boundary不是HTTP層級錯誤"既有原則。
+ * Integration、把結果交給Response Builder組裝成**結構化Product
+ * Response**回傳（TASK1.117後不再直接回傳HTML，見上方"TASK1.117
+ * 更新"說明）。不論Health Insight內部流程成功或失敗，這個函式的
+ * 回傳值都是一個乾淨的資料物件（`{ok:true, data}`或
+ * `{ok:false, error:{type, category}}`），呼叫端（route層）要
+ * 自己決定怎麼把這個回應轉成HTTP回應（例如呼叫UI
+ * Renderer轉成HTML，或未來直接以JSON回傳給API消費者）。
  *
  * @param {*} payload
  * @param {object} [dependencies] - 選填依賴注入，供測試替換
  * @param {{buildInsightContext: Function}} [dependencies.contextBuilder]
  * @param {{requestProductEntry: Function}} [dependencies.integration]
- * @returns {{ok:true, data:{html:string}}}
+ * @param {{buildSuccessResponse: Function, buildFailureResponse: Function}} [dependencies.responseBuilder]
+ * @returns {{ok:true, data:{healthObservation:Array, behaviorPattern:Array, recommendation:Array, progressTrend:object, decision:*}}|{ok:false, error:{type:'friendly_error', category:string}}}
  */
 export function submitHealthInsightController(payload, dependencies) {
   const deps = dependencies || {};
   const contextBuilder = deps.contextBuilder || createInsightContextBuilder();
   const integration = deps.integration || createHealthInsightProductIntegration();
+  const responseBuilder = deps.responseBuilder || createHealthInsightResponseBuilder();
 
   const profile = buildProfileFromPayload(payload);
   const preparedContext = {
@@ -136,23 +155,23 @@ export function submitHealthInsightController(payload, dependencies) {
   try {
     context = contextBuilder.buildInsightContext(preparedContext).context;
   } catch (e) {
-    return { ok: true, data: { html: renderHealthInsightDashboardError({ reason: 'unknown_error' }) } };
+    return responseBuilder.buildFailureResponse({ reason: 'unknown_error' });
   }
 
   let outcome;
   try {
     outcome = integration.requestProductEntry({ rawInput: context });
   } catch (e) {
-    return { ok: true, data: { html: renderHealthInsightDashboardError({ reason: 'unknown_error' }) } };
+    return responseBuilder.buildFailureResponse({ reason: 'unknown_error' });
   }
 
   if (!outcome || typeof outcome !== 'object') {
-    return { ok: true, data: { html: renderHealthInsightDashboardError({ reason: 'unknown_error' }) } };
+    return responseBuilder.buildFailureResponse({ reason: 'unknown_error' });
   }
 
   if (!outcome.ok) {
-    return { ok: true, data: { html: renderHealthInsightDashboardError(outcome) } };
+    return responseBuilder.buildFailureResponse(outcome);
   }
 
-  return { ok: true, data: { html: renderHealthInsightDashboard(outcome.result) } };
+  return responseBuilder.buildSuccessResponse(outcome.result);
 }

@@ -63,14 +63,16 @@ src/ui/health_insight/
     input_page.js          組裝完整Input Experience畫面（TASK1.115：新增標題區塊+送出按鈕）
   client/
     interaction_script.js  TASK1.116新增：瀏覽器端互動腳本（純字串，chip選取/輸入狀態/送出/loading/success/error）
-  index.js                 統一輸出入口（TASK1.116新增getHealthInsightClientScript匯出）
+  render_product_response.js  TASK1.117新增：Structured Product Response → HTML的連接點
+  index.js                 統一輸出入口（TASK1.116新增getHealthInsightClientScript匯出，TASK1.117新增renderHealthInsightProductResponse匯出）
 ```
 
-對應TASK1.116新增的真實route/controller（在這個目錄之外）：
+對應TASK1.116/1.117新增的真實route/controller（在這個目錄之外）：
 
 ```
-src/controllers/health_insight_controller.js   GET頁面/POST送出的橋接邏輯
-src/routes/health_insight_routes.js            GET /health-insight、POST /api/health-insight
+src/controllers/health_insight_controller.js          GET頁面/POST送出的橋接邏輯
+src/controllers/health_insight_response_builder.js    TASK1.117新增：結構化Product Response組裝
+src/routes/health_insight_routes.js                   GET /health-insight、POST /api/health-insight
 ```
 
 ## 元件責任（Intelligence Boundary）
@@ -169,3 +171,19 @@ route/controller，元件/頁面組裝函式本身也完全沒有被重新設計
   登入**：Health Insight Product Integration本身明確設計成
   不接受auth依賴，這兩條路由也沒有掛`requireAuth()`，延續
   "低壓力、不製造使用門檻"既有設計原則。
+
+## TASK1.117更新：新增UI Renderer連接點（Response Boundary Refinement）
+
+TASK1.116的Controller原本直接呼叫`renderHealthInsightDashboard()`/
+`renderHealthInsightDashboardError()`產生HTML。TASK1.117把
+Controller的職責拆開（見`src/controllers/
+health_insight_response_builder.js`檔案頭說明），改成回傳跟
+呈現方式無關的結構化Product Response，新增
+`render_product_response.js`（`renderHealthInsightProductResponse()`）
+當作"結構化回應 → HTML"的連接點——這個檔案**只呼叫**既有的
+`renderHealthInsightDashboard()`/`renderHealthInsightDashboardError()`，
+完全沒有重新實作任何排版邏輯。`error_card.js`的
+`REASON_CATEGORY_MAP`額外新增4筆"分類名稱本身"的identity
+mapping（見該檔案該常數定義處的說明），純新增、不影響既有20筆
+原始reason的分類行為。除此之外，`src/ui/health_insight/`底下
+所有既有元件/頁面/設計系統檔案完全沒有被修改。

@@ -34,6 +34,14 @@
 > 本系列第一次有正式的Health Insight route掛在`app.router`上，
 > `src/worker.js`同步新增了對應的判斷式（延續TASK1.29起既有的
 > "針對每一條已上線路徑直接解析真正HTTP輸入"慣例）。
+>
+> **更新記錄（TASK1.117 Health Insight Response Boundary
+> Refinement）**：`POST /api/health-insight`的handler內部多一道
+> 步驟——先呼叫controller拿到結構化Product
+> Response，再呼叫`renderHealthInsightProductResponse()`（新增於
+> `src/ui/health_insight/`）轉成HTML，最後包成跟TASK1.116完全
+> 相同的`{ok:true, data:{html}}`回傳——路由數量、路徑、外部JSON
+> 回應形狀完全沒有改變，`src/worker.js`這次**沒有**被修改。
 
 ## 目錄結構
 

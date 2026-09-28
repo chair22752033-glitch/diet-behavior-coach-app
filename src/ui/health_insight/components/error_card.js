@@ -1,7 +1,10 @@
 /*
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
- * （TASK1.115後更新：視覺重構，見下方"TASK1.115更新"區塊）
+ * （TASK1.115後更新：視覺重構，見下方"TASK1.115更新"區塊；
+ * TASK1.117後更新：`REASON_CATEGORY_MAP`新增4筆分類名稱本身的
+ * identity mapping，見該常數定義處說明，其餘邏輯/視覺輸出完全
+ * 不變）
  * - Error Card（Error Presentation）
  *
  * 責任：把Health Insight Integration（TASK1.112）既有的結構化
@@ -72,6 +75,17 @@ const REASON_CATEGORY_MAP = {
   intelligence_invalid_result: 'temporary_failure',
   capability_invalid_result: 'temporary_failure',
   unknown_error: 'temporary_failure',
+  // TASK1.117新增：identity mapping——Health Insight Response
+  // Builder（`src/controllers/health_insight_response_builder.js`）
+  // 現在會先把原始reason分類成這四種類別之一，再把「分類名稱
+  // 本身」透過UI Renderer（`render_product_response.js`）當作
+  // `reason`傳進這裡。沒有這4筆mapping，分類名稱本身會查不到
+  // 對照表、被誤判成temporary_failure，導致分類結果跑掉。這是
+  // 純粹新增的4筆對照，既有20筆原始reason的分類行為完全不變。
+  missing_data: 'missing_data',
+  invalid_input: 'invalid_input',
+  unavailable_intelligence: 'unavailable_intelligence',
+  temporary_failure: 'temporary_failure',
 };
 
 /**

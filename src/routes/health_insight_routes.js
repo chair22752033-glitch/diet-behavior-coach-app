@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.116｜Health Insight Product Activation Implementation
+ * （TASK1.117後更新：POST /api/health-insight新增UI
+ * Renderer轉接步驟，見下方"TASK1.117更新"區塊）
  * - Health Insight Routes
  *
  * 建立 GET /health-insight（Input Experience頁面）與
@@ -12,6 +14,22 @@
  * 參數、呼叫controller、把結果轉成Response」，完全不直接呼叫
  * db/Health Insight Integration本身（那是controller的責任，見
  * src/controllers/health_insight_controller.js）。
+ *
+ * ## TASK1.117更新：POST /api/health-insight新增UI Renderer轉接
+ *
+ * TASK1.117把`submitHealthInsightController()`的回傳值從HTML
+ * 改成結構化Product Response（`{ok, data}`/`{ok:false,
+ * error}`，見`health_insight_controller.js`/
+ * `health_insight_response_builder.js`檔案頭說明）。既有的
+ * `POST /api/health-insight` JSON回應外部形狀（`{ok:true,
+ * data:{html}}`）完全沒有改變（延續"Existing POST
+ * /api/health-insight behavior remains working"的完成標準）——
+ * route層現在多做一步：把controller回傳的結構化回應，交給
+ * `renderHealthInsightProductResponse()`（TASK1.117新增的UI
+ * Renderer連接點）轉成HTML，再包成跟TASK1.116完全相同的
+ * `{ok:true, data:{html}}`形狀回傳。`GET /health-insight`完全
+ * 沒有被這次更新影響（Input Experience頁面本身不涉及Product
+ * Response）。
  *
  * 安全/邊界考量：
  * - 兩條路由都**不**要求登入（不掛`requireAuth()`）——Health
@@ -29,7 +47,7 @@
  *   Router既有的makeResponse()包成JSON回應，跟其餘API路由一致。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
-import { getHealthInsightClientScript } from '../ui/health_insight/index.js';
+import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -76,6 +94,8 @@ export function registerHealthInsightRoutes(router) {
 
   router.add('POST', '/api/health-insight', async (ctx) => {
     const req = ctx.req || {};
-    return submitHealthInsightController(req.payload);
+    const structuredResponse = submitHealthInsightController(req.payload);
+    const html = renderHealthInsightProductResponse(structuredResponse);
+    return { ok: true, data: { html } };
   });
 }
