@@ -30,6 +30,25 @@
  * 角色歡迎插畫），改用`createObservationCard()`/
  * `createRecommendationCard()`新的單卡結構（見這兩個元件
  * 檔案的TASK1.115更新說明，不再是`*List()`的N張卡結構）。
+ *
+ * ## TASK1.123更新：Gemini呈現 + 歷史紀錄預留區塊
+ *
+ * `renderHealthInsightDashboard()`新增選填的第二個參數
+ * `presentationContext`（`{isAuthenticated, geminiPermitted,
+ * enhancedExplanation}`，由`../render_product_response.js`
+ * 轉發，最終由`src/routes/health_insight_routes.js`組出——這個
+ * 檔案本身完全不呼叫Gemini Enhancement Layer/Membership
+ * Boundary，只把已經算好的旗標交給`createGeminiInsightCard()`
+ * 排版，延續這個檔案自始至終"純函式組裝層"的既有定位）。省略
+ * 這個參數時（`presentationContext`為`undefined`），效果等同於
+ * 傳入`{}`——`createGeminiInsightCard({})`會安全回傳"會員專屬"
+ * 邊界卡片（因為`geminiPermitted`預設是falsy），這是刻意的安全
+ * 預設，不是巧合：沒有明確被授權的呼叫一律視為"未取得permission"，
+ * 不會意外顯示AI內容。
+ *
+ * 新增`createHistoryPlaceholderCard()`區塊（規格"History
+ * Experience Preparation"，純預留卡片，不接受任何真實歷史資料，
+ * 見該元件檔案說明），固定顯示在Dashboard最下方。
  */
 import { getDesignSystemCSS } from '../design_system/design_tokens.js';
 import { createIllustration } from '../components/illustration.js';
@@ -38,6 +57,8 @@ import { createObservationCard } from '../components/observation_card.js';
 import { createRecommendationCard } from '../components/recommendation_card.js';
 import { createBehaviorPatternPlaceholderCard } from '../components/behavior_pattern_card.js';
 import { createProgressPlaceholderCard } from '../components/progress_card.js';
+import { createGeminiInsightCard } from '../components/gemini_insight_card.js';
+import { createHistoryPlaceholderCard } from '../components/history_placeholder_card.js';
 import { createErrorCard } from '../components/error_card.js';
 
 /**
@@ -69,10 +90,12 @@ function renderDashboardHeader() {
  * "不暴露internal capability structure"既有原則）。
  *
  * @param {{healthObservation?:Array, behaviorPattern?:Array, recommendation?:Array, progressTrend?:object}} healthInsightResult
+ * @param {{isAuthenticated?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null}} [presentationContext] - TASK1.123新增，選填，見上方"TASK1.123更新"說明
  * @returns {string}
  */
-export function renderHealthInsightDashboard(healthInsightResult) {
+export function renderHealthInsightDashboard(healthInsightResult, presentationContext) {
   const result = healthInsightResult && typeof healthInsightResult === 'object' ? healthInsightResult : {};
+  const geminiCard = createGeminiInsightCard(presentationContext);
 
   return [
     `<style>${getDesignSystemCSS()}</style>`,
@@ -87,14 +110,20 @@ export function renderHealthInsightDashboard(healthInsightResult) {
     '  <div class="hi-dashboard-section hi-dashboard-recommendation">',
     createRecommendationCard(result.recommendation),
     '  </div>',
+    geminiCard ? '  <div class="hi-dashboard-section hi-dashboard-gemini-insight">' : '',
+    geminiCard,
+    geminiCard ? '  </div>' : '',
     '  <div class="hi-dashboard-section hi-dashboard-behavior-pattern">',
     createBehaviorPatternPlaceholderCard(),
     '  </div>',
     '  <div class="hi-dashboard-section hi-dashboard-progress">',
     createProgressPlaceholderCard(),
     '  </div>',
+    '  <div class="hi-dashboard-section hi-dashboard-history">',
+    createHistoryPlaceholderCard(),
+    '  </div>',
     '</section>',
-  ].join('\n');
+  ].filter((line) => line !== '').join('\n');
 }
 
 /**

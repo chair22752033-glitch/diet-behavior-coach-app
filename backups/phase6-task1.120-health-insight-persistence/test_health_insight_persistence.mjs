@@ -843,7 +843,8 @@ async function main() {
     'src/identity/health_insight/membership_placeholder.js',
     'src/controllers/health_insight_response_builder.js',
     'src/controllers/health_insight_controller.js',
-    'src/ui/health_insight/render_product_response.js',
+    // TASK1.123後更新：render_product_response.js從這個清單移除
+    // ——Product Experience Upgrade明確授權它轉發presentationContext。
     'src/worker.js',
   ];
 
@@ -860,9 +861,14 @@ async function main() {
     });
   }
 
-  await test('（9.product integration）src/ui/health_insight/整個目錄完全沒有被本次任務修改（不重新設計UI）', () => {
+  await test('（9.product integration）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（9.product integration）src/intelligence/整個目錄完全沒有被本次任務修改', () => {
@@ -870,7 +876,14 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  const TASK1120_AUTHORIZED_MODIFIED_FILES = ['src/db/index.js', 'src/routes/health_insight_routes.js'];
+  const TASK1120_AUTHORIZED_MODIFIED_FILES = [
+    'src/db/index.js',
+    'src/routes/health_insight_routes.js',
+    // TASK1.123後更新：Product Experience Upgrade明確授權的3個UI檔案
+    'src/ui/health_insight/render_product_response.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
+  ];
   const TASK1120_NEWLY_CREATED_FILES = [
     'src/db/tables/health_insight_records.js',
     'src/persistence/health_insight/health_insight_persistence_service.js',

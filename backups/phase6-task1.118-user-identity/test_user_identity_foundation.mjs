@@ -603,12 +603,13 @@ async function main() {
   // health_insight_routes.js從這個清單移除——TASK1.119明確被授權
   // 做"Controller/request context adjustment"跟"Minimal
   // route/session connection"，合法修改了這兩個檔案來接上
-  // resolve_identity()。health_insight_response_builder.js/
-  // render_product_response.js（真正的Response Boundary核心）
-  // 依然要求零diff。
+  // resolve_identity()。health_insight_response_builder.js
+  // （真正的Response Boundary核心）依然要求零diff。
+  // （TASK1.123後更新）render_product_response.js從這個清單移除
+  // ——Product Experience Upgrade明確授權它轉發presentationContext
+  // 給Dashboard。
   const RESPONSE_BOUNDARY_FILES = [
     'src/controllers/health_insight_response_builder.js',
-    'src/ui/health_insight/render_product_response.js',
   ];
 
   for (const relFile of RESPONSE_BOUNDARY_FILES) {
@@ -618,9 +619,14 @@ async function main() {
     });
   }
 
-  await test('（7.response boundary）src/ui/health_insight/整個目錄完全沒有被本次任務修改（不重新設計UI）', () => {
+  await test('（7.response boundary）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（7.response boundary）src/identity/health_insight/完全不import src/controllers/、src/routes/、src/ui/任何檔案（單向依賴，不會反過來影響既有Response Boundary）', () => {
@@ -807,6 +813,10 @@ async function main() {
     'src/controllers/health_insight_controller.js',
     'src/routes/health_insight_routes.js',
     'src/db/index.js',
+    // TASK1.123後更新：Product Experience Upgrade明確授權的3個UI檔案
+    'src/ui/health_insight/render_product_response.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
   ];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js' -o -name '*.md'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)

@@ -2,7 +2,9 @@
  * Phase 6 TASK 1.114｜Health Insight UI/UX Implementation
  * Foundation
  * （TASK1.115後更新：新增illustration.js/card_header.js/
- * card_cta.js三個共用輔助檔案的匯出，見下方）
+ * card_cta.js三個共用輔助檔案的匯出，見下方；TASK1.123後更新：
+ * 新增gemini_insight_card.js/history_placeholder_card.js兩個
+ * 呈現層元件的匯出，見下方）
  * - 統一輸出入口
  *
  * 把 src/ui/health_insight/components/ 底下所有可對外使用的
@@ -27,3 +29,5 @@ export { createBehaviorPatternPlaceholderCard } from './behavior_pattern_card.js
 export { createProgressPlaceholderCard } from './progress_card.js';
 export { createChoiceQuestionCard, createInputQuestionCard } from './question_card.js';
 export { classifyErrorReason, createErrorCard } from './error_card.js';
+export { createGeminiInsightCard } from './gemini_insight_card.js';
+export { createHistoryPlaceholderCard } from './history_placeholder_card.js';

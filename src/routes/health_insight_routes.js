@@ -120,6 +120,22 @@
  * `canUseFeature()`——`src/worker.js`真正的HTTP dispatch永遠只會
  * 傳空物件，所以目前沒有任何真實使用者能通過這個權限檢查（見
  * `src/membership/README.md`"Future Payment Compatibility"）。
+ *
+ * ## TASK1.123更新：html組裝改到Permission/Enhancement判斷之後
+ *
+ * 延續規格目標架構"Health Insight Result → Persistence → Gemini
+ * Permission Check → Optional Enhancement → UI"，`html`的組裝
+ * （呼叫`renderHealthInsightProductResponse()`）從原本"結果一
+ * 算出來就立刻組"，改成移到`canUseFeature()`/
+ * `enhanceHealthInsightResult()`判斷完之後才組——這樣UI Renderer
+ * 才能知道"這個使用者能不能用Gemini"（`geminiPermitted`）跟"這次
+ * 有沒有真的拿到AI說明"（`enhancedExplanation`），才有辦法呈現
+ * TASK1.123新增的"AI 陪伴解讀"/"會員專屬"邊界卡片（見
+ * `src/ui/health_insight/components/gemini_insight_card.js`）。
+ * `saveHealthInsightRecord()`→`canUseFeature()`→
+ * `enhanceHealthInsightResult()`三者的**呼叫順序完全沒有改變**
+ * （延續TASK1.121/1.122已經確認的既有順序），持久化依然只存
+ * 原始`structuredResponse`，不受這次html組裝時機調整影響。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
@@ -175,14 +191,23 @@ export function registerHealthInsightRoutes(router) {
     const req = ctx.req || {};
     const identity = await resolveHealthInsightIdentity(ctx.db, req.cookieHeader, {});
     const structuredResponse = submitHealthInsightController(req.payload, { identity });
-    const html = renderHealthInsightProductResponse(structuredResponse);
     await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
-    const data = { html };
-    if (canUseFeature(identity, 'gemini_enhancement', req.options)) {
+    const geminiPermitted = canUseFeature(identity, 'gemini_enhancement', req.options);
+    let enhancedExplanation = null;
+    if (geminiPermitted) {
       const enhancement = await enhanceHealthInsightResult(structuredResponse, { env: ctx.env });
       if (enhancement && enhancement.ok) {
-        data.enhancedExplanation = enhancement.enhancedExplanation;
+        enhancedExplanation = enhancement.enhancedExplanation;
       }
+    }
+    const html = renderHealthInsightProductResponse(structuredResponse, {
+      isAuthenticated: !!(identity && identity.authenticated),
+      geminiPermitted,
+      enhancedExplanation,
+    });
+    const data = { html };
+    if (enhancedExplanation) {
+      data.enhancedExplanation = enhancedExplanation;
     }
     return { ok: true, data };
   });

@@ -543,7 +543,9 @@ async function main() {
     'src/ui/health_insight/components/card_cta.js',
     'src/ui/health_insight/components/html_utils.js',
     'src/ui/health_insight/components/label_map.js',
-    'src/ui/health_insight/pages/dashboard_page.js',
+    // TASK1.123後更新：dashboard_page.js從這個"完全沒有被重寫"清單
+    // 移除——Product Experience Upgrade明確授權新增Gemini/History
+    // 呈現區塊，見該任務commit說明。
     'src/ui/health_insight/pages/input_page.js',
     'src/ui/health_insight/design_system/design_tokens.js',
     'src/ui/health_insight/client/interaction_script.js',
@@ -889,10 +891,13 @@ async function main() {
   const gitStatusPorcelain = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean);
   // （TASK1.120後更新）src/db/index.js從這個逐檔案掃描排除，理由
-  // 同上方"architecture protection"章節。
+  // 同上方"architecture protection"章節。（TASK1.123後更新）
+  // dashboard_page.js/components/index.js從這個逐檔案掃描排除——
+  // Product Experience Upgrade明確授權新增Gemini/History呈現區塊。
+  const TASK1123_AUTHORIZED_UI_FILES = ['src/ui/health_insight/pages/dashboard_page.js', 'src/ui/health_insight/components/index.js'];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
-    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js' && f !== 'src/db/index.js');
+    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js' && f !== 'src/db/index.js' && !TASK1123_AUTHORIZED_UI_FILES.includes(f));
 
   await test(`（9.architecture protection）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有檔案需要逐一確認零diff（排除4個本次任務明確授權修改的檔案+2個本次任務新增的檔案）`, () => {
     assert.ok(allExistingSrcFiles.length >= 200, `預期至少200個既有檔案，實際 ${allExistingSrcFiles.length}`);

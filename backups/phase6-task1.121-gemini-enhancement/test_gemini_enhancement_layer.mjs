@@ -840,7 +840,7 @@ async function main() {
     assert.deepStrictEqual(input, original);
   });
 
-  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應的html跟Gemini失敗時的html完全相同（TASK1.122後更新：改用已授權premium身份，匿名/free使用者已經不會觸發Gemini）', async () => {
+  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應的html裡核心健康觀察/建議卡片內容跟Gemini失敗時完全相同（TASK1.123後更新：完整html不再逐字相同，因為TASK1.123新增的"AI 陪伴解讀"呈現區塊會依Gemini是否成功而出現/消失，但這只是呈現層的加值區塊，不影響Health Insight本身的核心內容——這裡改成只比對觀察/建議卡片區塊）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'preserve-html-user', isGuest: false, authProvider: 'google' });
     const resSuccess = await withMockedGlobalFetch(async () => fakeGeminiHttpResponse('增強說明'), async () =>
@@ -849,7 +849,13 @@ async function main() {
     const resFailure = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
     const bodySuccess = await resSuccess.json();
     const bodyFailure = await resFailure.json();
-    assert.strictEqual(bodySuccess.data.html, bodyFailure.data.html);
+    const extractCard = (html, marker) => {
+      const start = html.indexOf(marker);
+      const end = html.indexOf('</div>\n</div>', start);
+      return html.slice(start, end);
+    };
+    assert.strictEqual(extractCard(bodySuccess.data.html, 'hi-observation-card'), extractCard(bodyFailure.data.html, 'hi-observation-card'));
+    assert.strictEqual(extractCard(bodySuccess.data.html, 'hi-recommendation-card'), extractCard(bodyFailure.data.html, 'hi-recommendation-card'));
   });
 
   await test('（6.existing result preservation）真實端對端：沒有設定GEMINI_API_KEY時，回應形狀跟TASK1.120完全一致（只有html欄位）', async () => {
@@ -870,7 +876,7 @@ async function main() {
     assert.strictEqual(body.ok, true);
   });
 
-  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應多了enhancedExplanation但html不變且status/ok不變（TASK1.122後更新：改用已授權premium身份）', async () => {
+  await test('（6.existing result preservation）真實端對端：Gemini成功時，回應多了enhancedExplanation，且核心健康觀察/建議卡片內容跟基準情境相同、status/ok不變（TASK1.123後更新：完整html不再逐字相同，理由同上，這裡改成比對觀察/建議卡片區塊）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'preserve-explanation-user', isGuest: false, authProvider: 'google' });
     const resBase = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
@@ -879,9 +885,15 @@ async function main() {
       router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: { lookupTier: () => 'premium' } }, { db, env: { GEMINI_API_KEY: 'fake' } })
     );
     const bodyEnhanced = await resEnhanced.json();
+    const extractCard = (html, marker) => {
+      const start = html.indexOf(marker);
+      const end = html.indexOf('</div>\n</div>', start);
+      return html.slice(start, end);
+    };
     assert.strictEqual(resEnhanced.status, 200);
     assert.strictEqual(bodyEnhanced.ok, true);
-    assert.strictEqual(bodyEnhanced.data.html, bodyBase.data.html);
+    assert.strictEqual(extractCard(bodyEnhanced.data.html, 'hi-observation-card'), extractCard(bodyBase.data.html, 'hi-observation-card'));
+    assert.strictEqual(extractCard(bodyEnhanced.data.html, 'hi-recommendation-card'), extractCard(bodyBase.data.html, 'hi-recommendation-card'));
     assert.strictEqual(bodyEnhanced.data.enhancedExplanation, '增強說明文字');
   });
 
@@ -952,7 +964,8 @@ async function main() {
     'src/identity/health_insight/membership_placeholder.js',
     'src/controllers/health_insight_response_builder.js',
     'src/controllers/health_insight_controller.js',
-    'src/ui/health_insight/render_product_response.js',
+    // TASK1.123後更新：render_product_response.js從這個清單移除
+    // ——Product Experience Upgrade明確授權它轉發presentationContext。
     'src/persistence/health_insight/health_insight_persistence_service.js',
     'src/persistence/health_insight/index.js',
     'src/db/tables/health_insight_records.js',
@@ -973,9 +986,14 @@ async function main() {
     });
   }
 
-  await test('（7.product integration）src/ui/health_insight/整個目錄完全沒有被本次任務修改（不重新設計UI）', () => {
+  await test('（7.product integration）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（7.product integration）src/intelligence/product/、src/intelligence/capabilities/、src/intelligence/analysis/、src/intelligence/recommendation/、src/intelligence/context/整個目錄完全沒有被本次任務修改', () => {
@@ -994,7 +1012,13 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  const TASK1121_AUTHORIZED_MODIFIED_FILES = ['src/routes/health_insight_routes.js'];
+  const TASK1121_AUTHORIZED_MODIFIED_FILES = [
+    'src/routes/health_insight_routes.js',
+    // TASK1.123後更新：Product Experience Upgrade明確授權的3個UI檔案
+    'src/ui/health_insight/render_product_response.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
+  ];
   const TASK1121_NEWLY_CREATED_FILES = [
     'src/config/gemini_config.js',
     'src/intelligence/enhancement/provider/ai_provider_contract.js',

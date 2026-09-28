@@ -981,9 +981,10 @@ async function main() {
     assert.ok(!/<form[\s>]|score|scoring|<select/i.test(clientScript));
   });
 
-  await test('（9.UX consistency）Input Experience既有的低壓力引導式問題卡片結構完全沒有被修改（question_card.js/input_page.js本次任務沒有被觸碰）', () => {
+  await test('（9.UX consistency）Input Experience既有的低壓力引導式問題卡片結構完全沒有被修改（question_card.js/input_page.js/error_card.js本次任務沒有被觸碰；dashboard_page.js在TASK1.123後合法新增Gemini/History呈現區塊，予以排除，見TASK1.123後更新）', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/ui/health_insight/components/question_card.js src/ui/health_insight/pages/input_page.js src/ui/health_insight/pages/dashboard_page.js src/ui/health_insight/components/error_card.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => line.trim() && !line.includes('dashboard_page.js') && !line.includes('file changed') && !line.includes('files changed')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（9.UX consistency）DESIGN_SPECIFICATION.md/README.md本次任務沒有被要求修改視覺規格本身（本次任務是Route/Interaction activation，不是視覺重新設計）', () => {
@@ -1084,6 +1085,10 @@ async function main() {
     'src/controllers/health_insight_controller.js',
     'src/routes/health_insight_routes.js',
     'src/ui/health_insight/client/interaction_script.js',
+    // TASK1.123後更新：Product Experience Upgrade明確授權修改的3個UI檔案
+    'src/ui/health_insight/render_product_response.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
   ];
 
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })

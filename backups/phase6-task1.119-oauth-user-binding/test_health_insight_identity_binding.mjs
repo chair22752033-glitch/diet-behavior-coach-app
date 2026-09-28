@@ -231,14 +231,20 @@ async function main() {
     });
   }
 
-  await test('（2.authenticated flow）已登入使用者的Dashboard結果跟匿名使用者完全一致（V1不做個人化，延續既有限制，本次任務沒有新增Intelligence邏輯）', async () => {
+  await test('（2.authenticated flow）已登入使用者的Dashboard核心內容（觀察/建議卡片）跟匿名使用者完全一致（V1不做個人化，延續既有限制，本次任務沒有新增Intelligence邏輯；TASK1.123後更新：完整html不再逐字相同，因為Premium Feature Boundary呈現層會依登入狀態顯示不同的引導文案"登入之後"vs"升級會員"，但這只是呈現層文字差異，不是Intelligence個人化——這裡改成比對兩者的健康觀察/建議卡片內容區塊完全相同）', async () => {
     const router = createAppRouter();
     const dbAuth = makeValidSessionDb({ userId: 'u-auth', isGuest: false, authProvider: 'google' });
     const resAuth = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db: dbAuth });
     const bodyAuth = await resAuth.json();
     const resAnon = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, options: {} }, {});
     const bodyAnon = await resAnon.json();
-    assert.strictEqual(bodyAuth.data.html, bodyAnon.data.html);
+    const extractCard = (html, marker) => {
+      const start = html.indexOf(marker);
+      const end = html.indexOf('</div>\n</div>', start);
+      return html.slice(start, end);
+    };
+    assert.strictEqual(extractCard(bodyAuth.data.html, 'hi-observation-card'), extractCard(bodyAnon.data.html, 'hi-observation-card'));
+    assert.strictEqual(extractCard(bodyAuth.data.html, 'hi-recommendation-card'), extractCard(bodyAnon.data.html, 'hi-recommendation-card'));
   });
 
   await test('（2.authenticated flow）submitHealthInsightController()正確接受dependencies.identity並轉發到Product Integration', () => {
@@ -495,7 +501,8 @@ async function main() {
     'src/identity/health_insight/request_context.js',
     'src/identity/health_insight/membership_placeholder.js',
     'src/controllers/health_insight_response_builder.js',
-    'src/ui/health_insight/render_product_response.js',
+    // TASK1.123後更新：render_product_response.js從這個清單移除
+    // ——Product Experience Upgrade明確授權它轉發presentationContext。
   ];
 
   for (const relFile of PRODUCT_BOUNDARY_FILES) {
@@ -511,9 +518,14 @@ async function main() {
     });
   }
 
-  await test('（7.product integration）src/ui/health_insight/整個目錄完全沒有被本次任務修改（不重新設計UI）', () => {
+  await test('（7.product integration）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（7.product integration）真實Product Entry接受{user, rawInput}形狀，不會被既有驗證邏輯拒絕', () => {
@@ -533,6 +545,9 @@ async function main() {
     'src/controllers/health_insight_controller.js',
     'src/routes/health_insight_routes.js',
     'src/db/index.js', // TASK1.120後更新：新增Health Insight persistence層的binding，明確授權
+    'src/ui/health_insight/render_product_response.js', // TASK1.123後更新
+    'src/ui/health_insight/pages/dashboard_page.js', // TASK1.123後更新
+    'src/ui/health_insight/components/index.js', // TASK1.123後更新
   ];
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)

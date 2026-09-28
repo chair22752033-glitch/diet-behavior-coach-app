@@ -32,18 +32,30 @@
  * "分類名稱本身也能被正確識別"的identity
  * mapping（見該檔案），讓這個轉接不需要重新解讀分類邏輯，也
  * 不會產生任何跟TASK1.114/1.115時代不同的呈現結果。
+ *
+ * ## TASK1.123更新：轉發Presentation Context給Dashboard
+ *
+ * 新增選填的第二個參數`presentationContext`（`{isAuthenticated,
+ * geminiPermitted, enhancedExplanation}`，由`src/routes/
+ * health_insight_routes.js`組出），成功時原樣轉發給
+ * `renderHealthInsightDashboard()`（見該檔案TASK1.123更新
+ * 說明）；失敗時完全不使用這個參數——Error Card的呈現邏輯延續
+ * 既有分類機制，跟Gemini/Membership完全無關。這個檔案本身依然
+ * 完全不import `src/intelligence/enhancement/gemini/`或
+ * `src/membership/`任何檔案，只是單純轉發呼叫端已經算好的資料。
  */
 import { renderHealthInsightDashboard, renderHealthInsightDashboardError } from './pages/dashboard_page.js';
 
 /**
  * @param {{ok:true, data:object}|{ok:false, error:{type:string, category:string}}} structuredResponse
+ * @param {{isAuthenticated?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null}} [presentationContext] - TASK1.123新增，選填
  * @returns {string}
  */
-export function renderHealthInsightProductResponse(structuredResponse) {
+export function renderHealthInsightProductResponse(structuredResponse, presentationContext) {
   const safeResponse = structuredResponse && typeof structuredResponse === 'object' ? structuredResponse : {};
 
   if (safeResponse.ok) {
-    return renderHealthInsightDashboard(safeResponse.data);
+    return renderHealthInsightDashboard(safeResponse.data, presentationContext);
   }
 
   const category = safeResponse.error && typeof safeResponse.error === 'object'

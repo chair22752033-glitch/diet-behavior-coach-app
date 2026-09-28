@@ -622,7 +622,7 @@ async function main() {
     assert.strictEqual(callCount, 1);
   });
 
-  await test('（7.gemini allowed flow）allowed且Gemini成功時，html跟denied情境的html完全相同（permission只影響有沒有enhancedExplanation，不影響html本身）', async () => {
+  await test('（7.gemini allowed flow）allowed且Gemini成功時，html裡核心健康觀察/建議卡片內容跟denied情境完全相同（TASK1.123後更新：完整html不再逐字相同，因為TASK1.123新增的"AI 陪伴解讀"呈現區塊會依permission/Gemini結果出現/消失，這只是呈現層的加值區塊，不影響Health Insight本身的核心內容——這裡改成只比對觀察/建議卡片區塊）', async () => {
     const router = createAppRouter();
     const db = makeValidSessionDb({ userId: 'allowed-html-compare', isGuest: false, authProvider: 'google' });
     const resDenied = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
@@ -631,7 +631,13 @@ async function main() {
     );
     const bodyDenied = await resDenied.json();
     const bodyAllowed = await resAllowed.json();
-    assert.strictEqual(bodyDenied.data.html, bodyAllowed.data.html);
+    const extractCard = (html, marker) => {
+      const start = html.indexOf(marker);
+      const end = html.indexOf('</div>\n</div>', start);
+      return html.slice(start, end);
+    };
+    assert.strictEqual(extractCard(bodyDenied.data.html, 'hi-observation-card'), extractCard(bodyAllowed.data.html, 'hi-observation-card'));
+    assert.strictEqual(extractCard(bodyDenied.data.html, 'hi-recommendation-card'), extractCard(bodyAllowed.data.html, 'hi-recommendation-card'));
   });
 
   await test('（7.gemini allowed flow）連續兩次呼叫（都allowed且成功）得到一致的enhancedExplanation（deterministic）', async () => {
@@ -656,11 +662,14 @@ async function main() {
     assert.ok(canUseIdx < enhanceIdx);
   });
 
-  await test('（7.gemini allowed flow）route的實際程式碼裡enhanceHealthInsightResult()的呼叫在一個if(canUseFeature(...))區塊裡（不是無條件呼叫）', () => {
+  await test('（7.gemini allowed flow）route的實際程式碼裡enhanceHealthInsightResult()的呼叫在一個依據canUseFeature()結果的if區塊裡（不是無條件呼叫；TASK1.123後更新：route現在先把canUseFeature()的結果存進geminiPermitted變數再判斷if(geminiPermitted)，變數本身緊接在canUseFeature()呼叫之後賦值，所以檢查範圍放寬到400字元）', () => {
     const codeOnly = stripComments(routesSource);
+    const canUseIdx = codeOnly.indexOf('canUseFeature(');
     const enhanceIdx = codeOnly.indexOf('enhanceHealthInsightResult(');
-    const before = codeOnly.slice(Math.max(0, enhanceIdx - 200), enhanceIdx);
-    assert.ok(/if\s*\(\s*canUseFeature\(/.test(before));
+    const between = codeOnly.slice(canUseIdx, enhanceIdx);
+    assert.ok(/if\s*\(\s*canUseFeature\(/.test(between) || /if\s*\(\s*\w+\s*\)\s*\{/.test(between));
+    const before = codeOnly.slice(Math.max(0, enhanceIdx - 400), enhanceIdx);
+    assert.ok(/if\s*\(\s*\w*[Pp]ermitted\w*\s*\)/.test(before) || /if\s*\(\s*canUseFeature\(/.test(before));
   });
 
   console.log('');
@@ -965,7 +974,8 @@ async function main() {
     'src/identity/health_insight/resolve_identity.js',
     'src/controllers/health_insight_controller.js',
     'src/controllers/health_insight_response_builder.js',
-    'src/ui/health_insight/render_product_response.js',
+    // TASK1.123後更新：render_product_response.js從這個清單移除
+    // ——Product Experience Upgrade明確授權它轉發presentationContext。
     'src/persistence/health_insight/health_insight_persistence_service.js',
     'src/db/tables/health_insight_records.js',
     'src/db/index.js',
@@ -986,9 +996,14 @@ async function main() {
     });
   }
 
-  await test('（11.architecture protection）src/ui/health_insight/整個目錄完全沒有被本次任務修改（不重新設計UI）', () => {
+  await test('（11.architecture protection）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（11.architecture protection）src/intelligence/整個目錄除了enhancement/之外完全沒有被本次任務修改', () => {
@@ -998,7 +1013,13 @@ async function main() {
     }
   });
 
-  const TASK1122_AUTHORIZED_MODIFIED_FILES = ['src/routes/health_insight_routes.js'];
+  const TASK1122_AUTHORIZED_MODIFIED_FILES = [
+    'src/routes/health_insight_routes.js',
+    // TASK1.123後更新：Product Experience Upgrade明確授權的3個UI檔案
+    'src/ui/health_insight/render_product_response.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
+  ];
   const TASK1122_NEWLY_CREATED_FILES = [
     'src/membership/membership_state.js',
     'src/membership/membership_resolver.js',

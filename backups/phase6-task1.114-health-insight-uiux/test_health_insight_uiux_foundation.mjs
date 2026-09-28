@@ -883,9 +883,21 @@ async function run() {
     assert.strictEqual(diff.trim(), '', `發現非預期的production程式碼變更：${diff}`);
   });
 
+  const TASK1123_GEMINI_PRESENTATION_FILES = [
+    path.join(componentsDir, 'index.js'),
+    path.join(pagesDir, 'dashboard_page.js'),
+  ];
+
   for (const file of UI_JS_FILES) {
     const relName = path.relative(repoRoot, file);
     for (const pattern of AI_KEYWORDS) {
+      if (pattern.source === 'gemini' && TASK1123_GEMINI_PRESENTATION_FILES.includes(file)) {
+        // TASK1.123後更新：這兩個檔案現在合法import
+        // gemini_insight_card.js（呈現層，只接收已經算好的旗標，
+        // 完全不呼叫Gemini API本身），檔名/symbol名稱本身含有
+        // "gemini"字樣，予以排除；其餘AI_KEYWORDS規則依然套用。
+        continue;
+      }
       await test(`（10.Existing architecture protection）${relName} 的實際程式碼不含AI相關關鍵字樣 ${pattern}（Gemini not integrated）`, () => {
         const src = readSrc(file);
         assert.ok(!pattern.test(src), `${relName} 出現疑似AI相關字樣：${pattern}`);
