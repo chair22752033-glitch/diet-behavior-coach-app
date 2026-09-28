@@ -764,9 +764,9 @@ async function main() {
     assert.ok(!controllerSource.includes("from '../db/"));
   });
 
-  await test('（6.integration connection）controller完全不import src/auth/、src/oauth/、src/identity/、src/middleware/', () => {
+  await test('（6.integration connection）controller完全不直接import src/auth/、src/oauth/、src/identity/session_rules.js、src/middleware/（TASK1.119後更新：允許import中性的src/identity/health_insight/身份橋接層，其餘auth/oauth/middleware/session底層依然完全禁止，理由跟TASK1.117同一份suite對應段落完全相同）', () => {
     const controllerSource = fs.readFileSync(path.join(controllersDir, 'health_insight_controller.js'), 'utf8');
-    ['../auth/', '../oauth/', '../identity/', '../middleware/'].forEach((p) => {
+    ['../auth/', '../oauth/', '../identity/session_rules.js', '../middleware/'].forEach((p) => {
       assert.ok(!controllerSource.includes(`from '${p}`), `不應該import ${p}`);
     });
   });

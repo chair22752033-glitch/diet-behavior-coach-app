@@ -1,7 +1,9 @@
 /*
  * Phase 6 TASK 1.116｜Health Insight Product Activation Implementation
  * （TASK1.117後更新：POST /api/health-insight新增UI
- * Renderer轉接步驟，見下方"TASK1.117更新"區塊）
+ * Renderer轉接步驟，見下方"TASK1.117更新"區塊；TASK1.119後更新：
+ * POST /api/health-insight新增身份解析步驟，見下方"TASK1.119
+ * 更新"區塊）
  * - Health Insight Routes
  *
  * 建立 GET /health-insight（Input Experience頁面）與
@@ -31,13 +33,31 @@
  * 沒有被這次更新影響（Input Experience頁面本身不涉及Product
  * Response）。
  *
+ * ## TASK1.119更新：POST /api/health-insight新增身份解析步驟
+ *
+ * 延續規格目標架構"User → Existing Authentication/Session
+ * System → resolve_identity() → Health Insight Request
+ * Context → Health Insight Controller"，這裡在呼叫controller
+ * 之前，先呼叫TASK1.118既有的`resolveHealthInsightIdentity()`
+ * （重用既有session/使用者驗證系統，不建立新的），把解析出來的
+ * 身份物件當作`dependencies.identity`傳給controller。**兩條
+ * 路由依然都不掛`requireAuth()`**——沒有cookie/session過期/
+ * 使用者被停權時，`resolveHealthInsightIdentity()`安全回傳
+ * `ANONYMOUS_IDENTITY`，不會擋下request，延續"Anonymous users
+ * MUST continue working"的明確要求。這是這條路由第一次讀取真正
+ * 的Cookie標頭——對應`src/worker.js`新增的一行`cookieHeader`
+ * 轉發（見該檔案TASK1.119區塊）。
+ *
  * 安全/邊界考量：
  * - 兩條路由都**不**要求登入（不掛`requireAuth()`）——Health
  *   Insight Product Integration本身明確設計成不接受db/不接受
  *   auth依賴（延續TASK1.112檔案頭已確認的邊界），Input
  *   Experience只收集使用者當下填寫的輪廓答案，不讀取/不寫入
  *   任何既有使用者資料表，延續本次任務"D1 domain tables維持
- *   0筆"的驗證要求。
+ *   0筆"的驗證要求。TASK1.119新增的身份解析是**選填的加值**，
+ *   不是登入門檻——即使`resolveHealthInsightIdentity()`本身會
+ *   讀取session/使用者資料表，讀取的目的只是"認出這是誰"，
+ *   讀不到/讀取失敗都不影響request繼續進行。
  * - GET /health-insight直接回傳真正的`Response`物件（HTML
  *   document，`Content-Type: text/html`）——延續
  *   `src/routes/router.js`"handler若回傳真正的Response就原樣
@@ -48,6 +68,7 @@
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
+import { resolveHealthInsightIdentity } from '../identity/health_insight/index.js';
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -94,7 +115,8 @@ export function registerHealthInsightRoutes(router) {
 
   router.add('POST', '/api/health-insight', async (ctx) => {
     const req = ctx.req || {};
-    const structuredResponse = submitHealthInsightController(req.payload);
+    const identity = await resolveHealthInsightIdentity(ctx.db, req.cookieHeader, {});
+    const structuredResponse = submitHealthInsightController(req.payload, { identity });
     const html = renderHealthInsightProductResponse(structuredResponse);
     return { ok: true, data: { html } };
   });

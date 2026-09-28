@@ -655,8 +655,8 @@ async function main() {
   // =========================================================================
   console.log('--- G. Future OAuth compatibility ---');
 
-  await test('（7.future OAuth）controller完全不import src/auth/、src/oauth/、src/identity/、src/middleware/（沒有提前引入身份邏輯）', () => {
-    ['../auth/', '../oauth/', '../identity/', '../middleware/'].forEach((p) => {
+  await test('（7.future OAuth）controller完全不直接import src/auth/、src/oauth/、src/identity/session_rules.js、src/middleware/（沒有提前引入身份底層邏輯；TASK1.119後更新：TASK1.119合法新增了import中性的src/identity/health_insight/身份橋接層，這裡改成排除那個特定路徑，其餘auth/oauth/middleware/session底層依然完全禁止）', () => {
+    ['../auth/', '../oauth/', '../identity/session_rules.js', '../middleware/'].forEach((p) => {
       assert.ok(!controllerSource.includes(`from '${p}`), `不應該import ${p}`);
     });
   });
@@ -766,9 +766,12 @@ async function main() {
     assert.strictEqual(app.router.routes.length, 23);
   });
 
-  await test('（9.architecture protection）src/worker.js完全沒有被本次任務修改（本次任務不需要新增/修改worker.js的任何判斷式，路由路徑完全沒有變化）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（9.architecture protection）src/worker.js的既有TASK1.21~1.38路由分派邏輯/legacy handler完全沒有被修改（本次任務不需要新增/修改worker.js的任何判斷式，路由路徑完全沒有變化；TASK1.119後更新：TASK1.119合法新增了POST /api/health-insight讀取Cookie標頭的一行，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在，理由跟TASK1.116/1.111~1.115其餘suite同一段落完全相同）', () => {
+    const workerSource = fs.readFileSync(path.join(srcRoot, 'worker.js'), 'utf8');
+    assert.ok(workerSource.includes('const DATA_API_PATHS = new Set(['));
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/api/timeline')"));
+    assert.ok(workerSource.includes('async function handle(r,env){'));
+    assert.ok(workerSource.includes("if(p==='/api/qlive'){"));
   });
 
   await test('（9.architecture protection）src/routes/index.js完全沒有被本次任務修改（沒有新增/刪除任何route註冊）', () => {
@@ -868,8 +871,12 @@ async function main() {
     'src/controllers/health_insight_response_builder.js',
     'src/ui/health_insight/render_product_response.js',
   ];
+  // （TASK1.119後更新）src/worker.js從這個控制組移除——TASK1.119
+  // 合法新增了POST /api/health-insight讀取Cookie標頭的一行（見該
+  // 任務"Minimal route/session connection"明確授權範圍），這個
+  // suite針對worker.js的保護已經在上面改成內容標記比對（見"既有
+  // TASK1.21~1.38路由分派邏輯"那個斷言），不再要求零diff。
   const UNCHANGED_CONTROL_FILES = [
-    'src/worker.js',
     'src/routes/index.js',
     'src/ui/health_insight/design_system/design_tokens.js',
   ];
@@ -881,7 +888,7 @@ async function main() {
     .split('\n').map((s) => s.trim()).filter(Boolean);
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
-    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f));
+    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js');
 
   await test(`（9.architecture protection）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有檔案需要逐一確認零diff（排除4個本次任務明確授權修改的檔案+2個本次任務新增的檔案）`, () => {
     assert.ok(allExistingSrcFiles.length >= 200, `預期至少200個既有檔案，實際 ${allExistingSrcFiles.length}`);

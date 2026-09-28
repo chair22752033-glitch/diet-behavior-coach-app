@@ -1,7 +1,8 @@
 /*
  * Phase 6 TASK 1.116｜Health Insight Product Activation Implementation
  * （TASK1.117後更新：Response Boundary Refinement，見下方
- * "TASK1.117更新"區塊）
+ * "TASK1.117更新"區塊；TASK1.119後更新：OAuth User Binding，見
+ * 下方"TASK1.119更新"區塊）
  * - Health Insight Controller
  *
  * 責任：第一次把TASK1.114/1.115的UI Foundation跟TASK1.112的
@@ -56,11 +57,34 @@
  * （TASK1.117新增，內部做`reason → category`分類），這個
  * controller本身完全不讀取/不解讀`reason`字串本身，也完全不會把
  * `field`/`stage`/例外物件本身放進回傳值裡。
+ *
+ * ## TASK1.119更新：接上TASK1.118的User Identity邊界
+ *
+ * `submitHealthInsightController()`新增選填的`dependencies.identity`
+ * 參數——route層（`src/routes/health_insight_routes.js`）先呼叫
+ * TASK1.118既有的`resolveHealthInsightIdentity()`解析出使用者
+ * 身份（重用既有登入/session系統，不建立新的），再把結果當作
+ * `dependencies.identity`傳進來。這裡只做兩件事：
+ * - 用TASK1.118既有的`isValidUserIdentity()`防禦性檢查，格式不對
+ *   （或完全沒提供）一律安全退回`ANONYMOUS_IDENTITY`——延續"匿名
+ *   使用者必須繼續正常運作"的明確要求
+ * - 用TASK1.118既有的`buildHealthInsightProductRequest()`把身份
+ *   附加到Product Integration request，組成規格示範的
+ *   `{user, rawInput}`形狀（不是`{rawInput}`）
+ *
+ * **完全沒有修改**Product Entry/Contract/Adapter/Execution/
+ * Operational/Health Insight Feature/Capability
+ * Orchestrator/Analysis Runner/Recommendation
+ * Runner/Runtime——`user`欄位對這些既有檔案來說只是一個它們原本
+ * 就會安全忽略的多餘欄位（TASK1.118已經用測試證明這件事），
+ * Capability Layer完全看不到`user`欄位本身，更不用說OAuth
+ * provider/session token這些細節。
  */
 import { createHealthInsightProductIntegration } from '../intelligence/product/health_insight_integration.js';
 import { createInsightContextBuilder } from '../intelligence/context/insight_context_builder.js';
 import { createHealthInsightResponseBuilder } from './health_insight_response_builder.js';
 import { renderHealthInsightInputExperience } from '../ui/health_insight/index.js';
+import { ANONYMOUS_IDENTITY, isValidUserIdentity, buildHealthInsightProductRequest } from '../identity/health_insight/index.js';
 
 /**
  * Input Experience目前收集的使用者輪廓欄位白名單——延續
@@ -133,6 +157,7 @@ export function getHealthInsightPageController() {
  * @param {{buildInsightContext: Function}} [dependencies.contextBuilder]
  * @param {{requestProductEntry: Function}} [dependencies.integration]
  * @param {{buildSuccessResponse: Function, buildFailureResponse: Function}} [dependencies.responseBuilder]
+ * @param {{userId:string|null, authenticated:boolean, provider:string|null}} [dependencies.identity] - TASK1.119新增，選填。省略或格式不符時安全退回ANONYMOUS_IDENTITY
  * @returns {{ok:true, data:{healthObservation:Array, behaviorPattern:Array, recommendation:Array, progressTrend:object, decision:*}}|{ok:false, error:{type:'friendly_error', category:string}}}
  */
 export function submitHealthInsightController(payload, dependencies) {
@@ -140,6 +165,7 @@ export function submitHealthInsightController(payload, dependencies) {
   const contextBuilder = deps.contextBuilder || createInsightContextBuilder();
   const integration = deps.integration || createHealthInsightProductIntegration();
   const responseBuilder = deps.responseBuilder || createHealthInsightResponseBuilder();
+  const identity = isValidUserIdentity(deps.identity) ? deps.identity : ANONYMOUS_IDENTITY;
 
   const profile = buildProfileFromPayload(payload);
   const preparedContext = {
@@ -160,7 +186,7 @@ export function submitHealthInsightController(payload, dependencies) {
 
   let outcome;
   try {
-    outcome = integration.requestProductEntry({ rawInput: context });
+    outcome = integration.requestProductEntry(buildHealthInsightProductRequest({ identity, rawInput: context }));
   } catch (e) {
     return responseBuilder.buildFailureResponse({ reason: 'unknown_error' });
   }

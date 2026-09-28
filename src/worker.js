@@ -207,7 +207,7 @@ export default {
       // Input Experience答案、取得Health Insight結果）——這是
       // Health Insight產品線第一個真正的application entry。跟
       // 既有二十條路由不同的是：這兩條路由刻意**不**要求登入
-      // （不讀取Cookie標頭），因為Health Insight Product
+      // （不強制擋下未登入請求），因為Health Insight Product
       // Integration（TASK1.112）本身明確設計成不接受db/auth依賴
       // （見src/intelligence/product/health_insight_integration.js
       // 檔案頭），Input Experience只收集使用者當下填寫的輪廓
@@ -215,14 +215,21 @@ export default {
       // /health-insight完全不需要解析任何真正的HTTP輸入，POST
       // /api/health-insight額外解析真正的HTTP body成payload（跟
       // 其餘POST路由一致的解析方式）。
+      //
+      // TASK1.119：POST /api/health-insight額外讀取真正的Cookie
+      // 標頭——這不是要求登入，是選填的身份辨識（見
+      // src/routes/health_insight_routes.js/src/identity/
+      // health_insight/resolve_identity.js：沒有cookie/session
+      // 無效時安全視為匿名，不會擋下request）。
       if (method === 'GET' && pathname === '/health-insight') {
         return app.router.handle({ method, pathname, options: {} }, { db: app.db, env, services: app.services });
       }
 
       if (method === 'POST' && pathname === '/api/health-insight') {
         const payload = await parseJsonBody(request);
+        const cookieHeader = request.headers.get('Cookie');
         return app.router.handle(
-          { method, pathname, payload, options: {} },
+          { method, pathname, payload, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
         );
       }
