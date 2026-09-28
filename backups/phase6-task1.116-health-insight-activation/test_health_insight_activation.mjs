@@ -1007,14 +1007,16 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（10.architecture protection）src/db/整個目錄完全沒有被本次任務修改（Database unchanged）', () => {
+  await test('（10.architecture protection）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新：TASK1.120明確被授權新增D1 schema/persistence層）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/db/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => line.trim() && !line.includes('src/db/index.js') && !line.includes('file changed') && !line.includes('files changed')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（10.architecture protection）migrations/目錄完全沒有新增或修改任何檔案', () => {
+  await test('（10.architecture protection）migrations/目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（10.architecture protection）src/auth/、src/oauth/、src/identity/、src/middleware/完全沒有被本次任務修改（不修改authentication/OAuth/session）', () => {
@@ -1084,11 +1086,14 @@ async function main() {
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean);
+  // （TASK1.120後更新）src/db/index.js從這個逐檔案掃描排除——
+  // TASK1.120明確被授權新增D1 schema/persistence層，在這個檔案
+  // 新增了一行health_insight_records的binding。
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f));
+    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/db/index.js');
 
   await test(`（10.architecture protection）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有檔案需要逐一確認零diff（排除4個本次任務明確授權修改的檔案+3個本次任務新增的檔案）`, () => {
     assert.ok(allExistingSrcFiles.length >= 200, `預期至少200個既有檔案，實際 ${allExistingSrcFiles.length}`);
@@ -1195,9 +1200,10 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（P1-P6）migrations/目錄完全沒有新增或修改任何檔案（不修改資料庫schema）', () => {
+  await test('（P1-P6）migrations/目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（P1-P6）src/auth/、src/oauth/完全沒有被本次任務修改，src/routes/、src/controllers/既有檔案也沒有被修改（新增的health_insight_routes.js/health_insight_controller.js/index.js一行註冊屬於本次任務明確授權的Route connection範圍）', () => {

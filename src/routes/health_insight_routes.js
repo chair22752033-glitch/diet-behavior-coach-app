@@ -3,7 +3,8 @@
  * （TASK1.117後更新：POST /api/health-insight新增UI
  * Renderer轉接步驟，見下方"TASK1.117更新"區塊；TASK1.119後更新：
  * POST /api/health-insight新增身份解析步驟，見下方"TASK1.119
- * 更新"區塊）
+ * 更新"區塊；TASK1.120後更新：POST /api/health-insight新增
+ * persistence步驟，見下方"TASK1.120更新"區塊）
  * - Health Insight Routes
  *
  * 建立 GET /health-insight（Input Experience頁面）與
@@ -65,10 +66,26 @@
  *   起就存在，這裡是第一次在auth/legacy路由之外用到）。
  * - POST /api/health-insight回傳既有的`{ok,data}`物件，交給
  *   Router既有的makeResponse()包成JSON回應，跟其餘API路由一致。
+ *
+ * ## TASK1.120更新：POST /api/health-insight新增persistence步驟
+ *
+ * 延續規格目標架構"Successful Result → Persistence Service → UI
+ * Response"，這裡在組出`html`之後、回傳response之前，額外呼叫
+ * 一次TASK1.120新增的`saveHealthInsightRecord()`（見
+ * `src/persistence/health_insight/`），把這次成功的結構化
+ * Product Response存成一筆`health_insight_records`歷史紀錄——
+ * 只有已登入使用者（`identity.authenticated`）才會真的寫入，
+ * 匿名使用者/Health Insight本身失敗時這個函式會安全跳過（回傳
+ * `{ok:false, reason}`，不拋出例外）。**這裡完全不檢查/不使用
+ * 這個呼叫的回傳值**——儲存成功或失敗都不影響接下來回傳給
+ * 使用者的`{ok:true, data:{html}}`，這是規格明確要求的"Failure
+ * to save must NOT break the user's Health Insight experience"
+ * 在route層的具體落地。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
 import { resolveHealthInsightIdentity } from '../identity/health_insight/index.js';
+import { saveHealthInsightRecord } from '../persistence/health_insight/index.js';
 
 /**
  * 組裝Input Experience的完整HTML document——`bodyHtml`是
@@ -118,6 +135,7 @@ export function registerHealthInsightRoutes(router) {
     const identity = await resolveHealthInsightIdentity(ctx.db, req.cookieHeader, {});
     const structuredResponse = submitHealthInsightController(req.payload, { identity });
     const html = renderHealthInsightProductResponse(structuredResponse);
+    await saveHealthInsightRecord(ctx.db, { identity, payload: req.payload, structuredResponse });
     return { ok: true, data: { html } };
   });
 }

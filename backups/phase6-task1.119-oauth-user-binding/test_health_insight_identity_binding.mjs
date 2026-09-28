@@ -532,6 +532,7 @@ async function main() {
     'src/worker.js',
     'src/controllers/health_insight_controller.js',
     'src/routes/health_insight_routes.js',
+    'src/db/index.js', // TASK1.120後更新：新增Health Insight persistence層的binding，明確授權
   ];
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
@@ -866,14 +867,16 @@ async function main() {
     assert.strictEqual(app.router.routes.length, 23);
   });
 
-  await test('（P1-P6）src/db/整個目錄完全沒有被本次任務修改（Database unchanged）', () => {
+  await test('（P1-P6）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/db/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => line.trim() && !line.includes('src/db/index.js') && !line.includes('file changed') && !line.includes('files changed')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（P1-P6）migrations/目錄完全沒有新增或修改任何檔案（不建立users/sessions表，沒有新migration）', () => {
+  await test('（P1-P6）migrations/目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（P1-P6）wrangler.toml完全沒有被本次任務修改', () => {

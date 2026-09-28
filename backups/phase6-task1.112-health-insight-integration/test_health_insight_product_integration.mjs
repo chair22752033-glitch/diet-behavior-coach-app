@@ -914,9 +914,10 @@ async function run() {
     assert.strictEqual(beforeRec, afterRec);
   });
 
-  await test('（12.Runtime isolation）src/db/、src/auth/、src/oauth/、src/middleware/、migrations/ 目錄本次任務完全沒有新增或修改任何檔案', () => {
+  await test('（12.Runtime isolation）src/auth/、src/oauth/、src/middleware/完全沒有被修改，src/db/、migrations/除了TASK1.120明確授權新增的Health Insight persistence層之外也沒有其他變動（TASK1.120後更新：TASK1.120是本系列第一個明確被授權新增D1 schema/persistence層的任務，這裡排除該任務已知的3個異動——新增migrations/0007_phase6_task1_120_*.sql、新增src/db/tables/health_insight_records.js、在src/db/index.js新增對應binding）', () => {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- src/db/ src/auth/ src/oauth/ src/middleware/ migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120') && !line.includes('health_insight_records.js') && !line.includes('src/db/index.js')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（12.Runtime isolation）src/routes/、src/controllers/既有檔案完全沒有被修改，只新增Health Insight專屬的新檔案（TASK1.116後更新：TASK1.116新增src/routes/health_insight_routes.js、src/controllers/health_insight_controller.js，並在src/routes/index.js新增對應的import/register一行，這是本次任務明確授權的Route connection範圍，這裡改成驗證既有路由/controller檔案本身逐一沒有被修改）', () => {
@@ -1052,9 +1053,10 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（P1-P6）migrations/ 目錄完全沒有新增或修改任何檔案（不修改資料庫schema）', () => {
+  await test('（P1-P6）migrations/ 目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const statusOutput = execFileSync('git', ['status', '--porcelain', 'migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(statusOutput.trim(), '');
+    const remaining = statusOutput.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（P1-P6）src/auth/、src/oauth/ 完全沒有被本次任務修改，src/routes/、src/controllers/既有檔案也沒有被修改（TASK1.116後更新：見上方"Runtime isolation"章節已針對routes/controllers做過檔案範圍限定的diff檢查，這裡額外確認src/auth/、src/oauth/兩個目錄完全沒有被觸碰）', () => {

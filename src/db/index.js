@@ -18,6 +18,7 @@ import { bind as bindAiReports } from './tables/ai_reports.js';
 import { bind as bindSessions } from './tables/sessions.js';
 import { bind as bindLegacyImportLogs } from './tables/legacy_import_logs.js';
 import { bind as bindAuthAuditLogs } from './tables/auth_audit_logs.js';
+import { bind as bindHealthInsightRecords } from './tables/health_insight_records.js';
 
 /**
  * @param {object} env - Worker 的 env 物件（ES Module fetch handler 的第二個參數）
@@ -44,6 +45,7 @@ export function createDb(env) {
     sessions: bindSessions(db),
     legacyImportLogs: bindLegacyImportLogs(db),
     authAuditLogs: bindAuthAuditLogs(db), // TASK1.34：僅新增binding，尚未被任何既有controller呼叫
+    healthInsightRecords: bindHealthInsightRecords(db), // TASK1.120：Health Insight Persistence Service（src/persistence/health_insight/）使用
   };
 }
 

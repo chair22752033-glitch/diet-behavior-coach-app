@@ -553,14 +553,16 @@ async function run() {
     assert.strictEqual(status.trim(), '');
   });
 
-  await test('（10.Dependency direction）migrations/ 目錄本次任務完全沒有新增或修改任何檔案（不修改資料庫schema）', () => {
+  await test('（10.Dependency direction）migrations/ 目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const status = execFileSync('git', ['status', '--porcelain', 'migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（10.Dependency direction）src/db/ 目錄本次任務完全沒有新增或修改任何檔案', () => {
+  await test('（10.Dependency direction）src/db/ 目錄除了TASK1.120新增的health_insight_records持久化層之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const status = execFileSync('git', ['status', '--porcelain', 'src/db/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(status.trim(), '');
+    const remaining = status.split('\n').filter((line) => line.trim() && !line.includes('health_insight_records.js') && !line.includes('src/db/index.js')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（10.Dependency direction）沒有新增任何CSS檔案/frontend元件（本次任務不實作UI）', () => {
@@ -772,9 +774,10 @@ async function run() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（P1-P6）migrations/ 目錄完全沒有新增或修改任何檔案（不修改資料庫schema）', () => {
+  await test('（P1-P6）migrations/ 目錄除了TASK1.120新增的0007 health_insight_records migration之外，完全沒有其他檔案被新增或修改（TASK1.120後更新）', () => {
     const statusOutput = execFileSync('git', ['status', '--porcelain', 'migrations/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(statusOutput.trim(), '');
+    const remaining = statusOutput.split('\n').filter((line) => line.trim() && !line.includes('0007_phase6_task1_120')).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（P1-P6）src/auth/、src/oauth/ 完全沒有被本次任務修改，src/routes/、src/controllers/既有檔案也沒有被修改（TASK1.116後更新：見上方"Dependency direction"章節已針對routes/controllers做過檔案範圍限定的diff檢查，這裡額外確認src/auth/、src/oauth/兩個目錄完全沒有被觸碰）', () => {
