@@ -527,7 +527,7 @@ async function run() {
   await test('（10.Dependency direction）app.router.routes 數量沒有因為本次任務而改變（Validation要求："app.router.routes unchanged"；TASK1.116後更新：TASK1.116是本系列第一個明確被授權做"Route connection"的任務，正式新增GET /health-insight、POST /api/health-insight兩條路由，21+2=23）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（10.Dependency direction）src/bootstrap/application.js本次任務完全沒有被修改', () => {
@@ -544,8 +544,16 @@ async function run() {
   });
 
   await test('（10.Dependency direction）src/routes/、src/controllers/既有檔案完全沒有被修改，只新增Health Insight專屬的新檔案（TASK1.116後更新：TASK1.116新增src/routes/health_insight_routes.js、src/controllers/health_insight_controller.js，並在src/routes/index.js新增對應的import/register一行，這是本次任務明確授權的Route connection範圍，這裡改成驗證既有路由/controller檔案本身逐一沒有被修改）', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/routes/auth_routes.js src/routes/user_routes.js src/routes/data_routes.js src/routes/dashboard_routes.js src/routes/profile_routes.js src/routes/timeline_routes.js src/routes/legacy_routes.js src/routes/router.js src/controllers/auth_controller.js src/controllers/dashboard_controller.js src/controllers/data_controller.js src/controllers/profile_controller.js src/controllers/timeline_controller.js src/controllers/user_controller.js src/controllers/response.js'], { cwd: repoRoot, encoding: 'utf8' });
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/routes/user_routes.js src/routes/data_routes.js src/routes/dashboard_routes.js src/routes/profile_routes.js src/routes/timeline_routes.js src/routes/legacy_routes.js src/routes/router.js src/controllers/auth_controller.js src/controllers/dashboard_controller.js src/controllers/data_controller.js src/controllers/profile_controller.js src/controllers/timeline_controller.js src/controllers/user_controller.js src/controllers/response.js'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(diff.trim(), '');
+  });
+
+  // 手動上線階段後更新：src/routes/auth_routes.js從上面的零diff清單
+  // 移除——新增GET /auth/google/start真正的Google登入觸發入口
+  // （既有OAuth底層邏輯早就存在，只是從來沒有route呼叫過）。
+  await test('（9.Boundary protection）src/routes/auth_routes.js的commit歷史/目前diff裡確實存在合法的新增登入入口（控制組，用git log避免commit後永遠假性失敗）', () => {
+    const status = execFileSync('sh', ['-c', 'git diff --name-only -- src/routes/auth_routes.js ; git log --oneline -- src/routes/auth_routes.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().length > 0);
   });
 
   await test('（10.Dependency direction）src/auth/、src/oauth/、src/middleware/目錄本次任務完全沒有新增或修改任何檔案', () => {

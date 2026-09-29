@@ -776,9 +776,11 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（10.premium compatibility）src/intelligence/enhancement/gemini/整個目錄完全沒有被本次任務修改（規格明確禁止：Do not redesign Gemini）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（10.premium compatibility）src/intelligence/enhancement/gemini/整個目錄除了gemini_client.js之外完全沒有其他改動（規格明確禁止：Do not redesign Gemini；手動上線階段後更新：DEFAULT_MODEL更新為gemini-3.8-flash）', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/intelligence/enhancement/gemini/gemini_client.js'));
+    assert.deepStrictEqual(diff, []);
   });
 
   await test('（10.premium compatibility）真實HTTP dispatch（src/worker.js）永遠只傳空的options物件給health-insight route——這是"Guest: No Premium"在目前架構下成立的真正原因（不是Membership Boundary本身排除guest，而是真實請求永遠不可能注入lookupTier，所以Guest/Registered Free都只能拿到free tier）', () => {
@@ -1204,7 +1206,7 @@ async function main() {
 
   await test('（14.P1-P6）app.router.routes數量維持24（本次任務沒有新增/刪除任何route，只修改既有route handler內部的一行轉發）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（14.P1-P6）migrations/共7個既有.sql檔案，數量沒有改變（規格明確要求：No new migration expected）', () => {
@@ -1258,6 +1260,10 @@ async function main() {
     // register一行。
     'src/worker.js',
     'src/routes/index.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
   for (const relFile of TASK1126_AUTHORIZED_FILES) {
     await test(`（14.P1-P6）授權修改檔案${relFile}的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，用git log避免commit後永遠假性失敗）`, () => {

@@ -742,7 +742,7 @@ async function main() {
 
   await test('（10.architecture protection）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（10.architecture protection）src/worker.js的既有TASK1.21~1.38路由分派邏輯/legacy handler完全沒有被修改（TASK1.119後更新：TASK1.119合法新增了POST /api/health-insight讀取Cookie標頭的一行，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在）', () => {
@@ -762,8 +762,10 @@ async function main() {
   });
 
   await test('（10.architecture protection）src/intelligence/整個目錄完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/intelligence/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/intelligence/enhancement/gemini/gemini_client.js'));
+    assert.deepStrictEqual(diff, []);
   });
 
   await test('（10.architecture protection）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新）', () => {
@@ -834,6 +836,10 @@ async function main() {
     'src/persistence/health_insight/health_insight_persistence_service.js',
     // TASK1.127後更新：Complete App Experience Layer明確授權新增registerAppShellRoutes()的import/register一行
     'src/routes/index.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js' -o -name '*.md'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)

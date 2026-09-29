@@ -960,8 +960,11 @@ async function main() {
   // =========================================================================
   console.log('--- K. Architecture protection ---');
 
+  // 手動上線階段後更新：gemini_client.js從這個清單移除——Google
+  // Gemini API deprecate了原本的gemini-1.5-flash模型，DEFAULT_MODEL
+  // 更新為gemini-3.8-flash，這是讓Gemini Enhancement實際能動起來
+  // 的必要修正，不是重新設計Gemini本身的呼叫方式/介面。
   const PROTECTED_FILES = [
-    'src/intelligence/enhancement/gemini/gemini_client.js',
     'src/intelligence/enhancement/gemini/gemini_provider.js',
     'src/intelligence/enhancement/gemini/gemini_enhancer.js',
     'src/intelligence/enhancement/gemini/index.js',
@@ -1044,6 +1047,10 @@ async function main() {
     // 明確授權修改的2個檔案
     'src/identity/health_insight/user_identity.js',
     'src/persistence/health_insight/health_insight_persistence_service.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
   const TASK1122_NEWLY_CREATED_FILES = [
     'src/membership/membership_state.js',
@@ -1180,7 +1187,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（P1-P6）migrations/、src/db/完全沒有新增或修改任何檔案（延續I類別已驗證的結論）', () => {

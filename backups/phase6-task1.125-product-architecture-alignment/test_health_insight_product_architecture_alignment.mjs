@@ -334,6 +334,9 @@ async function main() {
     // 三個if區塊（既有Health Insight if區塊完全沒有被移除，見
     // P1-P6章節的"既有if區塊依然逐字存在"標記檢查）。
     'src/worker.js',
+    // 手動上線階段後更新：gemini_client.js更新DEFAULT_MODEL（Google
+    // deprecate了gemini-1.5-flash）
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
 
   for (const layer of PRODUCT_LAYERS) {
@@ -837,6 +840,10 @@ async function main() {
     // register一行。
     'src/worker.js',
     'src/routes/index.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
 
   await test('（11.architecture zero-diff）本次任務完全沒有修改任何既有.js檔案（git diff --name-only排除backups/後應該是空的，TASK1.126後更新：排除7個明確授權修改的Guest/Authentication Experience Correction檔案）', () => {
@@ -979,7 +986,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持24（本次任務沒有新增/刪除任何route）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（P1-P6）migrations/共7個既有.sql檔案，數量沒有改變', () => {
@@ -987,9 +994,11 @@ async function main() {
     assert.strictEqual(files.length, 7);
   });
 
-  await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄除了gemini_client.js之外完全沒有其他改動（手動上線階段後更新：DEFAULT_MODEL更新為gemini-3.8-flash）', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/intelligence/enhancement/gemini/gemini_client.js'));
+    assert.deepStrictEqual(diff, []);
   });
 
   await test('（P1-P6）src/membership/整個目錄完全沒有被本次任務修改', () => {

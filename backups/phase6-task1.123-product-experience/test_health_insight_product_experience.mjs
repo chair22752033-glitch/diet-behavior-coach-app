@@ -973,8 +973,9 @@ async function main() {
   });
 
   // ---- Architecture protection：既有Product/Capability/Runtime/Identity/Persistence/Membership/Gemini檔案零diff ----
+  // 手動上線階段後更新：gemini_client.js從這個清單移除——DEFAULT_MODEL
+  // 從已deprecate的gemini-1.5-flash更新為gemini-3.8-flash。
   const PROTECTED_FILES = [
-    'src/intelligence/enhancement/gemini/gemini_client.js',
     'src/intelligence/enhancement/gemini/gemini_provider.js',
     'src/intelligence/enhancement/gemini/gemini_enhancer.js',
     'src/intelligence/enhancement/gemini/index.js',
@@ -1116,7 +1117,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24，這裡驗證的是"這個既有任務本身沒有意外改變路由數量"，不是"路由數量永遠固定23"）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（P1-P6）migrations/、src/db/完全沒有新增或修改任何檔案（本次任務不修改D1 schema）', () => {
@@ -1126,9 +1127,11 @@ async function main() {
     assert.strictEqual(files.length, 7);
   });
 
-  await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄完全沒有被本次任務修改（Gemini Provider unchanged）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄除了gemini_client.js之外完全沒有其他改動（Gemini Provider unchanged，手動上線階段後更新：DEFAULT_MODEL更新為gemini-3.8-flash）', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/intelligence/enhancement/gemini/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/intelligence/enhancement/gemini/gemini_client.js'));
+    assert.deepStrictEqual(diff, []);
   });
 
   await test('（P1-P6）src/membership/整個目錄完全沒有被本次任務修改（Membership boundary unchanged）', () => {
@@ -1178,6 +1181,10 @@ async function main() {
     // 明確授權修改的2個檔案
     'src/identity/health_insight/user_identity.js',
     'src/persistence/health_insight/health_insight_persistence_service.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
   const TASK1123_NEWLY_CREATED_FILES = [
     'src/ui/health_insight/components/gemini_insight_card.js',

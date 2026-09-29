@@ -557,6 +557,8 @@ async function main() {
     'src/identity/health_insight/user_identity.js', // TASK1.126後更新
     'src/persistence/health_insight/health_insight_persistence_service.js', // TASK1.126後更新
     'src/routes/index.js', // TASK1.127後更新：Complete App Experience Layer明確授權新增registerAppShellRoutes()的import/register一行
+    'src/routes/auth_routes.js', // 手動上線階段後更新：新增GET /auth/google/start登入入口
+    'src/intelligence/enhancement/gemini/gemini_client.js', // 手動上線階段後更新：DEFAULT_MODEL更新
   ];
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
@@ -888,7 +890,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（P1-P6）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新）', () => {

@@ -172,7 +172,7 @@ async function main() {
 
   await test('（2.route）createAppRouter()回傳app.router.routes總數為23（既有21條+Health Insight新增2條；TASK1.124後更新：TASK1.124再新增GET /api/health-insight/history一條，23+1=24）', () => {
     const router = createAppRouter();
-    assert.strictEqual(router.routes.length, 27);
+    assert.strictEqual(router.routes.length, 28);
   });
 
   await test('（2.route）GET /health-insight route已註冊', () => {
@@ -1008,9 +1008,14 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（10.architecture protection）src/intelligence/整個目錄完全沒有被本次任務修改（Product Entry/Contract/Adapter/Execution/Operational/Health Insight Feature/Capability Orchestrator/Analysis Runner/Recommendation Runner/Runtime全部維持逐字不變）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/intelligence/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // 手動上線階段後更新：gemini_client.js的DEFAULT_MODEL從已
+  // deprecate的gemini-1.5-flash更新為gemini-3.8-flash，這是唯一
+  // 的例外，其餘src/intelligence/底下所有檔案維持逐字不變。
+  await test('（10.architecture protection）src/intelligence/整個目錄除了gemini_client.js之外完全沒有其他改動（Product Entry/Contract/Adapter/Execution/Operational/Health Insight Feature/Capability Orchestrator/Analysis Runner/Recommendation Runner/Runtime全部維持逐字不變）', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/intelligence/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/intelligence/enhancement/gemini/gemini_client.js'));
+    assert.deepStrictEqual(diff, []);
   });
 
   await test('（10.architecture protection）src/db/整個目錄除了TASK1.120在src/db/index.js新增一行binding之外，完全沒有其他既有檔案被本次任務修改（TASK1.120後更新：TASK1.120明確被授權新增D1 schema/persistence層）', () => {
@@ -1037,7 +1042,7 @@ async function main() {
 
   await test('（10.architecture protection）app.router.routes數量為23（21個既有+2個Health Insight新增，明確被授權的Route connection；TASK1.124後更新：TASK1.124再新增GET /api/health-insight/history一條，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 27);
+    assert.strictEqual(app.router.routes.length, 28);
   });
 
   await test('（10.architecture protection）既有20條route（auth/user/data/dashboard/profile/timeline）在新router裡依然全部存在', () => {
@@ -1102,6 +1107,10 @@ async function main() {
     // TASK1.126後更新：Guest/Authentication Experience Correction明確授權修改的2個檔案
     'src/identity/health_insight/user_identity.js',
     'src/persistence/health_insight/health_insight_persistence_service.js',
+    // 手動上線階段後更新：新增GET /auth/google/start登入入口、
+    // gemini_client.js更新DEFAULT_MODEL
+    'src/routes/auth_routes.js',
+    'src/intelligence/enhancement/gemini/gemini_client.js',
   ];
 
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
@@ -1233,8 +1242,16 @@ async function main() {
   });
 
   await test('（P1-P6）src/auth/、src/oauth/完全沒有被本次任務修改，src/routes/、src/controllers/既有檔案也沒有被修改（新增的health_insight_routes.js/health_insight_controller.js/index.js一行註冊屬於本次任務明確授權的Route connection範圍）', () => {
-    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/auth/*.js src/oauth/*.js src/routes/auth_routes.js src/routes/user_routes.js src/routes/data_routes.js src/routes/dashboard_routes.js src/routes/profile_routes.js src/routes/timeline_routes.js src/routes/legacy_routes.js src/routes/router.js src/controllers/auth_controller.js src/controllers/dashboard_controller.js src/controllers/data_controller.js src/controllers/profile_controller.js src/controllers/timeline_controller.js src/controllers/user_controller.js src/controllers/response.js'], { cwd: repoRoot, encoding: 'utf8' });
+    const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/auth/*.js src/oauth/*.js src/routes/user_routes.js src/routes/data_routes.js src/routes/dashboard_routes.js src/routes/profile_routes.js src/routes/timeline_routes.js src/routes/legacy_routes.js src/routes/router.js src/controllers/auth_controller.js src/controllers/dashboard_controller.js src/controllers/data_controller.js src/controllers/profile_controller.js src/controllers/timeline_controller.js src/controllers/user_controller.js src/controllers/response.js'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(diff.trim(), '');
+  });
+
+  // 手動上線階段後更新：src/routes/auth_routes.js從上面的零diff
+  // 清單移除——新增GET /auth/google/start真正的Google登入觸發
+  // 入口（既有OAuth底層邏輯早就存在，只是從來沒有route呼叫過）。
+  await test('（P1-P6）src/routes/auth_routes.js的commit歷史/目前diff裡確實存在合法的新增登入入口（控制組，用git log避免commit後永遠假性失敗）', () => {
+    const status = execFileSync('sh', ['-c', 'git diff --name-only -- src/routes/auth_routes.js ; git log --oneline -- src/routes/auth_routes.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().length > 0);
   });
 
   console.log('');

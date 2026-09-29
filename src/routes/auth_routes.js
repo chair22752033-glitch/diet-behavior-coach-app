@@ -64,7 +64,9 @@ import {
   googleCallbackContract,
 } from '../contracts/auth_contract.js';
 import { createGoogleProvider } from '../oauth/google.js';
-import { serializeExpiredCookie } from '../auth/cookie.js';
+import { createOAuthState } from '../oauth/oauth_state.js';
+import { OAUTH_STATE_TTL_SECONDS } from '../oauth/constants.js';
+import { serializeCookie, serializeExpiredCookie } from '../auth/cookie.js';
 import { OAUTH_STATE_COOKIE_NAME } from '../services/auth_application_service.js';
 
 function withSetCookie(result) {
@@ -78,6 +80,27 @@ function withSetCookie(result) {
     });
   }
   return result;
+}
+
+// 手動上線階段新增：GET /auth/google/start——既有六條Auth路由裡缺少
+// 「真正開始Google登入流程」的入口，`GET /auth/google/callback`
+// 只處理Google導回之後的最後一步，前面「產生state、導向Google同意
+// 畫面」這一段一直沒有真正的路由掛上去（見`src/oauth/google.js`
+// `getAuthorizationUrl()`/`src/oauth/oauth_state.js`
+// `createOAuthState()`，兩者都是TASK1.17已經寫好、測試過、但從未
+// 被任何route呼叫的既有函式）。這裡只是把既有兩個函式串起來變成
+// 一條可以真正點擊的路由，沒有新增/修改OAuth核心邏輯本身。
+function buildGoogleStartResponse(env) {
+  const googleProvider = getGoogleProviderFromEnv(env);
+  if (!googleProvider) {
+    return new Response(null, { status: 302, headers: { Location: '/?oauth_error=oauth_not_configured' } });
+  }
+  const stateRecord = createOAuthState();
+  const authorizationUrl = googleProvider.getAuthorizationUrl(stateRecord.state);
+  const headers = new Headers();
+  headers.set('Location', authorizationUrl);
+  headers.append('Set-Cookie', serializeCookie(OAUTH_STATE_COOKIE_NAME, JSON.stringify(stateRecord), { maxAgeSeconds: OAUTH_STATE_TTL_SECONDS }));
+  return new Response(null, { status: 302, headers });
 }
 
 // TASK1.33：GET /auth/google/callback 這條路由不像其他五條回JSON，它是
@@ -174,6 +197,8 @@ export function registerAuthRoutes(router) {
     },
     { middlewares: [createContractValidationMiddleware(upgradeProviderContract)] }
   );
+
+  router.add('GET', '/auth/google/start', async (ctx) => buildGoogleStartResponse(ctx.env));
 
   router.add(
     'GET',

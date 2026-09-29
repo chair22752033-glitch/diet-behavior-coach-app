@@ -16,7 +16,7 @@
  * API、怎麼安全地把HTTP/網路層的各種失敗轉成穩定的{ok,reason}」。
  */
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 const DEFAULT_ENDPOINT_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_TIMEOUT_MS = 8000;
 
