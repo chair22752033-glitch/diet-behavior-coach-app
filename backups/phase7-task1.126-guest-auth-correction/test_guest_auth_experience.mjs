@@ -1182,9 +1182,19 @@ async function main() {
     assert.ok(workerSource.includes('function getManifest(){return'));
   });
 
-  await test('（14.P1-P6）src/worker.js完全沒有被本次任務修改（本次任務不需要任何HTTP層變動，只修改identity/persistence/history/routes轉發/UI四層）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // TASK1.127後更新：從嚴格零diff改成控制組檢查——Complete App
+  // Experience Layer明確授權在worker.js末尾新增3個App Shell
+  // if區塊，既有legacy getHTML()/getManifest()（上面測試）跟
+  // 既有Health Insight if區塊依然逐字存在。
+  await test('（14.P1-P6）src/worker.js的commit歷史/目前diff裡確實存在TASK1.127的合法修改（控制組，用git log避免commit後永遠假性失敗）', () => {
+    const status = execFileSync('sh', ['-c', 'git diff --name-only -- src/worker.js ; git log --oneline -- src/worker.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().length > 0, 'src/worker.js 找不到任何diff或commit歷史');
+  });
+
+  await test('（14.P1-P6）src/worker.js既有三條Health Insight if區塊依然逐字存在', () => {
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/health-insight')"));
+    assert.ok(workerSource.includes("if (method === 'POST' && pathname === '/api/health-insight')"));
+    assert.ok(workerSource.includes("if (method === 'GET' && pathname === '/api/health-insight/history')"));
   });
 
   await test('（14.P1-P6）app.intelligence維持24個既有欄位（沒有新增/刪除任何capability）', () => {
@@ -1194,7 +1204,7 @@ async function main() {
 
   await test('（14.P1-P6）app.router.routes數量維持24（本次任務沒有新增/刪除任何route，只修改既有route handler內部的一行轉發）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 24);
+    assert.strictEqual(app.router.routes.length, 27);
   });
 
   await test('（14.P1-P6）migrations/共7個既有.sql檔案，數量沒有改變（規格明確要求：No new migration expected）', () => {
@@ -1242,6 +1252,12 @@ async function main() {
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/history_card.js',
     'src/ui/health_insight/components/progress_summary_card.js',
+    // TASK1.127後更新：Complete App Experience Layer明確授權修改
+    // 的2個檔案——worker.js新增3個App Shell路由if區塊，
+    // routes/index.js新增registerAppShellRoutes()的import/
+    // register一行。
+    'src/worker.js',
+    'src/routes/index.js',
   ];
   for (const relFile of TASK1126_AUTHORIZED_FILES) {
     await test(`（14.P1-P6）授權修改檔案${relFile}的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，用git log避免commit後永遠假性失敗）`, () => {

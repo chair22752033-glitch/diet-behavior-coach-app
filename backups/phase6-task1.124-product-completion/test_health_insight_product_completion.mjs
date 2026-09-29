@@ -1755,7 +1755,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量為24（既有23條+History API新增1條，明確被授權的Route connection）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 24);
+    assert.strictEqual(app.router.routes.length, 27);
   });
 
   await test('（P1-P6）新的route是GET方法、路徑為/api/health-insight/history', () => {
@@ -1876,6 +1876,8 @@ async function main() {
 
   // ---- 逐檔案完整性掃描（Architecture protection bulk scan）----
   const TASK1124_AUTHORIZED_MODIFIED_FILES = [
+    // TASK1.127後更新：Complete App Experience Layer明確授權新增registerAppShellRoutes()的import/register一行
+    'src/routes/index.js',
     'src/worker.js',
     'src/routes/health_insight_routes.js',
     'src/ui/health_insight/pages/dashboard_page.js',

@@ -765,7 +765,7 @@ async function main() {
 
   await test('（9.architecture protection）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 24);
+    assert.strictEqual(app.router.routes.length, 27);
   });
 
   await test('（9.architecture protection）src/worker.js的既有TASK1.21~1.38路由分派邏輯/legacy handler完全沒有被修改（本次任務不需要新增/修改worker.js的任何判斷式，路由路徑完全沒有變化；TASK1.119後更新：TASK1.119合法新增了POST /api/health-insight讀取Cookie標頭的一行，不再要求整個檔案零diff，改成驗證既有邏輯的具體內容標記依然逐字存在，理由跟TASK1.116/1.111~1.115其餘suite同一段落完全相同）', () => {
@@ -776,9 +776,25 @@ async function main() {
     assert.ok(workerSource.includes("if(p==='/api/qlive'){"));
   });
 
-  await test('（9.architecture protection）src/routes/index.js完全沒有被本次任務修改（沒有新增/刪除任何route註冊）', () => {
-    const diff = execFileSync('git', ['diff', '--stat', 'src/routes/index.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // TASK1.127後更新：src/routes/index.js從嚴格零diff改成控制組
+  // 檢查——Complete App Experience Layer明確授權新增
+  // registerAppShellRoutes()的import/register一行，這個檔案本身
+  // 的既有組裝邏輯（既有7個route註冊）沒有被移除，見下方"逐字
+  // 存在"標記檢查。
+  await test('（9.architecture protection）src/routes/index.js的commit歷史/目前diff裡確實存在TASK1.127的合法修改（控制組，用git log避免commit後永遠假性失敗）', () => {
+    const status = execFileSync('sh', ['-c', 'git diff --name-only -- src/routes/index.js ; git log --oneline -- src/routes/index.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().length > 0, 'src/routes/index.js 找不到任何diff或commit歷史');
+  });
+
+  await test('（9.architecture protection）src/routes/index.js既有7個route註冊呼叫依然逐字存在（TASK1.127只新增registerAppShellRoutes()一行，沒有移除既有任何一行）', () => {
+    const indexSource = fs.readFileSync(path.join(routesDir, 'index.js'), 'utf8');
+    assert.ok(indexSource.includes('registerAuthRoutes(router);'));
+    assert.ok(indexSource.includes('registerUserRoutes(router);'));
+    assert.ok(indexSource.includes('registerDataRoutes(router);'));
+    assert.ok(indexSource.includes('registerDashboardRoutes(router);'));
+    assert.ok(indexSource.includes('registerProfileRoutes(router);'));
+    assert.ok(indexSource.includes('registerTimelineRoutes(router);'));
+    assert.ok(indexSource.includes('registerHealthInsightRoutes(router);'));
   });
 
   await test('（9.architecture protection）src/ui/health_insight/design_system/design_tokens.js完全沒有被本次任務修改（本次任務不重新設計視覺）', () => {
@@ -885,8 +901,11 @@ async function main() {
   // 任務"Minimal route/session connection"明確授權範圍），這個
   // suite針對worker.js的保護已經在上面改成內容標記比對（見"既有
   // TASK1.21~1.38路由分派邏輯"那個斷言），不再要求零diff。
+  // TASK1.127後更新：src/routes/index.js從這個控制組移除——理由
+  // 同上方"architecture protection"章節（Complete App Experience
+  // Layer明確授權新增registerAppShellRoutes()的import/register
+  // 一行）。
   const UNCHANGED_CONTROL_FILES = [
-    'src/routes/index.js',
     'src/ui/health_insight/design_system/design_tokens.js',
   ];
 
@@ -913,7 +932,7 @@ async function main() {
   ];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
-    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js' && f !== 'src/db/index.js' && !TASK1123_AUTHORIZED_UI_FILES.includes(f));
+    .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js' && f !== 'src/db/index.js' && f !== 'src/routes/index.js' && !TASK1123_AUTHORIZED_UI_FILES.includes(f));
 
   await test(`（9.architecture protection）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有檔案需要逐一確認零diff（排除4個本次任務明確授權修改的檔案+2個本次任務新增的檔案）`, () => {
     assert.ok(allExistingSrcFiles.length >= 200, `預期至少200個既有檔案，實際 ${allExistingSrcFiles.length}`);

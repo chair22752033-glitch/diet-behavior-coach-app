@@ -1023,6 +1023,8 @@ async function main() {
   });
 
   const TASK1121_AUTHORIZED_MODIFIED_FILES = [
+    // TASK1.127後更新：Complete App Experience Layer明確授權新增registerAppShellRoutes()的import/register一行
+    'src/routes/index.js',
     'src/routes/health_insight_routes.js',
     // TASK1.123後更新：Product Experience Upgrade明確授權的3個UI檔案
     'src/ui/health_insight/render_product_response.js',
@@ -1418,7 +1420,7 @@ async function main() {
 
   await test('（P1-P6）app.router.routes數量維持23（本次任務沒有新增/刪除任何route；TASK1.124後更新：TASK1.124新增GET /api/health-insight/history，23+1=24）', () => {
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 24);
+    assert.strictEqual(app.router.routes.length, 27);
   });
 
   await test('（P1-P6）migrations/目錄完全沒有新增或修改任何檔案（本次任務不修改D1 schema，延續H類別已驗證的結論）', () => {

@@ -7,6 +7,13 @@
  * 呼叫這裡的 createAppRouter()（不傳 legacyHandler）建立，再由
  * src/bootstrap/route_gateway.js（TASK1.26）視 feature flag 決定要不要
  * 動用它——這仍然是「基礎架構」而非「正式開放的 API」。
+ *
+ * Phase 7 TASK1.127後更新：新增`registerAppShellRoutes()`
+ * （GET /app、GET /app/history、GET /app/me），把Health Insight
+ * 從單一功能頁面擴充成完整App Experience Layer——延續既有
+ * `registerHealthInsightRoutes()`同樣的接線方式（純粹import +
+ * 在`createAppRouter()`裡多呼叫一行），沒有改變這個檔案既有的
+ * 組裝邏輯本身。
  */
 import { createRouter } from './router.js';
 import { registerAuthRoutes } from './auth_routes.js';
@@ -16,6 +23,7 @@ import { registerDashboardRoutes } from './dashboard_routes.js';
 import { registerProfileRoutes } from './profile_routes.js';
 import { registerTimelineRoutes } from './timeline_routes.js';
 import { registerHealthInsightRoutes } from './health_insight_routes.js';
+import { registerAppShellRoutes } from './app_shell_routes.js';
 import { registerLegacyRoutes } from './legacy_routes.js';
 
 /**
@@ -33,6 +41,7 @@ export function createAppRouter(legacyHandler) {
   registerProfileRoutes(router);
   registerTimelineRoutes(router);
   registerHealthInsightRoutes(router);
+  registerAppShellRoutes(router);
   if (typeof legacyHandler === 'function') {
     registerLegacyRoutes(router, legacyHandler);
   }
@@ -47,4 +56,5 @@ export { registerDashboardRoutes } from './dashboard_routes.js';
 export { registerProfileRoutes } from './profile_routes.js';
 export { registerTimelineRoutes } from './timeline_routes.js';
 export { registerHealthInsightRoutes } from './health_insight_routes.js';
+export { registerAppShellRoutes } from './app_shell_routes.js';
 export { registerLegacyRoutes } from './legacy_routes.js';

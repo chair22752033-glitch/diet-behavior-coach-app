@@ -248,6 +248,28 @@ export default {
           { db: app.db, env, services: app.services }
         );
       }
+
+      // TASK1.127：正式啟用 GET /app、GET /app/history、GET
+      // /app/me——把Health Insight從單一功能頁面擴充成完整的
+      // App Experience Layer（Home Dashboard/紀錄頁面/User
+      // Center）。跟既有三條Health Insight路由同一套安全模型：
+      // **不**要求登入，只是選填讀取真正的Cookie標頭做身份
+      // 辨識，匿名/訪客/註冊使用者都能造訪，差別只在頁面呈現的
+      // 內容。
+      if (method === 'GET' && pathname === '/app') {
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle({ method, pathname, cookieHeader, options: {} }, { db: app.db, env, services: app.services });
+      }
+
+      if (method === 'GET' && pathname === '/app/history') {
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle({ method, pathname, cookieHeader, options: {} }, { db: app.db, env, services: app.services });
+      }
+
+      if (method === 'GET' && pathname === '/app/me') {
+        const cookieHeader = request.headers.get('Cookie');
+        return app.router.handle({ method, pathname, cookieHeader, options: {} }, { db: app.db, env, services: app.services });
+      }
     }
 
     const gateway = createRouteGateway({ app, legacyHandler: handle });

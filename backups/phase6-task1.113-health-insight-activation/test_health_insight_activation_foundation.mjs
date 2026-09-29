@@ -527,7 +527,7 @@ async function run() {
   await test('（10.Dependency direction）app.router.routes 數量沒有因為本次任務而改變（Validation要求："app.router.routes unchanged"；TASK1.116後更新：TASK1.116是本系列第一個明確被授權做"Route connection"的任務，正式新增GET /health-insight、POST /api/health-insight兩條路由，21+2=23）', async () => {
     const { createApplication } = await import(path.join(srcRoot, 'bootstrap', 'application.js'));
     const app = createApplication({ DIET_COACH_DB: {}, SYNC_KV: {}, DIET_COACH_IMAGES: {} });
-    assert.strictEqual(app.router.routes.length, 24);
+    assert.strictEqual(app.router.routes.length, 27);
   });
 
   await test('（10.Dependency direction）src/bootstrap/application.js本次任務完全沒有被修改', () => {
