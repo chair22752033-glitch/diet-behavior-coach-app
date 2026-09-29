@@ -161,8 +161,8 @@ async function main() {
   // =========================================================================
   console.log('--- B. User identity object ---');
 
-  await test('（2.identity object）ANONYMOUS_IDENTITY形狀恰好是{userId:null, authenticated:false, provider:null}', () => {
-    assert.deepStrictEqual(ANONYMOUS_IDENTITY, { userId: null, authenticated: false, provider: null });
+  await test('（2.identity object）ANONYMOUS_IDENTITY形狀恰好是{userId:null, authenticated:false, provider:null, isGuest:false, userType:"anonymous"}（TASK1.126後更新：新增isGuest/userType語意分類欄位，見src/identity/health_insight/user_identity.js該任務更新說明）', () => {
+    assert.deepStrictEqual(ANONYMOUS_IDENTITY, { userId: null, authenticated: false, provider: null, isGuest: false, userType: 'anonymous' });
   });
 
   await test('（2.identity object）ANONYMOUS_IDENTITY被凍結，無法被修改', () => {
@@ -172,12 +172,17 @@ async function main() {
     assert.strictEqual(ANONYMOUS_IDENTITY.userId, original);
   });
 
+  // TASK1.126後更新：每個expected新增isGuest/userType兩個欄位
+  // （見src/identity/health_insight/user_identity.js該任務更新
+  // 說明）——guest案例是isGuest:true/userType:'guest'，其餘
+  // （google/null-provider/apple等任何非guest情況）都是
+  // isGuest:false/userType:'registered'。
   const PROVIDER_CASES = [
-    { label: 'guest', user: { id: 'u1', is_guest: 1, auth_provider: null }, expected: { userId: 'u1', authenticated: true, provider: 'guest' } },
-    { label: 'guest（is_guest為true布林值）', user: { id: 'u2', is_guest: true, auth_provider: null }, expected: { userId: 'u2', authenticated: true, provider: 'guest' } },
-    { label: 'google', user: { id: 'u3', is_guest: 0, auth_provider: 'google' }, expected: { userId: 'u3', authenticated: true, provider: 'google' } },
-    { label: 'is_guest為0但auth_provider也是null（既有資料異常情況，安全處理成provider:null）', user: { id: 'u4', is_guest: 0, auth_provider: null }, expected: { userId: 'u4', authenticated: true, provider: null } },
-    { label: '其他provider字串（未來可能的provider）', user: { id: 'u5', is_guest: 0, auth_provider: 'apple' }, expected: { userId: 'u5', authenticated: true, provider: 'apple' } },
+    { label: 'guest', user: { id: 'u1', is_guest: 1, auth_provider: null }, expected: { userId: 'u1', authenticated: true, provider: 'guest', isGuest: true, userType: 'guest' } },
+    { label: 'guest（is_guest為true布林值）', user: { id: 'u2', is_guest: true, auth_provider: null }, expected: { userId: 'u2', authenticated: true, provider: 'guest', isGuest: true, userType: 'guest' } },
+    { label: 'google', user: { id: 'u3', is_guest: 0, auth_provider: 'google' }, expected: { userId: 'u3', authenticated: true, provider: 'google', isGuest: false, userType: 'registered' } },
+    { label: 'is_guest為0但auth_provider也是null（既有資料異常情況，安全處理成provider:null）', user: { id: 'u4', is_guest: 0, auth_provider: null }, expected: { userId: 'u4', authenticated: true, provider: null, isGuest: false, userType: 'registered' } },
+    { label: '其他provider字串（未來可能的provider）', user: { id: 'u5', is_guest: 0, auth_provider: 'apple' }, expected: { userId: 'u5', authenticated: true, provider: 'apple', isGuest: false, userType: 'registered' } },
   ];
 
   for (const { label, user, expected } of PROVIDER_CASES) {
@@ -217,9 +222,9 @@ async function main() {
     });
   }
 
-  await test('（2.identity object）buildUserIdentity()輸出完全不含auth_provider_id/email/display_name/legacy_sync_code等D1原始欄位（不外洩OAuth細節）', () => {
+  await test('（2.identity object）buildUserIdentity()輸出完全不含auth_provider_id/email/display_name/legacy_sync_code等D1原始欄位（不外洩OAuth細節；TASK1.126後更新：欄位清單新增isGuest/userType兩個語意分類欄位，依然不含任何D1原始欄位）', () => {
     const identity = buildUserIdentity({ id: 'u9', is_guest: 0, auth_provider: 'google', auth_provider_id: 'secret-oauth-id', email: 'user@example.com', display_name: 'Real Name', legacy_sync_code: 'SYNC123' });
-    assert.deepStrictEqual(Object.keys(identity).sort(), ['authenticated', 'provider', 'userId']);
+    assert.deepStrictEqual(Object.keys(identity).sort(), ['authenticated', 'isGuest', 'provider', 'userId', 'userType']);
     const serialized = JSON.stringify(identity);
     assert.ok(!serialized.includes('secret-oauth-id'));
     assert.ok(!serialized.includes('user@example.com'));
@@ -331,16 +336,16 @@ async function main() {
     };
   }
 
-  await test('（4.future authenticated mode）resolveHealthInsightIdentity()在有效guest session時正確回傳authenticated:true, provider:guest', async () => {
+  await test('（4.future authenticated mode）resolveHealthInsightIdentity()在有效guest session時正確回傳authenticated:true, provider:guest, isGuest:true, userType:guest（TASK1.126後更新：新增isGuest/userType欄位）', async () => {
     const db = makeValidSessionDb({ userId: 'guest-1', isGuest: true });
     const identity = await resolveHealthInsightIdentity(db, 'dbc_sid=token123', {});
-    assert.deepStrictEqual(identity, { userId: 'guest-1', authenticated: true, provider: 'guest' });
+    assert.deepStrictEqual(identity, { userId: 'guest-1', authenticated: true, provider: 'guest', isGuest: true, userType: 'guest' });
   });
 
-  await test('（4.future authenticated mode）resolveHealthInsightIdentity()在有效google session時正確回傳authenticated:true, provider:google', async () => {
+  await test('（4.future authenticated mode）resolveHealthInsightIdentity()在有效google session時正確回傳authenticated:true, provider:google, isGuest:false, userType:registered（TASK1.126後更新：新增isGuest/userType欄位）', async () => {
     const db = makeValidSessionDb({ userId: 'google-1', isGuest: false, authProvider: 'google' });
     const identity = await resolveHealthInsightIdentity(db, 'dbc_sid=token123', {});
-    assert.deepStrictEqual(identity, { userId: 'google-1', authenticated: true, provider: 'google' });
+    assert.deepStrictEqual(identity, { userId: 'google-1', authenticated: true, provider: 'google', isGuest: false, userType: 'registered' });
   });
 
   await test('（4.future authenticated mode）resolveHealthInsightIdentity()在session過期時安全回傳ANONYMOUS_IDENTITY', async () => {
@@ -619,12 +624,12 @@ async function main() {
     });
   }
 
-  await test('（7.response boundary）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
+  await test('（7.response boundary）src/ui/health_insight/整個目錄除了TASK1.123/1.124明確授權新增的Gemini/History/Progress呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123/1.124後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
     const remaining = diff.split('\n').filter((line) => {
       const t = line.trim();
       if (!t) return false;
-      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('history_card.js') && !t.includes('progress_summary_card.js') && !t.includes('file changed') && !t.includes('files changed');
     }).join('\n');
     assert.strictEqual(remaining.trim(), '');
   });
@@ -817,6 +822,13 @@ async function main() {
     'src/ui/health_insight/render_product_response.js',
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/index.js',
+    // TASK1.124後更新：History/Progress Product Completion明確授權新增的4個檔案
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+    'src/history/health_insight/history_service.js',
+    'src/history/health_insight/index.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction明確授權修改
+    'src/persistence/health_insight/health_insight_persistence_service.js',
   ];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js' -o -name '*.md'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)

@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.120｜Health Insight Data Persistence Foundation
+ * （Phase 7 TASK1.126後更新：`shouldPersistHealthInsightRecord()`
+ * 新增訪客帳號排除，見下方"User Ownership"區塊更新說明）
  * - Health Insight Persistence Service
  *
  * 責任：把Health Insight流程成功產出的結構化Product
@@ -21,10 +23,25 @@
  * ## User Ownership（規格明確要求）
  *
  * 只有`identity.authenticated === true`且`identity.userId`是真正
- * 的字串時才會嘗試寫入——`shouldPersistHealthInsightRecord()`是
- * 這個判斷的唯一入口。匿名使用者（`ANONYMOUS_IDENTITY`）**完全
- * 不會**觸發任何D1寫入，也**不會**被賦予任何假的user_id（延續
- * "Anonymous users must NOT create fake identities"的明確要求）。
+ * 的字串、**且不是訪客帳號**時才會嘗試寫入——
+ * `shouldPersistHealthInsightRecord()`是這個判斷的唯一入口。
+ * 匿名使用者（`ANONYMOUS_IDENTITY`）**完全不會**觸發任何D1寫入，
+ * 也**不會**被賦予任何假的user_id（延續"Anonymous users must
+ * NOT create fake identities"的明確要求）。
+ *
+ * ## TASK1.126更新：訪客帳號（Guest）排除
+ *
+ * TASK1.125審查發現既有Guest帳號（`is_guest:1`，有真實D1 user
+ * row/session的完整功能帳號）被`buildUserIdentity()`轉成跟
+ * Google登入使用者完全相同的`authenticated:true`，導致這裡
+ * 原本會把Guest帳號的Health Insight結果也存進D1——這跟規格
+ * "Guest users: no persistent record"的原始設想有落差。這裡
+ * 新增`isGuestIdentity()`判斷（同時接受TASK1.126新增的
+ * `identity.isGuest`欄位，或既有的`identity.provider ===
+ * 'guest'`），只要是訪客帳號就一律不寫入，即使`authenticated`
+ * 是`true`。**這不影響既有的持久化能力本身**——`insert()`/
+ * D1 schema/白名單欄位規則完全沒有改變，只是"誰有資格觸發寫入"
+ * 這道permission boundary變嚴格了。
  *
  * ## Failure Isolation（規格明確要求）
  *
@@ -127,13 +144,34 @@ function buildOutputSnapshot(data) {
 }
 
 /**
- * 判斷這次請求是否應該嘗試持久化——唯一的判斷依據是
- * `identity.authenticated`跟`identity.userId`，不做任何額外的
- * 業務判斷（例如是否訂閱、是否啟用某功能——那些是未來Membership/
- * Feature Permission的職責，見`src/identity/health_insight/
- * membership_placeholder.js`，本次任務沒有串接）。
+ * 判斷某個identity是不是訪客帳號（`is_guest:1`）——TASK1.126
+ * 新增，獨立實作（不import `src/identity/`任何檔案，延續整個
+ * 系列"不共用內部實作細節，各自對公開行為負責"既有原則）。同時
+ * 接受`identity.isGuest === true`（TASK1.126新增的顯式欄位）
+ * 跟`identity.provider === 'guest'`（既有欄位，向下相容既有
+ * 只手動組出三欄位identity的呼叫端/測試fixture）兩種寫法。
  *
- * @param {{userId:string|null, authenticated:boolean, provider:string|null}} identity
+ * @param {*} identity
+ * @returns {boolean}
+ */
+function isGuestIdentity(identity) {
+  return !!(identity && typeof identity === 'object' && (identity.isGuest === true || identity.provider === 'guest'));
+}
+
+/**
+ * 判斷這次請求是否應該嘗試持久化——判斷依據是
+ * `identity.authenticated`跟`identity.userId`，**加上TASK1.126
+ * 新增的訪客排除**：訪客帳號（`isGuestIdentity(identity)`為
+ * true）即使`authenticated:true`也不應該被持久化。這是TASK1.125
+ * 記錄的產品語意落差在這裡的具體修正——規格原文"Guest users:
+ * no persistent record"——訪客能完整體驗Health Insight（Input→
+ * Analysis→Recommendation→Dashboard），但不會留下任何歷史紀錄，
+ * 只有真正的Google登入使用者（`userType:'registered'`）才會被
+ * 存。這裡**不做**任何額外的業務判斷（例如是否訂閱、是否啟用
+ * 某功能——那些是未來Membership/Feature Permission的職責，見
+ * `src/membership/`，本次任務沒有修改）。
+ *
+ * @param {{userId:string|null, authenticated:boolean, provider:string|null, isGuest?:boolean, userType?:string}} identity
  * @returns {boolean}
  */
 export function shouldPersistHealthInsightRecord(identity) {
@@ -142,7 +180,8 @@ export function shouldPersistHealthInsightRecord(identity) {
     typeof identity === 'object' &&
     identity.authenticated === true &&
     typeof identity.userId === 'string' &&
-    identity.userId.length > 0
+    identity.userId.length > 0 &&
+    !isGuestIdentity(identity)
   );
 }
 
@@ -159,6 +198,7 @@ export function shouldPersistHealthInsightRecord(identity) {
  * @param {number|string|Date} [params.now] - 選填，測試用的時間覆寫
  * @returns {Promise<{ok:true, id:string}|{ok:false, reason:string}>}
  *   reason 可能是 'anonymous_skip'（匿名使用者，刻意不存）|
+ *   'guest_skip'（TASK1.126新增：訪客帳號，刻意不存）|
  *   'not_successful_result'（Health Insight本身失敗，不存失敗結果）|
  *   'invalid_db'（db不可用）| 'db_error'（D1寫入失敗）|
  *   'unknown_error'（任何未預期例外，不外洩例外訊息本身）
@@ -167,7 +207,7 @@ export async function saveHealthInsightRecord(db, params) {
   const safeParams = params && typeof params === 'object' ? params : {};
 
   if (!shouldPersistHealthInsightRecord(safeParams.identity)) {
-    return { ok: false, reason: 'anonymous_skip' };
+    return { ok: false, reason: isGuestIdentity(safeParams.identity) ? 'guest_skip' : 'anonymous_skip' };
   }
 
   if (!safeParams.structuredResponse || typeof safeParams.structuredResponse !== 'object' || !safeParams.structuredResponse.ok) {

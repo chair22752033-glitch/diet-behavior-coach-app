@@ -862,9 +862,14 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（9.history placeholder）src/persistence/整個目錄完全沒有被本次任務修改', () => {
+  await test('（9.history placeholder）src/persistence/整個目錄除了TASK1.126明確授權的health_insight_persistence_service.js訪客排除修正之外，完全沒有其他改動', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/persistence/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('health_insight_persistence_service.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   console.log('');
@@ -985,11 +990,9 @@ async function main() {
     'src/intelligence/capabilities/recommendation/index.js',
     'src/intelligence/analysis/analysis_runner.js',
     'src/intelligence/recommendation/recommendation_runner.js',
-    'src/identity/health_insight/user_identity.js',
     'src/identity/health_insight/resolve_identity.js',
     'src/controllers/health_insight_controller.js',
     'src/controllers/health_insight_response_builder.js',
-    'src/persistence/health_insight/health_insight_persistence_service.js',
     'src/db/tables/health_insight_records.js',
     'src/db/index.js',
     'src/config/gemini_config.js',
@@ -1012,6 +1015,10 @@ async function main() {
     // TASK1.124後更新：src/worker.js從這個清單移除——History API
     // 明確授權新增GET /api/health-insight/history一個if區塊，不再
     // 要求整個檔案零diff，改成下方的marker-based檢查。
+    // TASK1.126後更新：src/identity/health_insight/user_identity.js
+    // 跟src/persistence/health_insight/health_insight_persistence_
+    // service.js從這個清單移除——Guest/Authentication Experience
+    // Correction明確授權修正Persistence Boundary排除訪客帳號。
   ];
 
   console.log('--- K2. Architecture protection ---');
@@ -1165,6 +1172,10 @@ async function main() {
     // TASK1.124後更新：History API明確授權新增GET
     // /api/health-insight/history一個if區塊
     'src/worker.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction
+    // 明確授權修改的2個檔案
+    'src/identity/health_insight/user_identity.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
   ];
   const TASK1123_NEWLY_CREATED_FILES = [
     'src/ui/health_insight/components/gemini_insight_card.js',

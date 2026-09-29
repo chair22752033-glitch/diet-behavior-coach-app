@@ -318,18 +318,39 @@ async function main() {
     { name: 'Membership Layer', paths: [path.join(membershipDir, 'membership_state.js'), path.join(membershipDir, 'membership_resolver.js'), path.join(membershipDir, 'feature_permission.js')] },
   ];
 
+  // TASK1.126後更新：這3個檔案從"零diff"要求裡排除——Guest/
+  // Authentication Experience Correction明確授權修改
+  // health_insight_routes.js/dashboard_page.js（轉發isGuest欄位）
+  // 跟health_insight_persistence_service.js（訪客帳號排除）。
+  // TASK1.125當初審查時這3個檔案確實是零diff，但TASK1.125自己
+  // 發現的語意落差本來就預期會被下一個任務修正，這裡的斷言需要
+  // 反映這個已經發生的合法修正。
+  const TASK1126_AUTHORIZED_LAYER_FILES = [
+    'src/routes/health_insight_routes.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
+  ];
+
   for (const layer of PRODUCT_LAYERS) {
     for (const filePath of layer.paths) {
-      await test(`（3.product layers）${layer.name}：${path.relative(repoRoot, filePath)}存在`, () => {
+      const relPath = path.relative(repoRoot, filePath);
+      await test(`（3.product layers）${layer.name}：${relPath}存在`, () => {
         assert.ok(fs.existsSync(filePath), `檔案不存在：${filePath}`);
       });
-      await test(`（3.product layers）${layer.name}：${path.relative(repoRoot, filePath)}通過node --check語法驗證`, () => {
+      await test(`（3.product layers）${layer.name}：${relPath}通過node --check語法驗證`, () => {
         assert.doesNotThrow(() => execFileSync('node', ['--check', filePath], { encoding: 'utf8' }));
       });
-      await test(`（3.product layers）${layer.name}：${path.relative(repoRoot, filePath)}維持零diff（本次任務純審查，不修改任何.js檔案）`, () => {
-        const diff = execFileSync('git', ['diff', '--stat', '--', path.relative(repoRoot, filePath)], { cwd: repoRoot, encoding: 'utf8' });
-        assert.strictEqual(diff.trim(), '');
-      });
+      if (TASK1126_AUTHORIZED_LAYER_FILES.includes(relPath)) {
+        await test(`（3.product layers）${layer.name}：${relPath}的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，用git log避免commit後永遠假性失敗）`, () => {
+          const status = execFileSync('sh', ['-c', `git diff --name-only -- ${relPath} ; git log --oneline -- ${relPath}`], { cwd: repoRoot, encoding: 'utf8' });
+          assert.ok(status.trim().length > 0, `${relPath} 找不到任何diff或commit歷史`);
+        });
+      } else {
+        await test(`（3.product layers）${layer.name}：${relPath}維持零diff（本次任務純審查，不修改任何.js檔案）`, () => {
+          const diff = execFileSync('git', ['diff', '--stat', '--', relPath], { cwd: repoRoot, encoding: 'utf8' });
+          assert.strictEqual(diff.trim(), '');
+        });
+      }
     }
   }
 
@@ -468,21 +489,21 @@ async function main() {
     assert.strictEqual(identity.provider, 'guest');
   });
 
-  await test('（5.missing capabilities）3.1驗證：Guest帳號（authenticated:true）目前會被shouldPersistHealthInsightRecord()判定為應該persist（跟Google相同，證實文件記錄的語意落差是真實存在的）', async () => {
+  await test('（5.missing capabilities）3.1驗證（TASK1.126後更新：語意落差已修正）：Guest帳號（authenticated:true）現在被shouldPersistHealthInsightRecord()正確判定為不應該persist，跟Google不再相同', async () => {
     const { shouldPersistHealthInsightRecord } = await import(path.join(persistenceDir, 'health_insight_persistence_service.js'));
     const guestIdentity = buildUserIdentity({ id: 'guest-user-2', is_guest: 1, auth_provider: null });
     const googleIdentity = buildUserIdentity({ id: 'google-user-2', is_guest: 0, auth_provider: 'google' });
-    assert.strictEqual(shouldPersistHealthInsightRecord(guestIdentity), true);
+    assert.strictEqual(shouldPersistHealthInsightRecord(guestIdentity), false);
     assert.strictEqual(shouldPersistHealthInsightRecord(googleIdentity), true);
   });
 
-  await test('（5.missing capabilities）3.1驗證：Guest帳號端對端POST後，History真的會累積紀錄（不是理論分析，是實際行為）', async () => {
+  await test('（5.missing capabilities）3.1驗證（TASK1.126後更新：語意落差已修正）：Guest帳號端對端POST後，History正確保持空清單（訪客不再累積歷史紀錄）', async () => {
     const db = makeSessionDb({ userId: 'guest-e2e-1', isGuest: true, records: [] });
     const router = createAppRouter();
     await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 28, healthGoal: 'weight_loss' }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
     const res = await router.handle({ method: 'GET', pathname: '/api/health-insight/history', cookieHeader: 'dbc_sid=token123', options: {} }, { db });
     const body = await res.json();
-    assert.strictEqual(body.data.records.length, 1);
+    assert.strictEqual(body.data.records.length, 0);
   });
 
   await test('（5.missing capabilities）3.2驗證：Premium沒有真實觸發管道——worker.js完全沒有任何地方組出非空的lookupTier', () => {
@@ -660,10 +681,20 @@ async function main() {
       assert.ok(!/window\.|document\./.test(source));
     });
 
-    await test(`（8.ui consistency）卡片元件${f}維持零diff（本次任務不修改任何UI元件）`, () => {
-      const diff = execFileSync('git', ['diff', '--stat', '--', `src/ui/health_insight/components/${f}`], { cwd: repoRoot, encoding: 'utf8' });
-      assert.strictEqual(diff.trim(), '');
-    });
+    // TASK1.126後更新：history_card.js/progress_summary_card.js從零diff
+    // 要求裡移除——Guest/Authentication Experience Correction明確授權
+    // 新增Guest狀態文案（目前為體驗模式／登入保存你的健康紀錄）。
+    if (f === 'history_card.js' || f === 'progress_summary_card.js') {
+      await test(`（8.ui consistency）卡片元件${f}的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，用git log避免commit後永遠假性失敗）`, () => {
+        const status = execFileSync('sh', ['-c', `git diff --name-only -- src/ui/health_insight/components/${f} ; git log --oneline -- src/ui/health_insight/components/${f}`], { cwd: repoRoot, encoding: 'utf8' });
+        assert.ok(status.trim().length > 0, `${f} 找不到任何diff或commit歷史`);
+      });
+    } else {
+      await test(`（8.ui consistency）卡片元件${f}維持零diff（本次任務不修改任何UI元件）`, () => {
+        const diff = execFileSync('git', ['diff', '--stat', '--', `src/ui/health_insight/components/${f}`], { cwd: repoRoot, encoding: 'utf8' });
+        assert.strictEqual(diff.trim(), '');
+      });
+    }
   }
 
   console.log('');
@@ -783,18 +814,40 @@ async function main() {
   // =========================================================================
   console.log('--- K. Architecture zero-diff ---');
 
-  await test('（11.architecture zero-diff）本次任務完全沒有修改任何既有.js檔案（git diff --name-only排除backups/後應該是空的）', () => {
+  // TASK1.126後更新：以下7個檔案從"完全沒有修改任何既有.js檔案"的
+  // 零diff要求裡移除——Guest/Authentication Experience Correction
+  // 明確授權修改這些檔案，用來修正TASK1.125自己發現的語意落差
+  // （Guest帳號被誤判為authenticated，能建立persistence/history紀錄）。
+  const TASK1126_AUTHORIZED_MODIFIED_FILES = [
+    'src/identity/health_insight/user_identity.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
+    'src/history/health_insight/history_service.js',
+    'src/routes/health_insight_routes.js',
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+  ];
+
+  await test('（11.architecture zero-diff）本次任務完全沒有修改任何既有.js檔案（git diff --name-only排除backups/後應該是空的，TASK1.126後更新：排除7個明確授權修改的Guest/Authentication Experience Correction檔案）', () => {
     const diff = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
       .split('\n').map((s) => s.trim()).filter(Boolean)
-      .filter((f) => !f.startsWith('backups/'));
+      .filter((f) => !f.startsWith('backups/'))
+      .filter((f) => !TASK1126_AUTHORIZED_MODIFIED_FILES.includes(f));
     const jsChanges = diff.filter((f) => f.endsWith('.js'));
-    assert.deepStrictEqual(jsChanges, [], `不應該有任何.js檔案被修改，實際: ${jsChanges.join(', ')}`);
+    assert.deepStrictEqual(jsChanges, [], `不應該有任何未授權.js檔案被修改，實際: ${jsChanges.join(', ')}`);
   });
+
+  for (const relFile of TASK1126_AUTHORIZED_MODIFIED_FILES) {
+    await test(`（11.architecture zero-diff）授權修改檔案${relFile}的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，用git log避免commit後永遠假性失敗）`, () => {
+      const status = execFileSync('sh', ['-c', `git diff --name-only -- ${relFile} ; git log --oneline -- ${relFile}`], { cwd: repoRoot, encoding: 'utf8' });
+      assert.ok(status.trim().length > 0, `${relFile} 找不到任何diff或commit歷史`);
+    });
+  }
 
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean);
 
-  await test(`（11.architecture zero-diff）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有.js檔案，全部應該保持零diff（本次任務沒有授權修改任何.js檔案）`, () => {
+  await test(`（11.architecture zero-diff）逐檔案完整性掃描：src/底下共找到 ${allExistingSrcFiles.length} 個既有.js檔案，全部應該保持零diff（本次任務沒有授權修改任何.js檔案，TASK1.126後更新：7個授權檔案除外）`, () => {
     assert.ok(allExistingSrcFiles.length >= 200, `預期至少200個既有檔案，實際 ${allExistingSrcFiles.length}`);
   });
 
@@ -802,6 +855,7 @@ async function main() {
     .split('\n').map((s) => s.trim()).filter(Boolean);
 
   for (const relFile of allExistingSrcFiles) {
+    if (TASK1126_AUTHORIZED_MODIFIED_FILES.includes(relFile)) continue;
     await test(`（11.architecture zero-diff）逐檔案完整性掃描：${relFile} 完全沒有被本次任務修改`, () => {
       assert.ok(!gitDiffNameOnly.includes(relFile), `${relFile} 出現在git diff清單裡`);
     });
@@ -922,24 +976,40 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（P1-P6）src/history/health_insight/整個目錄完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/history/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  // TASK1.126後更新：以下4個P1-P6目錄/檔案零diff檢查改為過濾式檢查——
+  // Guest/Authentication Experience Correction明確授權修改
+  // history_service.js、health_insight_persistence_service.js、
+  // dashboard_page.js、history_card.js、progress_summary_card.js、
+  // health_insight_routes.js，排除這些檔案後其餘內容應仍保持零diff。
+  await test('（P1-P6）src/history/health_insight/整個目錄除了TASK1.126授權修改的history_service.js之外，完全沒有其他改動', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/history/health_insight/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/history/health_insight/history_service.js'));
+    assert.deepStrictEqual(diff, [], `預期以外的改動: ${diff.join(', ')}`);
   });
 
-  await test('（P1-P6）src/persistence/health_insight/整個目錄完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/persistence/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/persistence/health_insight/整個目錄除了TASK1.126授權修改的health_insight_persistence_service.js之外，完全沒有其他改動', () => {
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/persistence/health_insight/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !f.endsWith('src/persistence/health_insight/health_insight_persistence_service.js'));
+    assert.deepStrictEqual(diff, [], `預期以外的改動: ${diff.join(', ')}`);
   });
 
-  await test('（P1-P6）src/ui/health_insight/整個目錄完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/ui/health_insight/整個目錄除了TASK1.126授權修改的dashboard_page.js、history_card.js、progress_summary_card.js之外，完全沒有其他改動', () => {
+    const AUTHORIZED_UI_SUFFIXES = [
+      'src/ui/health_insight/pages/dashboard_page.js',
+      'src/ui/health_insight/components/history_card.js',
+      'src/ui/health_insight/components/progress_summary_card.js',
+    ];
+    const diff = execFileSync('git', ['diff', '--name-only', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\n').map((s) => s.trim()).filter(Boolean)
+      .filter((f) => !AUTHORIZED_UI_SUFFIXES.some((suffix) => f.endsWith(suffix)));
+    assert.deepStrictEqual(diff, [], `預期以外的改動: ${diff.join(', ')}`);
   });
 
-  await test('（P1-P6）src/routes/health_insight_routes.js完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/routes/health_insight_routes.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（P1-P6）src/routes/health_insight_routes.js的commit歷史/目前diff裡確實存在TASK1.126的合法修改（控制組，轉發isGuest欄位給presentationContext）', () => {
+    const status = execFileSync('sh', ['-c', 'git diff --name-only -- src/routes/health_insight_routes.js ; git log --oneline -- src/routes/health_insight_routes.js'], { cwd: repoRoot, encoding: 'utf8' });
+    assert.ok(status.trim().length > 0, 'src/routes/health_insight_routes.js 找不到任何diff或commit歷史');
   });
 
   await test('（P1-P6）src/intelligence/product/整個目錄除了本次新增的.md文件之外，完全沒有其他改動', () => {

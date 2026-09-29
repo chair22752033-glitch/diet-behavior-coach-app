@@ -108,7 +108,7 @@ function renderDashboardHeader() {
  * "不暴露internal capability structure"既有原則）。
  *
  * @param {{healthObservation?:Array, behaviorPattern?:Array, recommendation?:Array, progressTrend?:object}} healthInsightResult
- * @param {{isAuthenticated?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null, previousRecords?:Array, previousHealthGoal?:string|null, currentHealthGoal?:string|null}} [presentationContext] - TASK1.123新增，TASK1.124擴充，選填，見上方"TASK1.123更新"/"TASK1.124更新"說明
+ * @param {{isAuthenticated?:boolean, isGuest?:boolean, geminiPermitted?:boolean, enhancedExplanation?:string|null, previousRecords?:Array, previousHealthGoal?:string|null, currentHealthGoal?:string|null}} [presentationContext] - TASK1.123新增，TASK1.124/1.126擴充，選填，見上方"TASK1.123更新"/"TASK1.124更新"/"TASK1.126更新"說明
  * @returns {string}
  */
 export function renderHealthInsightDashboard(healthInsightResult, presentationContext) {
@@ -118,10 +118,12 @@ export function renderHealthInsightDashboard(healthInsightResult, presentationCo
   const previousRecords = Array.isArray(safeContext.previousRecords) ? safeContext.previousRecords : [];
   const historyCard = createHistoryCard({
     isAuthenticated: safeContext.isAuthenticated,
+    isGuest: safeContext.isGuest,
     previousRecords,
   });
   const progressCard = createProgressSummaryCard({
     isAuthenticated: safeContext.isAuthenticated,
+    isGuest: safeContext.isGuest,
     previousRecordCount: previousRecords.length,
     previousHealthGoal: safeContext.previousHealthGoal,
     currentHealthGoal: safeContext.currentHealthGoal,

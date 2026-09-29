@@ -1280,9 +1280,11 @@ async function main() {
   // =========================================================================
   console.log('--- J. OAuth compatibility ---');
 
-  await test('（10.oauth compatibility）src/identity/health_insight/user_identity.js完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/identity/health_insight/user_identity.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（10.oauth compatibility）src/identity/health_insight/user_identity.js既有匯出（ANONYMOUS_IDENTITY/buildUserIdentity/isValidUserIdentity）依然存在（TASK1.126後更新：TASK1.126合法新增isGuest/userType語意分類欄位，不再要求整個檔案零diff，改成驗證既有匯出依然存在）', () => {
+    const userIdentitySource = fs.readFileSync(path.join(identityDir, 'user_identity.js'), 'utf8');
+    assert.ok(userIdentitySource.includes('export const ANONYMOUS_IDENTITY'));
+    assert.ok(userIdentitySource.includes('export function buildUserIdentity'));
+    assert.ok(userIdentitySource.includes('export function isValidUserIdentity'));
   });
 
   await test('（10.oauth compatibility）src/identity/health_insight/resolve_identity.js完全沒有被本次任務修改', () => {
@@ -1387,9 +1389,11 @@ async function main() {
   // =========================================================================
   console.log('--- K. Persistence compatibility ---');
 
-  await test('（11.persistence compatibility）src/persistence/health_insight/health_insight_persistence_service.js完全沒有被本次任務修改', () => {
-    const diff = execFileSync('git', ['diff', '--stat', '--', 'src/persistence/health_insight/health_insight_persistence_service.js'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+  await test('（11.persistence compatibility）src/persistence/health_insight/health_insight_persistence_service.js既有匯出（shouldPersistHealthInsightRecord/saveHealthInsightRecord/listHealthInsightRecordsForUser）依然存在（TASK1.126後更新：TASK1.126合法修正訪客帳號排除，不再要求整個檔案零diff，改成驗證既有匯出依然存在）', () => {
+    const source = fs.readFileSync(path.join(persistenceDir, 'health_insight_persistence_service.js'), 'utf8');
+    assert.ok(source.includes('export function shouldPersistHealthInsightRecord'));
+    assert.ok(source.includes('export async function saveHealthInsightRecord'));
+    assert.ok(source.includes('export async function listHealthInsightRecordsForUser'));
   });
 
   await test('（11.persistence compatibility）src/db/tables/health_insight_records.js完全沒有被本次任務修改（沒有新增欄位/query）', () => {
@@ -1822,11 +1826,12 @@ async function main() {
     'src/intelligence/capabilities/recommendation/index.js',
     'src/intelligence/analysis/analysis_runner.js',
     'src/intelligence/recommendation/recommendation_runner.js',
-    'src/identity/health_insight/user_identity.js',
+    // TASK1.126後更新：user_identity.js跟health_insight_persistence_
+    // service.js從這個清單移除——Guest/Authentication Experience
+    // Correction明確授權修正Persistence Boundary排除訪客帳號。
     'src/identity/health_insight/resolve_identity.js',
     'src/controllers/health_insight_controller.js',
     'src/controllers/health_insight_response_builder.js',
-    'src/persistence/health_insight/health_insight_persistence_service.js',
     'src/db/tables/health_insight_records.js',
     'src/db/index.js',
     'src/config/gemini_config.js',
@@ -1875,6 +1880,10 @@ async function main() {
     'src/routes/health_insight_routes.js',
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/index.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction
+    // 明確授權修改的2個檔案
+    'src/identity/health_insight/user_identity.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
   ];
   const TASK1124_NEWLY_CREATED_FILES = [
     'src/history/health_insight/history_service.js',

@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.124｜Health Insight Product Completion
+ * （Phase 7 TASK1.126後更新：新增訪客體驗模式狀態，見下方"四種
+ * 狀態"區塊）
  * - History Card（陪伴紀錄呈現）
  *
  * 責任：呈現History Retrieval Boundary（TASK1.124新增，見
@@ -12,7 +14,7 @@
  * 已算好旗標"既有模式——這個檔案完全不import
  * `src/persistence/`或`src/history/`任何檔案。
  *
- * ## 三種狀態
+ * ## 四種狀態（TASK1.126後更新：新增訪客體驗模式）
  *
  * - 匿名使用者（`isAuthenticated!==true`）→ 顯示"登入之後才會
  *   開始累積"的引導卡片（不是"會員專屬"——History跟Premium/
@@ -21,9 +23,18 @@
  *   history access"，這裡刻意用不同文案跟`gemini_insight_
  *   card.js`的"會員專屬"鎖定卡區分，避免使用者誤以為歷史紀錄
  *   也是premium功能）
- * - 已登入但沒有任何先前紀錄（`previousRecords`為空陣列）→
- *   顯示"這是你的第一筆紀錄"的友善開場文案
- * - 已登入且有先前紀錄 → 逐筆列出（最多顯示
+ * - **已登入但是訪客帳號**（`isAuthenticated===true &&
+ *   isGuest===true`，TASK1.126新增）→ 顯示"目前為體驗模式"/
+ *   "登入後可以保存你的健康歷程"引導文案——訪客帳號雖然
+ *   `authenticated:true`，但規格明確要求"Guest: no persistent
+ *   record, no history"，`previousRecords`在route層已經結構性地
+ *   保證永遠是空陣列（見`src/history/health_insight/
+ *   history_service.js`的`isGuestIdentity()`排除），這裡額外
+ *   用專屬文案跟"已登入但第一次使用"的Registered使用者區分開，
+ *   避免訪客誤以為自己的資料有被保存
+ * - 已登入（非訪客）但沒有任何先前紀錄（`previousRecords`為空
+ *   陣列）→ 顯示"這是你的第一筆紀錄"的友善開場文案
+ * - 已登入（非訪客）且有先前紀錄 → 逐筆列出（最多顯示
  *   `MAX_DISPLAYED_RECORDS`筆，摘要格式`M/D · 健康目標中文標籤`），
  *   這是規格PART1"previous insight display"的具體落地——純粹
  *   列表呈現，不含任何連結/導向詳細記錄頁面（本次任務沒有建立
@@ -78,7 +89,7 @@ function renderRecordLine(record) {
 }
 
 /**
- * @param {{isAuthenticated?:boolean, previousRecords?:Array<{id?:string, createdAt?:string, healthGoal?:string}>}} [context]
+ * @param {{isAuthenticated?:boolean, isGuest?:boolean, previousRecords?:Array<{id?:string, createdAt?:string, healthGoal?:string}>}} [context]
  * @returns {string}
  */
 export function createHistoryCard(context) {
@@ -93,6 +104,19 @@ export function createHistoryCard(context) {
       createCardHeader({ title: '陪伴紀錄', underline: 'muted' }),
       '    <div class="hi-card-explanation">登入之後，這裡就會開始保留你每一次的健康小洞察，讓你慢慢看見自己的變化</div>',
       createCardCta({ label: '敬請期待', accent: 'muted', action: 'history-login-required' }),
+      '  </div>',
+      '</div>',
+    ].join('\n');
+  }
+
+  if (safeContext.isGuest) {
+    return [
+      '<div class="hi-card hi-history-card hi-history-card--guest hi-placeholder-card">',
+      createIllustration('behaviorPatternPlaceholder'),
+      '  <div class="hi-card-body">',
+      createCardHeader({ title: '陪伴紀錄', underline: 'muted' }),
+      '    <div class="hi-card-explanation">目前為體驗模式，這次的內容不會被保存；登入後可以保存你的健康歷程，累積成屬於你的健康紀錄</div>',
+      createCardCta({ label: '登入保存你的健康紀錄', accent: 'muted', action: 'history-guest-upgrade' }),
       '  </div>',
       '</div>',
     ].join('\n');
@@ -118,7 +142,7 @@ export function createHistoryCard(context) {
     createIllustration('behaviorPatternPlaceholder'),
     '  <div class="hi-card-body">',
     createCardHeader({ title: '陪伴紀錄', underline: 'muted' }),
-    '    <div class="hi-card-explanation">你過去的洞察都留在這裡，一起看看走過的路</div>',
+    '    <div class="hi-card-explanation">這是你的健康紀錄——過去的洞察都留在這裡，一起看看走過的路</div>',
     '    <ul class="hi-history-record-list">',
     displayedRecords.map(renderRecordLine).join('\n'),
     '    </ul>',

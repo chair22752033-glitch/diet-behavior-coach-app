@@ -168,6 +168,20 @@
  * records}}`。跟既有兩條路由一樣**不**要求登入（不掛
  * `requireAuth()`），匿名使用者呼叫這條路由會安全拿到
  * `{authenticated:false, records:[]}`，不會被擋下。
+ *
+ * ## TASK1.126更新：presentationContext新增`isGuest`欄位
+ *
+ * 延續TASK1.125發現的產品語意落差修正——`identity.isGuest`
+ * （TASK1.126於`src/identity/health_insight/user_identity.js`
+ * 新增的欄位）原樣轉發進`presentationContext`，讓UI層能區分
+ * "訪客體驗模式"跟"已註冊使用者"兩種已登入狀態，顯示不同的
+ * 引導文案（見`src/ui/health_insight/components/history_card.js`/
+ * `progress_summary_card.js`的TASK1.126更新說明）。這裡**只是
+ * 轉發**這個identity既有欄位，完全不新增任何判斷邏輯——真正的
+ * 持久化/歷史查詢permission boundary修正在
+ * `saveHealthInsightRecord()`/`getHealthInsightHistoryForIdentity()`
+ * 內部（`src/persistence/health_insight/`/`src/history/
+ * health_insight/`），這裡呼叫這兩個函式的方式完全沒有改變。
  */
 import { getHealthInsightPageController, submitHealthInsightController } from '../controllers/health_insight_controller.js';
 import { getHealthInsightClientScript, renderHealthInsightProductResponse } from '../ui/health_insight/index.js';
@@ -251,6 +265,7 @@ export function registerHealthInsightRoutes(router) {
     const previousHealthGoal = previousRecords.length > 0 ? previousRecords[0].healthGoal : null;
     const html = renderHealthInsightProductResponse(structuredResponse, {
       isAuthenticated: !!(identity && identity.authenticated),
+      isGuest: !!(identity && identity.isGuest),
       geminiPermitted,
       enhancedExplanation,
       previousRecords,

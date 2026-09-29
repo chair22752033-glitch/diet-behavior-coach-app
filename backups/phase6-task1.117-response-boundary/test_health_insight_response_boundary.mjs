@@ -803,9 +803,14 @@ async function main() {
     assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（9.architecture protection）src/auth/、src/oauth/、src/identity/、src/middleware/完全沒有被本次任務修改（不實作OAuth/不改authentication/session）', () => {
+  await test('（9.architecture protection）src/auth/、src/oauth/、src/identity/、src/middleware/除了TASK1.126明確授權的user_identity.js語意分類擴充之外，完全沒有其他改動（不實作OAuth/不改authentication/session）', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/auth/ src/oauth/ src/identity/ src/middleware/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('user_identity.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（9.architecture protection）既有20條非Health Insight route在router裡依然全部存在', () => {
@@ -894,7 +899,18 @@ async function main() {
   // 同上方"architecture protection"章節。（TASK1.123後更新）
   // dashboard_page.js/components/index.js從這個逐檔案掃描排除——
   // Product Experience Upgrade明確授權新增Gemini/History呈現區塊。
-  const TASK1123_AUTHORIZED_UI_FILES = ['src/ui/health_insight/pages/dashboard_page.js', 'src/ui/health_insight/components/index.js'];
+  const TASK1123_AUTHORIZED_UI_FILES = [
+    'src/ui/health_insight/pages/dashboard_page.js',
+    'src/ui/health_insight/components/index.js',
+    // TASK1.124後更新：History/Progress Product Completion明確授權新增的4個檔案
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+    'src/history/health_insight/history_service.js',
+    'src/history/health_insight/index.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction明確授權修改的2個檔案
+    'src/identity/health_insight/user_identity.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
+  ];
   const allExistingSrcFiles = execFileSync('sh', ['-c', "find src -name '*.js'"], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)
     .filter((f) => !NEWLY_ADDED_FILES.includes(f) && !INTENTIONALLY_CHANGED_FILES.includes(f) && f !== 'src/worker.js' && f !== 'src/db/index.js' && !TASK1123_AUTHORIZED_UI_FILES.includes(f));

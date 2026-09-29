@@ -496,7 +496,9 @@ async function main() {
     'src/intelligence/analysis/analysis_runner.js',
     'src/intelligence/recommendation/recommendation_runner.js',
     'src/intelligence/context/insight_context_builder.js',
-    'src/identity/health_insight/user_identity.js',
+    // TASK1.126後更新：user_identity.js從這個清單移除——Guest/
+    // Authentication Experience Correction明確授權新增isGuest/
+    // userType語意分類欄位。
     'src/identity/health_insight/resolve_identity.js',
     'src/identity/health_insight/request_context.js',
     'src/identity/health_insight/membership_placeholder.js',
@@ -518,12 +520,12 @@ async function main() {
     });
   }
 
-  await test('（7.product integration）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
+  await test('（7.product integration）src/ui/health_insight/整個目錄除了TASK1.123/1.124明確授權新增的Gemini/History/Progress呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123/1.124後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
     const remaining = diff.split('\n').filter((line) => {
       const t = line.trim();
       if (!t) return false;
-      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('history_card.js') && !t.includes('progress_summary_card.js') && !t.includes('file changed') && !t.includes('files changed');
     }).join('\n');
     assert.strictEqual(remaining.trim(), '');
   });
@@ -548,6 +550,12 @@ async function main() {
     'src/ui/health_insight/render_product_response.js', // TASK1.123後更新
     'src/ui/health_insight/pages/dashboard_page.js', // TASK1.123後更新
     'src/ui/health_insight/components/index.js', // TASK1.123後更新
+    'src/ui/health_insight/components/history_card.js', // TASK1.124後更新
+    'src/ui/health_insight/components/progress_summary_card.js', // TASK1.124後更新
+    'src/history/health_insight/history_service.js', // TASK1.124後更新
+    'src/history/health_insight/index.js', // TASK1.124後更新
+    'src/identity/health_insight/user_identity.js', // TASK1.126後更新
+    'src/persistence/health_insight/health_insight_persistence_service.js', // TASK1.126後更新
   ];
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter(Boolean)

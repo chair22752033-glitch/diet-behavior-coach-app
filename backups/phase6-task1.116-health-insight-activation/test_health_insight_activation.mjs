@@ -1025,9 +1025,14 @@ async function main() {
     assert.strictEqual(remaining.trim(), '');
   });
 
-  await test('（10.architecture protection）src/auth/、src/oauth/、src/identity/、src/middleware/完全沒有被本次任務修改（不修改authentication/OAuth/session）', () => {
+  await test('（10.architecture protection）src/auth/、src/oauth/、src/identity/、src/middleware/除了TASK1.126明確授權的user_identity.js語意分類擴充之外，完全沒有其他改動（不修改authentication/OAuth/session）', () => {
     const diff = execFileSync('sh', ['-c', 'git diff --stat -- src/auth/ src/oauth/ src/identity/ src/middleware/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('user_identity.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   await test('（10.architecture protection）app.router.routes數量為23（21個既有+2個Health Insight新增，明確被授權的Route connection；TASK1.124後更新：TASK1.124再新增GET /api/health-insight/history一條，23+1=24）', () => {
@@ -1089,6 +1094,14 @@ async function main() {
     'src/ui/health_insight/render_product_response.js',
     'src/ui/health_insight/pages/dashboard_page.js',
     'src/ui/health_insight/components/index.js',
+    // TASK1.124後更新：History/Progress Product Completion明確授權新增的4個檔案
+    'src/ui/health_insight/components/history_card.js',
+    'src/ui/health_insight/components/progress_summary_card.js',
+    'src/history/health_insight/history_service.js',
+    'src/history/health_insight/index.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction明確授權修改的2個檔案
+    'src/identity/health_insight/user_identity.js',
+    'src/persistence/health_insight/health_insight_persistence_service.js',
   ];
 
   const gitDiffNameOnly = execFileSync('git', ['diff', '--name-only'], { cwd: repoRoot, encoding: 'utf8' })

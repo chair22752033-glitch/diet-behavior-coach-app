@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.118｜Health Insight User Identity Foundation
+ * （Phase 7 TASK1.126後更新：新增`isGuest`/`userType`語意分類
+ * 欄位，見下方"TASK1.126更新"區塊）
  * - User Identity Context（穩定的內部身份表示）
  *
  * 責任：定義一個跟"目前是誰登入"這件事完全無關的**穩定形狀**
@@ -40,6 +42,37 @@
  * - ❌ 不快取/不持久化任何身份資訊（每次呼叫`buildUserIdentity()`
  *   都是全新、獨立的計算，deterministic，不讀取Date.now()/
  *   Math.random()/任何外部狀態）
+ *
+ * ## TASK1.126更新：新增`isGuest`/`userType`語意分類欄位
+ *
+ * 規格明確指出TASK1.125發現的產品語意落差：既有Guest帳號
+ * （`is_guest:1`）被這個檔案轉成跟Google登入使用者完全相同的
+ * `{authenticated:true}`，導致下游（Persistence/History
+ * Boundary）沒有辦法區分"這是暫時體驗的訪客"還是"這是真正的
+ * 註冊使用者"。這裡**不移除、不修改**既有的
+ * `userId`/`authenticated`/`provider`三個欄位（延續"這是規格
+ * 明確要求的穩定三欄位形狀"既有結論，OAuth/Session/既有
+ * authentication流程完全不受影響）——只**新增**兩個欄位，讓
+ * 語意分類成為這個穩定形狀的一部分，而不是額外建立一套新的
+ * 身份系統：
+ *
+ * - `isGuest`：`boolean`，true代表這是訪客帳號（`is_guest:1`），
+ *   false代表匿名或Google登入使用者
+ * - `userType`：`'anonymous' | 'guest' | 'registered'`，三選一
+ *   的語意標籤，方便下游程式碼用一個欄位直接判斷，不用自己重新
+ *   推導`authenticated`+`isGuest`的組合邏輯
+ *
+ * 下游的Persistence Boundary（`src/persistence/health_insight/
+ * health_insight_persistence_service.js`）跟History Retrieval
+ * Boundary（`src/history/health_insight/history_service.js`）
+ * 各自獨立實作了自己的"這是不是guest"判斷（延續整個系列"不共用
+ * 內部實作細節，各自對公開行為負責"既有原則），判斷條件同時
+ * 接受`identity.isGuest === true`**或**`identity.provider ===
+ * 'guest'`兩種寫法——這是刻意的向下相容設計：既有19個測試套件
+ * 裡大量存在只手動組出`{userId, authenticated:true,
+ * provider:'guest'}`三欄位（沒有`isGuest`/`userType`）的
+ * identity fixture，這些fixture在TASK1.126之後依然會被正確
+ * 判定為guest，不需要每一個都改寫成新形狀。
  */
 
 /**
@@ -51,12 +84,16 @@ export const ANONYMOUS_IDENTITY = Object.freeze({
   userId: null,
   authenticated: false,
   provider: null,
+  isGuest: false,
+  userType: 'anonymous',
 });
 
 /**
  * 判斷傳入的值是否已經是合法的User Identity Context形狀——純
  * 結構檢查（型別是否相符），不判斷`userId`/`provider`的實際內容
- * 有沒有意義（那不是這一層的責任）。
+ * 有沒有意義（那不是這一層的責任）。`isGuest`/`userType`是
+ * TASK1.126新增的選填欄位——省略時視為合法（向下相容既有只有
+ * 三欄位的identity物件），出現時才檢查型別是否正確。
  *
  * @param {*} identity
  * @returns {boolean}
@@ -66,6 +103,8 @@ export function isValidUserIdentity(identity) {
   if (identity.userId !== null && typeof identity.userId !== 'string') return false;
   if (typeof identity.authenticated !== 'boolean') return false;
   if (identity.provider !== null && typeof identity.provider !== 'string') return false;
+  if ('isGuest' in identity && typeof identity.isGuest !== 'boolean') return false;
+  if ('userType' in identity && typeof identity.userType !== 'string') return false;
   return true;
 }
 
@@ -87,7 +126,7 @@ export function isValidUserIdentity(identity) {
  * 狀態。
  *
  * @param {object|null} user
- * @returns {{userId:string|null, authenticated:boolean, provider:string|null}}
+ * @returns {{userId:string|null, authenticated:boolean, provider:string|null, isGuest:boolean, userType:'anonymous'|'guest'|'registered'}}
  */
 export function buildUserIdentity(user) {
   if (!user || typeof user !== 'object' || Array.isArray(user)) {
@@ -104,5 +143,11 @@ export function buildUserIdentity(user) {
     ? 'guest'
     : (typeof user.auth_provider === 'string' && user.auth_provider.length > 0 ? user.auth_provider : null);
 
-  return { userId, authenticated: true, provider };
+  return {
+    userId,
+    authenticated: true,
+    provider,
+    isGuest,
+    userType: isGuest ? 'guest' : 'registered',
+  };
 }

@@ -350,9 +350,14 @@ async function main() {
     assert.strictEqual(diff.trim(), '');
   });
 
-  await test('（2.migration boundary）src/identity/health_insight/整個目錄完全沒有被本次任務修改（User Identity邊界不變）', () => {
+  await test('（2.migration boundary）src/identity/health_insight/整個目錄除了TASK1.126明確授權的user_identity.js語意分類擴充之外，完全沒有其他改動（User Identity邊界不變）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/identity/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
-    assert.strictEqual(diff.trim(), '');
+    const remaining = diff.split('\n').filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      return !t.includes('user_identity.js') && !t.includes('file changed') && !t.includes('files changed');
+    }).join('\n');
+    assert.strictEqual(remaining.trim(), '');
   });
 
   console.log('');
@@ -453,9 +458,13 @@ async function main() {
   // =========================================================================
   console.log('--- D. Authenticated persistence ---');
 
+  // TASK1.126後更新：'guest-partial-profile'從這個陣列移除——Guest/
+  // Authentication Experience Correction明確授權訪客帳號不再被
+  // 視為"應該持久化"的身份，這裡的AUTH_SCENARIOS專門驗證"確實會
+  // 被持久化"的情境，guest不再屬於這一類（見下方新增的"訪客帳號
+  // 不會被持久化"專屬測試區塊，跟Anonymous behavior區塊相鄰）。
   const AUTH_SCENARIOS = [
     { label: 'google-full-profile', isGuest: false, authProvider: 'google', payload: { gender: 'female', age: 28, height: 165, weight: 55, healthGoal: 'lose_weight' } },
-    { label: 'guest-partial-profile', isGuest: true, authProvider: null, payload: { age: 40 } },
     { label: 'google-empty-payload', isGuest: false, authProvider: 'google', payload: {} },
     { label: 'google-extra-fields', isGuest: false, authProvider: 'google', payload: { gender: 'male', age: 33, password: 'should-not-leak', sessionToken: 'should-not-leak' } },
     { label: 'google-long-string-truncated', isGuest: false, authProvider: 'google', payload: { gender: 'x'.repeat(150) } },
@@ -534,6 +543,29 @@ async function main() {
     });
   }
 
+  // TASK1.126後更新：訪客帳號（is_guest:1）不會被持久化——這是
+  // Guest/Authentication Experience Correction明確授權的Persistence
+  // Boundary修正，取代原本AUTH_SCENARIOS裡假設guest"應該"被持久化
+  // 的'guest-partial-profile'情境。
+  await test('（4.authenticated persistence）身份=guest-partial-profile（TASK1.126後更新）：真實端對端POST依然成功回傳200，但完全不會新增任何紀錄', async () => {
+    const router = createAppRouter();
+    const { db, inserted } = makeCaptureDb({ userId: 'guest-no-persist-1', isGuest: true, authProvider: null, recordBehavior: 'success' });
+    const res = await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 40 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.strictEqual(body.ok, true);
+    assert.strictEqual(typeof body.data.html, 'string');
+    assert.strictEqual(inserted.length, 0);
+  });
+
+  await test('（4.authenticated persistence）身份=guest-partial-profile（TASK1.126後更新）：連續呼叫兩次依然完全不會新增任何紀錄', async () => {
+    const router = createAppRouter();
+    const { db, inserted } = makeCaptureDb({ userId: 'guest-no-persist-2', isGuest: true, authProvider: null, recordBehavior: 'success' });
+    await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 40 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
+    await router.handle({ method: 'POST', pathname: '/api/health-insight', payload: { age: 40 }, cookieHeader: 'dbc_sid=token123', options: {} }, { db });
+    assert.strictEqual(inserted.length, 0);
+  });
+
   console.log('');
 
   // =========================================================================
@@ -596,7 +628,11 @@ async function main() {
     { label: 'empty-object', identity: {}, expected: false },
     { label: 'ANONYMOUS_IDENTITY', identity: ANONYMOUS_IDENTITY, expected: false },
     { label: 'valid-google', identity: { userId: 'u1', authenticated: true, provider: 'google' }, expected: true },
-    { label: 'valid-guest', identity: { userId: 'u1', authenticated: true, provider: 'guest' }, expected: true },
+    // TASK1.126後更新：expected從true改成false——Guest/Authentication
+    // Experience Correction明確授權shouldPersistHealthInsightRecord()
+    // 排除訪客帳號（見該檔案"TASK1.126更新"說明），即使authenticated
+    // 是true也不應該被持久化。
+    { label: 'valid-guest', identity: { userId: 'u1', authenticated: true, provider: 'guest' }, expected: false },
     { label: 'valid-null-provider', identity: { userId: 'u1', authenticated: true, provider: null }, expected: true },
     { label: 'empty-string-userId', identity: { userId: '', authenticated: true, provider: 'google' }, expected: false },
     { label: 'null-userId', identity: { userId: null, authenticated: true, provider: 'google' }, expected: false },
@@ -837,7 +873,6 @@ async function main() {
     'src/intelligence/analysis/analysis_runner.js',
     'src/intelligence/recommendation/recommendation_runner.js',
     'src/intelligence/context/insight_context_builder.js',
-    'src/identity/health_insight/user_identity.js',
     'src/identity/health_insight/resolve_identity.js',
     'src/identity/health_insight/request_context.js',
     'src/identity/health_insight/membership_placeholder.js',
@@ -848,6 +883,9 @@ async function main() {
     // TASK1.124後更新：src/worker.js從這個清單移除——History API
     // 明確授權新增GET /api/health-insight/history一個if區塊，不再
     // 要求整個檔案零diff，改成下方的marker-based檢查。
+    // TASK1.126後更新：src/identity/health_insight/user_identity.js
+    // 從這個清單移除——Guest/Authentication Experience Correction
+    // 明確授權新增isGuest/userType語意分類欄位。
   ];
 
   for (const relFile of PRODUCT_BOUNDARY_FILES) {
@@ -869,12 +907,12 @@ async function main() {
     });
   }
 
-  await test('（9.product integration）src/ui/health_insight/整個目錄除了TASK1.123明確授權新增的Gemini/History呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123後更新）', () => {
+  await test('（9.product integration）src/ui/health_insight/整個目錄除了TASK1.123/1.124明確授權新增的Gemini/History/Progress呈現區塊之外，完全沒有其他改動（不重新設計UI，見TASK1.123/1.124後更新）', () => {
     const diff = execFileSync('git', ['diff', '--stat', '--', 'src/ui/health_insight/'], { cwd: repoRoot, encoding: 'utf8' });
     const remaining = diff.split('\n').filter((line) => {
       const t = line.trim();
       if (!t) return false;
-      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('file changed') && !t.includes('files changed');
+      return !t.includes('render_product_response.js') && !t.includes('dashboard_page.js') && !t.includes('components/index.js') && !t.includes('history_card.js') && !t.includes('progress_summary_card.js') && !t.includes('file changed') && !t.includes('files changed');
     }).join('\n');
     assert.strictEqual(remaining.trim(), '');
   });
@@ -894,6 +932,9 @@ async function main() {
     // TASK1.124後更新：History API明確授權新增GET
     // /api/health-insight/history一個if區塊
     'src/worker.js',
+    // TASK1.126後更新：Guest/Authentication Experience Correction
+    // 明確授權新增isGuest/userType語意分類欄位
+    'src/identity/health_insight/user_identity.js',
   ];
   const TASK1120_NEWLY_CREATED_FILES = [
     'src/db/tables/health_insight_records.js',

@@ -1,5 +1,7 @@
 /*
  * Phase 6 TASK 1.124｜Health Insight Product Completion
+ * （Phase 7 TASK1.126後更新：`isAuthenticatedIdentity()`新增
+ * 訪客帳號排除，見下方新增的`isGuestIdentity()`說明）
  * - History Retrieval Boundary（History Service）
  *
  * 責任：規格目標架構"User Identity → History Service → Persistence
@@ -64,13 +66,40 @@ import { listHealthInsightRecordsForUser } from '../../persistence/health_insigh
  */
 export const DEFAULT_HISTORY_LIMIT = 5;
 
+/**
+ * 判斷某個identity是不是訪客帳號（`is_guest:1`）——Phase 7
+ * TASK1.126新增，獨立實作（不import `src/identity/`任何檔案，
+ * 延續整個系列"不共用內部實作細節，各自對公開行為負責"既有
+ * 原則）。同時接受`identity.isGuest === true`（TASK1.126新增的
+ * 顯式欄位）跟`identity.provider === 'guest'`（既有欄位，向下
+ * 相容既有只手動組出三欄位identity的呼叫端/測試fixture）兩種
+ * 寫法。
+ *
+ * @param {*} identity
+ * @returns {boolean}
+ */
+function isGuestIdentity(identity) {
+  return !!(identity && typeof identity === 'object' && (identity.isGuest === true || identity.provider === 'guest'));
+}
+
+/**
+ * TASK1.126更新：訪客帳號排除。規格原文"Guest: Cannot query
+ * history, retrieve previous records"——訪客帳號即使
+ * `authenticated:true`，History Retrieval Boundary也一律視為
+ * 沒有查詢資格，安全回傳空紀錄清單（見
+ * `getHealthInsightHistoryForIdentity()`），不會嘗試任何D1查詢。
+ * Security規則依然是"identity based, not frontend userId
+ * based"——這裡沒有改變"用什麼決定查誰的紀錄"，只是新增了
+ * "誰有資格查"這一層額外判斷。
+ */
 function isAuthenticatedIdentity(identity) {
   return !!(
     identity &&
     typeof identity === 'object' &&
     identity.authenticated === true &&
     typeof identity.userId === 'string' &&
-    identity.userId.length > 0
+    identity.userId.length > 0 &&
+    !isGuestIdentity(identity)
   );
 }
 
