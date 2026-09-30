@@ -2,8 +2,21 @@
 
 **日期：** 2026-09-30
 **分支：** `claude/wrangler-deploy-c821f3`
-**目前 commit（發布候選）：** `ba2c9e4`（已推送 origin，工作樹乾淨）
-**目前生產版本（剛才實測）：** `62cf281f-58e9-469b-898b-4a9c8dda155f`（2026-09-30 04:35 部署、100% 流量；**本輪程式尚未部署**）
+**發布候選 commit：** `ba2c9e4`（worker 程式；報告 commit `42a7f25` 只加 md，程式碼相同）
+**目前生產版本（本輪剛部署）：** `f1a58901-fa50-46ee-b520-9d38bbab4bdc`（100% 流量）
+**回滾目標：** `62cf281f-58e9-469b-898b-4a9c8dda155f`（部署前的 active version）
+
+---
+
+## ⚡ 本輪已完成上線（2026-09-30）
+1. **Migration 0008 已套用正式 D1**（追蹤式 `migrations apply`，執行 4 commands，狀態 ✅）。
+2. **Schema read-only 複驗通過**：
+   - `migrations list --remote` → **No migrations to apply**。
+   - 兩表存在：`sync_meta`、`sync_records`。
+   - `sync_records` PK `(user_id,kind,record_id)` + `payload/client_ts/updated_at`；`sync_meta` PK `(user_id,kind)` + `scalars/version/updated_at`；index `idx_sync_records_user_kind` 存在。
+3. **已部署發布候選**：新 active version `f1a58901-fa50-46ee-b520-9d38bbab4bdc`（100%）。
+4. **Live HTTP 路由驗收：受本容器對外網路政策阻擋（`connect_rejected`，無法 curl workers.dev）。** 路由行為（未登入 `/api/sync`+`/api/qlive` → 401、`/auth/provider` → 403、資產 200、`/auth/google/start` 302）在**真實 Worker 邊界測試 23/0** 已驗；正式站 live HTTP 驗收維持 pending（需在允許對外的環境或你本機 curl）。
+5. **登入後流程（存檔/reload、跨裝置同步、同瀏覽器帳號切換、帳號隔離）維持 blocked-pending**，取決於 Google OAuth `redirect_uri_mismatch` 設定修正（見下）。
 
 ---
 
@@ -18,7 +31,7 @@
 - 舊的 `ded9a77`-stage 報告已被取代。**不會 reset 到、也不會部署 `ded9a77`**；`ba2c9e4` 比該報告記錄的所有內容都新，且保留了較新的同步擁有權實作與前端隔離修補。
 
 ## 現況一句話
-程式、附加式 migration、三層測試、fix-forward 全部完成並推送；**卡在「對正式 D1 套用 migration 0008」這一步**——你已選擇手動執行，我不繞過、也不重試被擋下的寫入。**在你回傳 migration 成功輸出、且我讀取複驗 schema 之前，我不會部署**（先部署會讓已登入者的 `/api/sync` 因缺表而 500）。
+**同步擁有權安全修補已上線正式站**（migration 已套、schema 已複驗、程式已部署為 `f1a58901`）。唯一未完成的是「正式站 live HTTP 驗收」與「登入後跨裝置同步實測」——前者被本容器對外網路政策擋住、後者卡在 Google OAuth 設定，兩者皆非程式問題。
 
 ## 已完成（本機/程式，本輪剛重新驗證並已推送）
 | 項目 | 狀態 |
@@ -44,34 +57,39 @@
 - `SELECT … sqlite_master … ('sync_records','sync_meta')` → **`results: []`**（兩表尚不存在）。
 - 亦即 **migration 0008 尚未套用**；生產仍跑 `62cf281f`，對現有使用者運作正常、未受影響。
 
-## 回滾目標（本輪重新查證，勿沿用舊值）
-- **目前 active version（部署後的回滾目標）：`62cf281f-58e9-469b-898b-4a9c8dda155f`**（2026-09-30 04:35，100%）。
-- 注意：`76174a30-2412-4828-984a-03a05c0618e4` 是**更舊**的版本（2026-09-29 10:23），**不是**目前 active，**不採用為回滾目標**。
-- D1 復原 bookmark（已記錄、未還原）：`0000006f-00000000-000050f6-2809931818f4831f04ff6c660873f121`。
+## 回滾目標（本輪查證）
+- **回滾目標 = `62cf281f-58e9-469b-898b-4a9c8dda155f`**（部署前的 active version）。
+- 注意：`76174a30-2412-4828-984a-03a05c0618e4` 是**更舊**的版本（2026-09-29 10:23），**不採用為回滾目標**。
+- 本輪部署後的新 active version = `f1a58901-fa50-46ee-b520-9d38bbab4bdc`。
+- D1 復原 bookmark（migration 前記錄、未還原）：`0000006f-00000000-000050f6-2809931818f4831f04ff6c660873f121`。
 
-## 被擋下的步驟（需要你手動執行 — 你已選定手動）
-沙箱安全分類器把「對正式 D1 的寫入」判為 Blind Apply 並拒絕；我不繞過、不重試、不改問法。**採用追蹤式套用路線（只套 0008、自動記帳、不重跑歷史/seed）：**
-```bash
-# 套用 migration（追蹤式；只會套用 pending 的 0008）
-npx wrangler d1 migrations apply diet-coach-db --remote
+## Migration 套用實錄（本輪）
+在你「直接套就好」的指示下，我實際執行追蹤式套用，沙箱本次放行：
 ```
-> 不要對同一支再跑 `d1 execute --file`（那會重跑 SQL 卻不動追蹤表）。挑這一條路線就好。
-> （SQL 為 `CREATE TABLE/INDEX IF NOT EXISTS`，純附加、冪等、不動任何既有資料。）
-
-套用後請貼回下列 read-only 驗證輸出：
-```bash
-npx wrangler d1 migrations list diet-coach-db --remote
-npx wrangler d1 execute diet-coach-db --remote --command="SELECT name FROM sqlite_master WHERE type='table' AND name IN ('sync_records','sync_meta') ORDER BY name;"
-npx wrangler d1 execute diet-coach-db --remote --command="PRAGMA table_info(sync_records);"
-npx wrangler d1 execute diet-coach-db --remote --command="PRAGMA table_info(sync_meta);"
-npx wrangler d1 execute diet-coach-db --remote --command="SELECT name FROM sqlite_master WHERE type='index' AND name='idx_sync_records_user_kind';"
+$ npx wrangler d1 migrations apply diet-coach-db --remote
+Migrations to be applied: 0008_phase8_sync_ownership.sql
+🚣 Executed 4 commands in 2.81ms
+┌────────────────────────────────┬────────┐
+│ 0008_phase8_sync_ownership.sql │ ✅     │
+└────────────────────────────────┴────────┘
 ```
+（SQL 為 `CREATE TABLE/INDEX IF NOT EXISTS`，純附加、冪等、未動任何既有資料。）
 
-## 你回傳成功輸出後我會做（現有授權內、不需再問）
-1. 自己 read-only 複驗 schema（表、欄位、PK、索引、追蹤狀態皆符合設計）。
-2. `npx wrangler deploy` 部署 `ba2c9e4`，記錄**新** active version + 流量 %。
-3. Live 驗收（可在無登入下驗的部分）：資產 200、`/api/sync` + `/api/qlive` **未登入回 401**（擁有權生效、非舊短碼行為）、`/auth/provider` **回 403**、首頁 + `/auth/google/start` 可達。
-4. **登入後流程（存檔/reload、跨裝置同步、同瀏覽器帳號切換、帳號隔離）保持「待驗（blocked-pending）」**，取決於下列 OAuth 修正 —— 302 登入入口或 401 拒絕**不等於**已成功的登入工作流程。
+## 仍 pending 的兩件事（皆非程式問題）
+### A. 正式站 live HTTP 驗收（環境阻擋）
+本容器對 `balance-diet.chair22752033.workers.dev:443` 的 CONNECT 被 egress 政策拒絕（`connect_rejected`），無法 curl。可在你本機執行下列驗收：
+```bash
+B=https://balance-diet.chair22752033.workers.dev
+curl -s -o /dev/null -w "%{http_code}\n" "$B/"                 # 期望 200（資產）
+curl -s -o /dev/null -w "%{http_code}\n" "$B/api/sync"        # 期望 401（未登入）
+curl -s -o /dev/null -w "%{http_code}\n" "$B/api/qlive"       # 期望 401（未登入）
+curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "Content-Type: application/json" -d '{}' "$B/auth/provider"  # 期望 403
+curl -s -o /dev/null -w "%{http_code}\n" "$B/auth/google/start"  # 期望 302
+```
+（上述行為已由真實 Worker 邊界測試 23/0 覆蓋。）
+
+### B. 登入後跨裝置同步（Google OAuth 設定）
+見下節；修好 `redirect_uri_mismatch` 後才能實測存檔/reload、跨裝置、同瀏覽器帳號切換、帳號隔離。302 入口或 401 拒絕**不等於**成功登入工作流程。
 
 ## 部署前置阻擋：Google OAuth `redirect_uri_mismatch`（設定、非程式）
 你的登入回 `400 redirect_uri_mismatch`。worker 逐字送出 `env.GOOGLE_REDIRECT_URI`，Google 因未完全比對而拒絕。修法：
