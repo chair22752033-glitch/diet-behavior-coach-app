@@ -1077,9 +1077,9 @@ async function main() {
   // =========================================================================
   console.log('--- N. Database protection ---');
 
-  await test('（14.database protection）migrations/共7個既有.sql檔案，數量沒有改變（規格明確要求：Do not modify Database schema）', () => {
+  await test('（14.database protection）migrations/共8個.sql檔案（含 0008 sync ownership，rollout 授權新增）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 7);
+    assert.strictEqual(files.length, 8);
   });
 
   await test('（14.database protection）migrations/完全沒有新增或修改任何檔案', () => {
