@@ -3,6 +3,11 @@ main = "src/worker.js"
 compatibility_date = "2026-07-25"
 account_id = "a6d9cbae720e9a59dc0487fde7b832b7"
 
+[assets]
+directory = "./public"
+binding = "UI_ASSETS"
+run_worker_first = true
+
 [[kv_namespaces]]
 binding = "SYNC_KV"
 id = "b984c2b3dfb14e2f86e3a99c1b0c1475"
