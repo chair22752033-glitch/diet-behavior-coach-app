@@ -1,5 +1,7 @@
 import { createApplication } from './bootstrap/application.js';
 import { createRouteGateway } from './bootstrap/route_gateway.js';
+import { getCurrentUser } from './services/auth_application_service.js';
+import { pushSyncDoc, getSyncDoc } from './sync/sync_store.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -290,6 +292,60 @@ export default {
       }
     }
 
+    // SECURITY (remediation 2026-09-30): session-owned cross-device sync.
+    // Ownership is the verified session user_id resolved server-side — never a
+    // client-supplied code / user_id. Durable records go to D1 (per-record,
+    // transactional, idempotent); QUEST live state to owner-scoped KV.
+    // Unauthenticated -> 401. This intercepts before the legacy handler, so the
+    // old anonymous short-code path is no longer reachable (bypass closed).
+    {
+      const syncPath = new URL(request.url).pathname;
+      if (syncPath === '/api/sync' || syncPath === '/api/qlive') {
+        if (request.method !== 'GET' && request.method !== 'POST') {
+          return new Response('Method Not Allowed', { status: 405 });
+        }
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        }
+        const ownerId = auth.userId;
+        if (syncPath === '/api/sync') {
+          if (request.method === 'GET') {
+            const res = await getSyncDoc(app.db.raw, ownerId);
+            if (!res.ok) return new Response(JSON.stringify({ ok: false, error: res.reason || 'read_failed' }), { status: 500, headers: jsonHeaders });
+            return new Response(JSON.stringify({ ok: true, data: res.doc }), { headers: jsonHeaders });
+          }
+          const payload = await parseJsonBody(request);
+          const res = await pushSyncDoc(app.db.raw, ownerId, payload);
+          if (!res.ok) {
+            const clientErrors = ['not_an_object', 'error_object', 'ins_not_array', 'quest_not_object', 'quest_entries_not_array', 'too_many_ins', 'too_many_quest', 'record_not_object', 'record_too_large', 'record_unserializable', 'scalars_too_large', 'scalars_unserializable'];
+            const status = clientErrors.indexOf(res.reason) >= 0 ? 400 : 500;
+            return new Response(JSON.stringify({ ok: false, error: res.reason || 'write_failed' }), { status, headers: jsonHeaders });
+          }
+          return new Response(JSON.stringify({ ok: true, data: { written: res.written } }), { headers: jsonHeaders });
+        }
+        // /api/qlive — ephemeral QUEST live state, owner-scoped KV key
+        const kv = env && env.SYNC_KV;
+        if (request.method === 'GET') {
+          if (!kv) return new Response(JSON.stringify({ ok: true, data: null }), { headers: jsonHeaders });
+          const raw = await kv.get('qlive:u:' + ownerId);
+          let parsed = null; if (raw != null) { try { parsed = JSON.parse(raw); } catch (e) { parsed = null; } }
+          return new Response(JSON.stringify({ ok: true, data: parsed }), { headers: jsonHeaders });
+        }
+        const qpayload = await parseJsonBody(request);
+        if (!qpayload || typeof qpayload !== 'object' || Array.isArray(qpayload)) {
+          return new Response(JSON.stringify({ ok: false, error: 'invalid_json' }), { status: 400, headers: jsonHeaders });
+        }
+        const qbody = JSON.stringify(qpayload);
+        if (qbody.length > 200000) return new Response(JSON.stringify({ ok: false, error: 'too_large' }), { status: 413, headers: jsonHeaders });
+        if (!kv) return new Response(JSON.stringify({ ok: false, error: 'kv_unavailable' }), { status: 503, headers: jsonHeaders });
+        await kv.put('qlive:u:' + ownerId, qbody, { expirationTtl: 3600 });
+        return new Response(JSON.stringify({ ok: true, data: { stored: true } }), { headers: jsonHeaders });
+      }
+    }
+
     const gateway = createRouteGateway({ app, legacyHandler: handle });
     return gateway.handle(request, env);
   }
@@ -320,52 +376,15 @@ async function handle(r,env){
     }
   }
   if(p==='/api/sync'){
-    var code=(new URL(r.url)).searchParams.get('code')||'';
-    if(!/^[A-Za-z0-9_-]{3,40}$/.test(code)){
-      return new Response(JSON.stringify({error:'invalid code'}),{status:400,headers:{'Content-Type':'application/json'}});
-    }
-    var key='sync:'+code;
-    if(r.method==='GET'){
-      var v=await env.SYNC_KV.get(key);
-      return new Response(v===null?'null':v,{headers:{'Content-Type':'application/json'}});
-    }
-    if(r.method==='POST'){
-      var body=await r.text();
-      if(body.length>1000000){
-        return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
-      }
-      var parsed;try{parsed=JSON.parse(body);}catch(e){parsed=undefined;}
-      if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)){
-        return new Response(JSON.stringify({error:'invalid json'}),{status:400,headers:{'Content-Type':'application/json'}});
-      }
-      await env.SYNC_KV.put(key,body);
-      return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
-    }
-    return new Response('Method Not Allowed',{status:405});
+    // SUPERSEDED (remediation 2026-09-30): anonymous short-code sync is removed.
+    // The authenticated, session-owned handler in fetch() intercepts /api/sync
+    // before this legacy handler runs, so this block is unreachable and kept only
+    // for structural stability. Fail closed if ever reached — no code-based access.
+    return new Response(JSON.stringify({ok:false,error:'legacy_sync_disabled'}),{status:410,headers:{'Content-Type':'application/json'}});
   }
   if(p==='/api/qlive'){
-    var qcode=(new URL(r.url)).searchParams.get('code')||'';
-    if(!/^[A-Za-z0-9_-]{3,40}$/.test(qcode)){
-      return new Response(JSON.stringify({error:'invalid code'}),{status:400,headers:{'Content-Type':'application/json'}});
-    }
-    var qkey='qlive:'+qcode;
-    if(r.method==='GET'){
-      var qv=await env.SYNC_KV.get(qkey);
-      return new Response(qv===null?'null':qv,{headers:{'Content-Type':'application/json'}});
-    }
-    if(r.method==='POST'){
-      var qbody=await r.text();
-      if(qbody.length>200000){
-        return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
-      }
-      var qparsed;try{qparsed=JSON.parse(qbody);}catch(e){qparsed=undefined;}
-      if(!qparsed||typeof qparsed!=='object'||Array.isArray(qparsed)){
-        return new Response(JSON.stringify({error:'invalid json'}),{status:400,headers:{'Content-Type':'application/json'}});
-      }
-      await env.SYNC_KV.put(qkey,qbody,{expirationTtl:3600});
-      return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
-    }
-    return new Response('Method Not Allowed',{status:405});
+    // SUPERSEDED (remediation 2026-09-30): see /api/sync above. Fail closed.
+    return new Response(JSON.stringify({ok:false,error:'legacy_qlive_disabled'}),{status:410,headers:{'Content-Type':'application/json'}});
   }
   return new Response(getHTML(),{headers:{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store'}});
 }
@@ -1032,36 +1051,32 @@ function getHTML(){return [
   'function recKey(r){if(!r||typeof r!=="object")return null;if(r.id!=null)return "id:"+r.id;if(r.ts!=null)return "ts:"+r.ts;return null;}',
   'function mergeRecords(a,b){var seen={},out=[];(a||[]).concat(b||[]).forEach(function(r){var k=recKey(r);if(k===null){out.push(r);return;}if(!seen[k]){seen[k]=1;out.push(r);}});out.sort(function(x,y){return ((y&&y.ts)||0)-((x&&x.ts)||0);});return out;}',
   'function mergeData(localD,remoteD){localD=(localD&&typeof localD==="object")?localD:{ins:[]};if(!isSyncShape(remoteD))return localD;var m={};for(var k in localD)m[k]=localD[k];for(var rk in remoteD){if(rk!=="ins"&&rk!=="quest"&&!(rk in m))m[rk]=remoteD[rk];}m.ins=mergeRecords(localD.ins,remoteD.ins);var lq=(localD.quest&&localD.quest.entries)||null;var rq=(remoteD.quest&&remoteD.quest.entries)||null;if(lq||rq){m.quest=(m.quest&&typeof m.quest==="object")?m.quest:{};m.quest.entries=mergeRecords(lq,rq);}return m;}',
-  'function cloudPush(d,cb){var code=getSyncCode();if(!code){if(cb)cb(false);return;}fetch("/api/sync?code="+encodeURIComponent(code),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).then(function(res){if(cb)cb(!!(res&&res.ok));}).catch(function(e){if(cb)cb(false);});}',
-  'function cloudPull(cb){var code=getSyncCode();if(!code){if(cb)cb(false);return;}fetch("/api/sync?code="+encodeURIComponent(code)).then(function(res){if(!res||!res.ok)throw new Error("http");return res.text();}).then(function(txt){var d=null;if(txt&&txt!=="null"){d=JSON.parse(txt);}if(d===null){cloudPush(ld());if(cb)cb(true);return;}if(!isSyncShape(d)){if(cb)cb(false);return;}var merged=mergeData(ld(),d);try{localStorage.setItem(SK,JSON.stringify(merged));}catch(e){if(cb)cb(false);return;}cloudPush(merged);if(cb)cb(true);}).catch(function(e){if(cb)cb(false);});}',
+  'var SYNC_ON=false;',
+  'function uid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);}',
+  'function cloudPush(d,cb){if(!SYNC_ON){if(cb)cb(false);return;}fetch("/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).then(function(res){if(cb)cb(!!(res&&res.ok));}).catch(function(e){if(cb)cb(false);});}',
+  'function cloudPull(cb){if(!SYNC_ON){if(cb)cb(false);return;}fetch("/api/sync").then(function(res){if(!res||!res.ok)throw new Error("http");return res.json();}).then(function(body){if(!body||!body.ok){if(cb)cb(false);return;}var d=body.data;if(!isSyncShape(d)){if(cb)cb(false);return;}var merged=mergeData(ld(),d);try{localStorage.setItem(SK,JSON.stringify(merged));}catch(e){if(cb)cb(false);return;}cloudPush(merged);if(cb)cb(true);}).catch(function(e){if(cb)cb(false);});}',
   'function openSyncUI(){',
-  '  var cur=getSyncCode();',
-  '  var input=window.prompt("\\u8f38\\u5165\\u540c\\u6b65\\u78bc\\uff08\\u5169\\u53f0\\u88dd\\u7f6e\\u8acb\\u8f38\\u5165\\u540c\\u4e00\\u7d44\\u78bc\\uff09",cur);',
-  '  if(input===null)return;',
-  '  input=input.trim();',
-  '  if(!input){setSyncCode("");window.alert("\\u5df2\\u95dc\\u9589\\u540c\\u6b65");return;}',
-  '  setSyncCode(input);',
-  '  cloudPull(function(ok){',
-  '    initHome();',
-  '    window.alert(ok?("\\u540c\\u6b65\\u78bc\\u5df2\\u8a2d\\u5b9a\\uff0c\\u53e6\\u4e00\\u53f0\\u88dd\\u7f6e\\u8acb\\u8f38\\u5165\\u540c\\u6a23\\u7684\\u78bc\\uff1a"+input):"\\u540c\\u6b65\\u5931\\u6557\\uff0c\\u8acb\\u6aa2\\u67e5\\u7db2\\u8def\\u5f8c\\u518d\\u8a66");',
-  '  });',
+  '  if(!SYNC_ON){if(window.confirm("跨裝置同步需要先登入。要用 Google 登入嗎？（在另一台裝置登入同一個帳號即可同步）")){location.href="/auth/google/start";}return;}',
+  '  cloudPull(function(ok){initHome();window.alert(ok?"已與你的帳號雲端同步":"同步失敗，請檢查網路後再試一次");});',
   '}',
   'function initLoginState(){',
   '  var btn=document.getElementById("login-btn");',
   '  if(!btn)return;',
   '  function showLoggedOut(){',
+  '    SYNC_ON=false;',
   '    btn.classList.remove("logged-in");',
   '    btn.textContent="Google \\u767b\\u5165";',
   '    btn.onclick=function(){location.href="/auth/google/start";};',
   '  }',
   '  function showLoggedIn(user){',
+  '    SYNC_ON=true;',
   '    btn.classList.add("logged-in");',
   '    btn.textContent=(user&&(user.display_name||user.email))||"\\u5df2\\u767b\\u5165";',
   '    btn.onclick=function(){fetch("/auth/logout",{method:"POST"}).catch(function(e){}).then(function(){location.reload();});};',
   '  }',
   '  showLoggedOut();',
   '  fetch("/auth/me").then(function(res){return res.ok?res.json():null;}).then(function(body){',
-  '    if(body&&body.ok&&body.data&&body.data.user)showLoggedIn(body.data.user);',
+  '    if(body&&body.ok&&body.data&&body.data.user){showLoggedIn(body.data.user);cloudPull(function(){try{initHome();}catch(e){}});}',
   '  }).catch(function(e){});',
   '}',
   'var QLIVE_PREF_KEY="quest_live_pref";',
@@ -1073,11 +1088,10 @@ function getHTML(){return [
   '  return{mode:QST.mode,phase:QST.phase,stepCats:QST.stepCats,stepIdx:QST.stepIdx,confirmed:QST.confirmed,current:QST.current,cards:QST.cards,prompts:QST.prompts,insight:QST.insight,savedCarry:QST.savedCarry,note:ta?ta.value:""};',
   '}',
   'function qlivePush(){',
-  '  if(!QLIVE_ON)return;',
-  '  var code=getSyncCode();if(!code)return;',
+  '  if(!QLIVE_ON||!SYNC_ON)return;',
   '  var payload={ts:Date.now(),qst:qliveSnapshot()};',
   '  QLIVE_TS=payload.ts;',
-  '  fetch("/api/qlive?code="+encodeURIComponent(code),{method:"POST",body:JSON.stringify(payload)}).catch(function(e){});',
+  '  fetch("/api/qlive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).catch(function(e){});',
   '}',
   'function qlivePushSoon(){clearTimeout(QLIVE_PUSH_T);QLIVE_PUSH_T=setTimeout(qlivePush,500);}',
   'function qliveApply(remote){',
@@ -1092,8 +1106,9 @@ function getHTML(){return [
   '  if(ta&&remote.note!==undefined&&document.activeElement!==ta)ta.value=remote.note;',
   '}',
   'function qlivePull(){',
-  '  var code=getSyncCode();if(!code){return;}',
-  '  fetch("/api/qlive?code="+encodeURIComponent(code)).then(function(res){return res.json();}).then(function(d){',
+  '  if(!SYNC_ON){return;}',
+  '  fetch("/api/qlive").then(function(res){return res.ok?res.json():null;}).then(function(body){',
+  '    var d=body&&body.ok?body.data:null;',
   '    if(d&&d.ts>QLIVE_TS){QLIVE_TS=d.ts;qliveApply(d.qst);}',
   '  }).catch(function(e){});',
   '}',
@@ -1110,8 +1125,7 @@ function getHTML(){return [
   '  var btn=document.getElementById("qst-sync-btn");if(btn){btn.textContent="同步";btn.classList.remove("on");}',
   '}',
   'function qliveToggle(){',
-  '  var code=getSyncCode();',
-  '  if(!code){openSyncUI();return;}',
+  '  if(!SYNC_ON){openSyncUI();return;}',
   '  if(QLIVE_ON){qliveSetPref(false);qliveStop();}',
   '  else{qliveSetPref(true);qliveStart();}',
   '}',
@@ -1120,7 +1134,7 @@ function getHTML(){return [
   '  btn.onclick=qliveToggle;',
   '  btn.textContent=QLIVE_ON?"同步中":"同步";',
   '  if(QLIVE_ON)btn.classList.add("on");else btn.classList.remove("on");',
-  '  if(qliveGetPref()&&getSyncCode()&&!QLIVE_ON)qliveStart();',
+  '  if(qliveGetPref()&&SYNC_ON&&!QLIVE_ON)qliveStart();',
   '}',
   'function qstGoHome(){qliveStop();goHome();}',
   'function tx(id,t){var e=document.getElementById(id);if(e)e.textContent=t;}',
@@ -1791,8 +1805,8 @@ function getHTML(){return [
   '  var insight=qstAnalyzeNote(note);',
   '  var data=ld();if(!data.quest)data.quest={entries:[]};if(!data.quest.entries)data.quest.entries=[];',
   '  var cardsData=QST.cards.map(function(c){return{cat:c.c,text:c.t};});',
-  '  data.quest.entries.unshift({ts:Date.now(),mode:QST.mode,cards:cardsData,note:note,carry:false,insight:insight?insight.title:null});',
-  '  sd(data);QST.phase="saved";QST.savedCarry=false;QST.insight=insight;',
+  '  data.quest.entries.unshift({id:uid(),ts:Date.now(),mode:QST.mode,cards:cardsData,note:note,carry:false,insight:insight?insight.title:null});',
+  '  if(!sd(data)){try{window.alert("提醒：這次 QUEST 紀錄沒能存到本機（可能是儲存空間已滿）。");}catch(e){}}QST.phase="saved";QST.savedCarry=false;QST.insight=insight;',
   '  renderQuest();qlivePush();',
   '}',
   'function qstMarkCarry(){',
@@ -3402,8 +3416,8 @@ function getHTML(){return [
   '  var beh=analyze(CS);',
   '  var data=ld();if(!data.ins)data.ins=[];',
   '  var ts=Date.now();',
-  '  data.ins.unshift({ts:ts,st:JSON.parse(JSON.stringify(CS)),beh:beh,crave:CS.crave});',
-  '  sd(data);',
+  '  data.ins.unshift({id:uid(),ts:ts,st:JSON.parse(JSON.stringify(CS)),beh:beh,crave:CS.crave});',
+  '  if(!sd(data)){try{window.alert("提醒：這次結果沒能存到本機（可能是瀏覽器儲存空間已滿或無法寫入）。畫面已顯示，但重新整理後可能不會保留。");}catch(e){}}',
   '  renderResult(beh,CS.crave,CS,ts);',
   '  showScreen("sr");',
   '}',
