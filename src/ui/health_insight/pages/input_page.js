@@ -48,9 +48,9 @@ const GENDER_QUESTION = {
   fieldKey: 'gender',
   question: '想先確認一下你的性別',
   options: [
-    { value: 'female', label: '女性', icon: '👩' },
-    { value: 'male', label: '男性', icon: '👨' },
-    { value: 'other', label: '其他 / 不想說', icon: '🌱' },
+    { value: 'female', label: '女性', icon: '' },
+    { value: 'male', label: '男性', icon: '' },
+    { value: 'other', label: '其他 / 不想說', icon: '' },
   ],
 };
 
@@ -61,10 +61,10 @@ const HEALTH_GOAL_QUESTION = {
   fieldKey: 'healthGoal',
   question: '這陣子你比較想達成什麼呢？',
   options: [
-    { value: 'weight_loss', label: '想瘦一點', icon: '🌱' },
-    { value: 'weight_maintenance', label: '維持現在的狀態', icon: '🌿' },
-    { value: 'muscle_gain', label: '想變得更結實', icon: '💪' },
-    { value: 'healthy_lifestyle', label: '單純想過得健康一點', icon: '🌤️' },
+    { value: 'weight_loss', label: '想瘦一點', icon: '' },
+    { value: 'weight_maintenance', label: '維持現在的狀態', icon: '' },
+    { value: 'muscle_gain', label: '想變得更結實', icon: '' },
+    { value: 'healthy_lifestyle', label: '單純想過得健康一點', icon: '' },
   ],
 };
 
