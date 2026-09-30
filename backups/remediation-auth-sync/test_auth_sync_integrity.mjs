@@ -54,10 +54,10 @@ function makeSandbox(initialLocal, fetchImpl, syncOn) {
     removeItem: (k) => { delete store[k]; },
   };
   const js = inlineScript();
-  const fns = ['ld', 'sd', 'isSyncShape', 'recKey', 'mergeRecords', 'mergeData', 'cloudPush', 'cloudPull']
+  const fns = ['ld', 'sd', 'isSyncShape', 'recKey', 'mergeRecords', 'mergeData', 'cloudPush', 'cloudPull', 'getOwner', 'setOwner', 'loginSync']
     .map((n) => extractFn(js, n)).join('\n');
-  const preamble = 'var SYNC_ON=' + (syncOn ? 'true' : 'false') + ';';
-  const api = new Function('localStorage', 'fetch', 'SK', preamble + fns + '\nreturn {ld,sd,isSyncShape,recKey,mergeRecords,mergeData,cloudPush,cloudPull,setSyncOn:function(v){SYNC_ON=v;}};')(localStorage, fetchImpl, 'diet_app_v1');
+  const preamble = 'var SYNC_ON=' + (syncOn ? 'true' : 'false') + ';var OWK="diet_owner";';
+  const api = new Function('localStorage', 'fetch', 'SK', preamble + fns + '\nreturn {ld,sd,isSyncShape,recKey,mergeRecords,mergeData,cloudPush,cloudPull,getOwner,setOwner,loginSync,setSyncOn:function(v){SYNC_ON=v;}};')(localStorage, fetchImpl, 'diet_app_v1');
   api.__store = store;
   return api;
 }
@@ -126,6 +126,69 @@ console.log('\n=== D. sd() reports local-write failure ===');
   test('sd returns false when localStorage throws', () => assert.strictEqual(badApi.sd({ ins: [] }), false));
 }
 
+console.log('\n=== F. Frontend account isolation on login (owner-tagging) ===');
+function recordingFetch(getResp) {
+  const calls = [];
+  const fn = function (url, init) {
+    calls.push({ url, method: (init && init.method) || 'GET', body: init && init.body });
+    const r = getResp(url, init);
+    if (r === 'reject') return Promise.reject(new Error('offline'));
+    return Promise.resolve({ ok: r.ok, status: r.status || 200, json: () => Promise.resolve(r.json), text: () => Promise.resolve(JSON.stringify(r.json)) });
+  };
+  fn.calls = calls;
+  return fn;
+}
+{
+  // Account switch in the SAME browser: A's local data must NOT be pushed to B.
+  const fetchFn = recordingFetch((url, init) => {
+    if ((init && init.method) === 'POST') return { ok: true, json: { ok: true, data: { written: 0 } } };
+    return { ok: true, json: { ok: true, data: { ins: [{ id: 'b1', ts: 200, crave: 'fried' }] } } }; // B's remote
+  });
+  const api = makeSandbox({ 'diet_app_v1': JSON.stringify({ ft: false, ins: [{ id: 'a1', ts: 100, crave: 'soup', note: 'A private' }] }), 'diet_owner': 'userA' }, fetchFn, true);
+  await new Promise((res) => api.loginSync('userB', res));
+  await delay();
+  const local = JSON.parse(api.__store['diet_app_v1']);
+  test('B login clears A’s local records (no cross-account display)', () => {
+    assert.ok(!local.ins.some((r) => r.id === 'a1'), 'A record must be gone from local after B login');
+  });
+  test('B login results in B’s data only', () => {
+    assert.deepStrictEqual(local.ins.map((r) => r.id), ['b1']);
+  });
+  test('owner is now userB', () => assert.strictEqual(api.getOwner(), 'userB'));
+  test('no POST to /api/sync ever contained A’s record (A not uploaded to B)', () => {
+    const leaked = fetchFn.calls.some((c) => c.method === 'POST' && typeof c.body === 'string' && c.body.indexOf('a1') >= 0 && c.body.indexOf('A private') >= 0);
+    assert.ok(!leaked, 'A’s data must never be POSTed under B');
+  });
+}
+{
+  // Anonymous local data + first login = one-time guest->account migration (kept).
+  const fetchFn = recordingFetch((url, init) => {
+    if ((init && init.method) === 'POST') return { ok: true, json: { ok: true, data: { written: 0 } } };
+    return { ok: true, json: { ok: true, data: { ins: [] } } }; // A's remote empty
+  });
+  const api = makeSandbox({ 'diet_app_v1': JSON.stringify({ ft: false, ins: [{ id: 'anon1', ts: 1 }] }) }, fetchFn, true);
+  await new Promise((res) => api.loginSync('userA', res));
+  await delay();
+  const local = JSON.parse(api.__store['diet_app_v1']);
+  test('anonymous data migrates to first account on login (kept)', () => assert.ok(local.ins.some((r) => r.id === 'anon1')));
+  test('owner set to userA after migration', () => assert.strictEqual(api.getOwner(), 'userA'));
+}
+{
+  // Same user re-login keeps + merges local.
+  const fetchFn = recordingFetch((url, init) => {
+    if ((init && init.method) === 'POST') return { ok: true, json: { ok: true, data: { written: 0 } } };
+    return { ok: true, json: { ok: true, data: { ins: [{ id: 'srv', ts: 5 }] } } };
+  });
+  const api = makeSandbox({ 'diet_app_v1': JSON.stringify({ ft: false, ins: [{ id: 'local1', ts: 1 }] }), 'diet_owner': 'userA' }, fetchFn, true);
+  await new Promise((res) => api.loginSync('userA', res));
+  await delay();
+  const local = JSON.parse(api.__store['diet_app_v1']);
+  test('same-user re-login keeps local and merges remote', () => {
+    const ids = local.ins.map((r) => r.id).sort();
+    assert.deepStrictEqual(ids, ['local1', 'srv']);
+  });
+}
+
 console.log('\n=== E. Source-level fixes present ===');
 {
   test('auth: POST /auth/provider(/upgrade) blocked with explicit failure', () => {
@@ -150,6 +213,12 @@ console.log('\n=== E. Source-level fixes present ===');
   test('client: new records carry stable id (uid)', () => {
     assert.ok(workerSrc.includes('data.ins.unshift({id:uid()'));
     assert.ok(workerSrc.includes('data.quest.entries.unshift({id:uid()'));
+  });
+  test('client: login is owner-aware and logout clears local (account isolation)', () => {
+    assert.ok(workerSrc.includes('function loginSync(uid,cb)'));
+    assert.ok(workerSrc.includes("var OWK=\"diet_owner\";"));
+    assert.ok(workerSrc.includes('if(owner&&owner!==uid)'));
+    assert.ok(workerSrc.includes('localStorage.removeItem(SK);localStorage.removeItem(OWK)'));
   });
   test('persistence: 30-record silent truncation removed', () => {
     assert.ok(!workerSrc.includes('data.ins=data.ins.slice(0,30)'));
