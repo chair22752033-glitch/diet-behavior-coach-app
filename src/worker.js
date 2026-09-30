@@ -128,7 +128,19 @@ export default {
         );
       }
 
-      if (method === 'POST' && (pathname === '/auth/guest' || pathname === '/auth/provider')) {
+      // SECURITY (remediation 2026-09-30): a browser-supplied provider/providerId
+      // pair must NEVER establish or upgrade authentication. The only trusted
+      // provider login is the server-verified Google OAuth flow
+      // (/auth/google/start -> /auth/google/callback). These public shortcuts are
+      // disabled with an explicit failure; the router still registers the routes.
+      if (method === 'POST' && (pathname === '/auth/provider' || pathname === '/auth/provider/upgrade')) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'direct_provider_login_disabled' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (method === 'POST' && pathname === '/auth/guest') {
         const payload = await parseJsonBody(request);
         return app.router.handle(
           { method, pathname, payload, options: {} },
@@ -140,15 +152,6 @@ export default {
         const cookieHeader = request.headers.get('Cookie');
         return app.router.handle(
           { method, pathname, cookieHeader, options: {} },
-          { db: app.db, env, services: app.services }
-        );
-      }
-
-      if (method === 'POST' && pathname === '/auth/provider/upgrade') {
-        const payload = await parseJsonBody(request);
-        const cookieHeader = request.headers.get('Cookie');
-        return app.router.handle(
-          { method, pathname, payload, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
         );
       }
@@ -331,6 +334,10 @@ async function handle(r,env){
       if(body.length>1000000){
         return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
       }
+      var parsed;try{parsed=JSON.parse(body);}catch(e){parsed=undefined;}
+      if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)){
+        return new Response(JSON.stringify({error:'invalid json'}),{status:400,headers:{'Content-Type':'application/json'}});
+      }
       await env.SYNC_KV.put(key,body);
       return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
     }
@@ -350,6 +357,10 @@ async function handle(r,env){
       var qbody=await r.text();
       if(qbody.length>200000){
         return new Response(JSON.stringify({error:'too large'}),{status:413,headers:{'Content-Type':'application/json'}});
+      }
+      var qparsed;try{qparsed=JSON.parse(qbody);}catch(e){qparsed=undefined;}
+      if(!qparsed||typeof qparsed!=='object'||Array.isArray(qparsed)){
+        return new Response(JSON.stringify({error:'invalid json'}),{status:400,headers:{'Content-Type':'application/json'}});
       }
       await env.SYNC_KV.put(qkey,qbody,{expirationTtl:3600});
       return new Response(JSON.stringify({ok:true}),{headers:{'Content-Type':'application/json'}});
@@ -1013,12 +1024,16 @@ function getHTML(){return [
   'var S={};var CS={};var QI=0;var STRESS_FOLLOWUP=false;',
   'var QK=["energy","sleep","stress","social","move","crave"];',
   'function ld(){try{var s=localStorage.getItem(SK);return s?JSON.parse(s):{ft:true,ins:[]};}catch(e){return{ft:true,ins:[]};}}',
-  'function sd(d){try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){}cloudPush(d);}',
+  'function sd(d){var okLocal=true;try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){okLocal=false;}cloudPush(d);return okLocal;}',
   'var SCK="diet_sync_code";',
   'function getSyncCode(){try{return localStorage.getItem(SCK)||"";}catch(e){return "";}}',
   'function setSyncCode(c){try{if(c){localStorage.setItem(SCK,c);}else{localStorage.removeItem(SCK);}}catch(e){}}',
-  'function cloudPush(d){var code=getSyncCode();if(!code)return;fetch("/api/sync?code="+encodeURIComponent(code),{method:"POST",body:JSON.stringify(d)}).catch(function(e){});}',
-  'function cloudPull(cb){var code=getSyncCode();if(!code){cb(false);return;}fetch("/api/sync?code="+encodeURIComponent(code)).then(function(res){return res.json();}).then(function(d){if(d){try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){}}else{cloudPush(ld());}cb(true);}).catch(function(e){cb(false);});}',
+  'function isSyncShape(d){return !!d&&typeof d==="object"&&!Array.isArray(d)&&!("error" in d)&&(d.ins===undefined||Array.isArray(d.ins));}',
+  'function recKey(r){if(!r||typeof r!=="object")return null;if(r.id!=null)return "id:"+r.id;if(r.ts!=null)return "ts:"+r.ts;return null;}',
+  'function mergeRecords(a,b){var seen={},out=[];(a||[]).concat(b||[]).forEach(function(r){var k=recKey(r);if(k===null){out.push(r);return;}if(!seen[k]){seen[k]=1;out.push(r);}});out.sort(function(x,y){return ((y&&y.ts)||0)-((x&&x.ts)||0);});return out;}',
+  'function mergeData(localD,remoteD){localD=(localD&&typeof localD==="object")?localD:{ins:[]};if(!isSyncShape(remoteD))return localD;var m={};for(var k in localD)m[k]=localD[k];for(var rk in remoteD){if(rk!=="ins"&&rk!=="quest"&&!(rk in m))m[rk]=remoteD[rk];}m.ins=mergeRecords(localD.ins,remoteD.ins);var lq=(localD.quest&&localD.quest.entries)||null;var rq=(remoteD.quest&&remoteD.quest.entries)||null;if(lq||rq){m.quest=(m.quest&&typeof m.quest==="object")?m.quest:{};m.quest.entries=mergeRecords(lq,rq);}return m;}',
+  'function cloudPush(d,cb){var code=getSyncCode();if(!code){if(cb)cb(false);return;}fetch("/api/sync?code="+encodeURIComponent(code),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}).then(function(res){if(cb)cb(!!(res&&res.ok));}).catch(function(e){if(cb)cb(false);});}',
+  'function cloudPull(cb){var code=getSyncCode();if(!code){if(cb)cb(false);return;}fetch("/api/sync?code="+encodeURIComponent(code)).then(function(res){if(!res||!res.ok)throw new Error("http");return res.text();}).then(function(txt){var d=null;if(txt&&txt!=="null"){d=JSON.parse(txt);}if(d===null){cloudPush(ld());if(cb)cb(true);return;}if(!isSyncShape(d)){if(cb)cb(false);return;}var merged=mergeData(ld(),d);try{localStorage.setItem(SK,JSON.stringify(merged));}catch(e){if(cb)cb(false);return;}cloudPush(merged);if(cb)cb(true);}).catch(function(e){if(cb)cb(false);});}',
   'function openSyncUI(){',
   '  var cur=getSyncCode();',
   '  var input=window.prompt("\\u8f38\\u5165\\u540c\\u6b65\\u78bc\\uff08\\u5169\\u53f0\\u88dd\\u7f6e\\u8acb\\u8f38\\u5165\\u540c\\u4e00\\u7d44\\u78bc\\uff09",cur);',
@@ -1777,7 +1792,6 @@ function getHTML(){return [
   '  var data=ld();if(!data.quest)data.quest={entries:[]};if(!data.quest.entries)data.quest.entries=[];',
   '  var cardsData=QST.cards.map(function(c){return{cat:c.c,text:c.t};});',
   '  data.quest.entries.unshift({ts:Date.now(),mode:QST.mode,cards:cardsData,note:note,carry:false,insight:insight?insight.title:null});',
-  '  if(data.quest.entries.length>30)data.quest.entries=data.quest.entries.slice(0,30);',
   '  sd(data);QST.phase="saved";QST.savedCarry=false;QST.insight=insight;',
   '  renderQuest();qlivePush();',
   '}',
@@ -3389,7 +3403,6 @@ function getHTML(){return [
   '  var data=ld();if(!data.ins)data.ins=[];',
   '  var ts=Date.now();',
   '  data.ins.unshift({ts:ts,st:JSON.parse(JSON.stringify(CS)),beh:beh,crave:CS.crave});',
-  '  if(data.ins.length>30)data.ins=data.ins.slice(0,30);',
   '  sd(data);',
   '  renderResult(beh,CS.crave,CS,ts);',
   '  showScreen("sr");',

@@ -71,11 +71,30 @@ import { OAUTH_STATE_COOKIE_NAME } from '../services/auth_application_service.js
 
 function withSetCookie(result) {
   if (result && result.ok && result.data && typeof result.data.cookie === 'string') {
-    return new Response(JSON.stringify(result), {
+    // SECURITY (remediation 2026-09-30): keep the session in the Set-Cookie
+    // header (HttpOnly) only. Never expose the raw cookie string or the session
+    // token in the public JSON body.
+    const setCookie = result.data.cookie;
+    const safeData = {};
+    for (const k in result.data) {
+      if (k === 'cookie') continue;
+      if (k === 'session' && result.data.session && typeof result.data.session === 'object') {
+        const safeSession = {};
+        for (const sk in result.data.session) {
+          if (sk === 'token') continue;
+          safeSession[sk] = result.data.session[sk];
+        }
+        safeData.session = safeSession;
+        continue;
+      }
+      safeData[k] = result.data[k];
+    }
+    const safeResult = Object.assign({}, result, { data: safeData });
+    return new Response(JSON.stringify(safeResult), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Set-Cookie': result.data.cookie,
+        'Set-Cookie': setCookie,
       },
     });
   }
