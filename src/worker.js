@@ -251,11 +251,8 @@ export default {
       if (method === 'POST' && pathname === '/api/health-insight') {
         const payload = await parseJsonBody(request);
         const cookieHeader = request.headers.get('Cookie');
-        // 注意：這條路由仍只傳空 options（client 無法透過 HTTP 注入 lookupTier）。
-        // Phase 9 的權益來源（getEntitlement）已接到真正的付費入口 /api/review，
-        // 在 server 端直接強制驗證。health-insight 的 gemini_enhancement 閘門目前
-        // 不啟用（Gemini 本輪關閉），待啟用 Gemini 時再於此處注入 server 解析的
-        // lookupTier（同 /api/review 的 server-only 模式），不接受前端來源。
+        // 仍只傳空 options（client 無法透過 HTTP 注入權益判斷）；Phase 9 的權益
+        // 強制驗證在真正付費入口 /api/review 的 server 端完成，見下方區塊。
         return app.router.handle(
           { method, pathname, payload, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
