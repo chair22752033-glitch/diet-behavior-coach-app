@@ -64,6 +64,23 @@ async function test(name, fn) { try { await fn(); passed++; console.log('✅ ' +
 
 const SUB = 'owner-google-sub-123';
 
+await test('whoami：未登入 → 200 {owner:false}', async () => {
+  const { env } = makeCtx(SUB);
+  const r = await call(env, 'GET', '/api/admin/whoami');
+  assert.strictEqual(r.status, 200); assert.strictEqual(r.json.owner, false);
+});
+await test('whoami：非擁有者 guest → 200 {owner:false}', async () => {
+  const { env, sqlite } = makeCtx(SUB);
+  const g = await mintGuest(env, sqlite);
+  const r = await call(env, 'GET', '/api/admin/whoami', { cookie: g.cookie });
+  assert.strictEqual(r.status, 200); assert.strictEqual(r.json.owner, false);
+});
+await test('whoami：擁有者 → 200 {owner:true}', async () => {
+  const { env, sqlite } = makeCtx(SUB);
+  const g = await mintGuest(env, sqlite); makeOwner(sqlite, g.userId, SUB);
+  const r = await call(env, 'GET', '/api/admin/whoami', { cookie: g.cookie });
+  assert.strictEqual(r.status, 200); assert.strictEqual(r.json.owner, true);
+});
 await test('/admin GET 未登入 → 403（非擁有者不給頁面）', async () => {
   const { env } = makeCtx(SUB);
   const r = await call(env, 'GET', '/admin');
