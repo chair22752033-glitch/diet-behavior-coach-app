@@ -6,3 +6,4 @@ export {
 } from './membership_state.js';
 export { resolveMembershipState } from './membership_resolver.js';
 export { isFeatureAllowedForTier, canUseFeature } from './feature_permission.js';
+export { getEntitlement, grantBeta, revoke } from './entitlement_store.js';

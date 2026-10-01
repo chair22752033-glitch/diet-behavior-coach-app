@@ -1124,7 +1124,7 @@ async function main() {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- migrations/ src/db/'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(status.trim(), '');
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 8);
+    assert.strictEqual(files.length, 9);
   });
 
   await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄除了gemini_client.js之外完全沒有其他改動（Gemini Provider unchanged，手動上線階段後更新：DEFAULT_MODEL更新為gemini-3.8-flash）', () => {

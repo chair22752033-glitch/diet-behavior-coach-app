@@ -252,9 +252,9 @@ async function main() {
     assert.strictEqual(getImportLines(stateSource).trim(), '');
   });
 
-  await test('（1.membership state）src/membership/目錄恰好5個檔案（state/resolver/permission/index/README）', () => {
+  await test('（1.membership state）src/membership/目錄恰好6個檔案（state/resolver/permission/entitlement_store/index/README）', () => {
     const files = fs.readdirSync(membershipDir);
-    assert.strictEqual(files.length, 5);
+    assert.strictEqual(files.length, 6);
   });
 
   console.log('');
@@ -774,9 +774,9 @@ async function main() {
     assert.strictEqual(status.trim(), '');
   });
 
-  await test('（9.persistence compatibility）migrations/目錄恰好8個.sql檔案', () => {
+  await test('（9.persistence compatibility）migrations/目錄恰好9個.sql檔案', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 8);
+    assert.strictEqual(files.length, 9);
   });
 
   await test('（9.persistence compatibility）src/db/整個目錄完全沒有被本次任務修改', () => {
@@ -1195,9 +1195,9 @@ async function main() {
     assert.strictEqual(status.trim(), '');
   });
 
-  await test('（P1-P6）src/membership/目錄恰好5個檔案', () => {
+  await test('（P1-P6）src/membership/目錄恰好6個檔案', () => {
     const files = fs.readdirSync(membershipDir);
-    assert.strictEqual(files.length, 5);
+    assert.strictEqual(files.length, 6);
   });
 
   await test('（P1-P6）新增/修改的核心檔案通過node --check語法驗證', () => {

@@ -271,9 +271,9 @@ async function main() {
   // =========================================================================
   console.log('--- B. Migration & directory boundary ---');
 
-  await test('（2.migration boundary）migrations/目錄總共恰好8個.sql檔案（新增0008 sync ownership 後）', () => {
+  await test('（2.migration boundary）migrations/目錄總共恰好9個.sql檔案（新增0008 sync ownership 後）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 8);
+    assert.strictEqual(files.length, 9);
   });
 
   await test('（2.migration boundary）migrations/目錄除了0007之外，沒有其他新增或修改的檔案', () => {

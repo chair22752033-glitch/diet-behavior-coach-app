@@ -1102,9 +1102,9 @@ async function main() {
     assert.strictEqual(status.trim(), '');
   });
 
-  await test('（8.persistence compatibility）migrations/目錄恰好8個.sql檔案（含 0008 sync ownership）', () => {
+  await test('（8.persistence compatibility）migrations/目錄恰好9個.sql檔案（含 0008 sync ownership）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 8);
+    assert.strictEqual(files.length, 9);
   });
 
   await test('（8.persistence compatibility）src/db/整個目錄完全沒有被本次任務修改', () => {
