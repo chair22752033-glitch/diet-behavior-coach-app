@@ -3,15 +3,24 @@
 **日期：** 2026-10-01
 **分支：** `claude/wrangler-deploy-c821f3`
 **HEAD（已推送）：** `08d80c6`（實作主體在 `bb0bb58`）
-**正式版本：** `1584bd97`（**本輪未部署**；見下）
+**正式版本：** `13d07d73`（已部署；回滾目標 `1584bd97`）
 **授權：** 使用者選「全包依 GPT 指令做」＋「先做確定性版、Gemini 先關著」。本輪不收款。
 
 ---
 
 ## 一句話
-會員權益來源 + 第一個付費功能「7 日飲食回顧」程式、附加 migration、UI、測試全部完成並推送；
-**卡在對正式 D1 套用 migration 0009**（沙箱這次拒絕我的寫入，我不繞過）。**migration 套用前不部署**
-（先部署會讓已登入者的 /api/review 一律 503）。Gemini 依決策關閉，回顧走純確定性。
+會員權益來源 + 第一個付費功能「7 日飲食回顧」已**全部上線**：migration 0009 已套用正式 D1
+（由使用者手動執行，6 commands ✅）、schema 已複驗、worker 已部署（`13d07d73`）。Gemini 依決策
+關閉，回顧走純確定性。beta 尚未開通任何帳號（功能呈休眠：登入後 free 看到示意範例）。
+
+## 上線實錄（2026-10-01）
+1. Migration 0009 套用正式 D1（追蹤式 apply，6 commands，狀態 ✅）。
+2. Schema read-only 複驗：tracking「No migrations to apply」；三表存在
+   （memberships / membership_audit / review_reports）；memberships PK=user_id、欄位齊全。
+3. 部署：新 active version `13d07d73-b525-437c-8f05-0b635b75a446`。回滾目標 `1584bd97`。
+4. Live HTTP 驗收：本容器對外網被 egress 政策擋（curl `000`），無法自驗；路由行為
+   （未登入 /api/review → 401、free → 403、premium 產生、配額、跨帳號隔離）已由 **12/0 邊界測試** 覆蓋。
+   正式站 live HTTP 驗收請在你本機執行（指令見下），或待真實登入後端對端。
 
 ## 本地已驗證（Locally verified）
 | 項目 | 結果 |
@@ -55,13 +64,13 @@
 ### 5. 驗證/部署/交接（本報告）
 - 測試與本機驗證如上。**部署被卡在 migration**（見下），已備妥手動交接。
 
-## 被擋下的步驟（需要你手動執行）
-沙箱分類器拒絕我對正式 D1 的寫入。請你手動套用（追蹤式、只套 0009、純附加）：
+## 正式站 live 驗收（可在你本機跑，選用）
 ```bash
-npx wrangler d1 migrations apply diet-coach-db --remote
+B=https://balance-diet.chair22752033.workers.dev
+curl -s -o /dev/null -w "%{http_code}\n" "$B/"           # 期望 200（資產/首頁）
+curl -s -o /dev/null -w "%{http_code}\n" "$B/api/review"  # 期望 401（未登入）
 ```
-完整步驟、驗證查詢、beta 開通與回滾見 `backups/remediation-membership-review/MIGRATION_HANDOFF_0009.md`。
-你把成功輸出貼回後，我會 read-only 複驗 schema → `wrangler deploy` → 記錄新版本 → live 驗收（未登入 /api/review → 401、資產 200）。
+（登入後的 free→403、premium 產生回顧，需真實 Google 登入；見下方前置條件。）
 
 ## 回滾
 - 部署回滾目標：`1584bd97`（部署前 active version）。
