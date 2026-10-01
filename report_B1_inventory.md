@@ -13,11 +13,15 @@
    POST `/api/health-insight` 會呼叫 `saveHealthInsightRecord()` 把使用者的 `input_snapshot`（6 題健康洞察輸入）與 `output_snapshot`（結果）**明文存進 D1**。這也要納入 B 的加密/遷移範圍，否則會漏。
    → 目前 server 端私人內容共 **4 處**：`sync_records`、`review_reports`、`health_insight_records`、`qlive`(KV)。
 
-2. **前端沒有打包器（no bundler），不能 bundle `jose`/JWE 函式庫。**
-   這個 App 的前端是 `getHTML()` 回傳的「字串陣列」內嵌 JS，沒有 npm/webpack/vite。GPT 建議的「成熟 JWE 實作（jose）」**無法直接引入**。
-   → **建議改用瀏覽器原生 Web Crypto（`crypto.subtle`）**：`AES-GCM`(加密)、`AES-KW`(wrapKey/unwrapKey 包裝金鑰)、`HKDF`(deriveKey 由恢復碼導出)、`crypto.getRandomValues`(亂數) 全部原生支援，零依賴、符合「用平台成熟實作、不自創演算法」。封裝格式用「版本化自訂 envelope + AEAD + 綁定欄位」，不一定要完整 JWE compact（可選）。這是對 GPT 設計的**必要技術調整**。
+2. **前端是內嵌字串陣列，沒有打包器 → 加密函式庫的引入方式要特別處理（但不是「不能用 jose」）。**
+   這個 App 的前端是 `getHTML()` 回傳的「字串陣列」內嵌 JS，沒有 npm/webpack/vite。
+   **修正（GPT 指出，正確）：** 不能說「沒有打包器就不能用 jose」。`jose` 官方支援瀏覽器與 ES modules；本專案又有 `[assets] directory="./public"` 靜態資源，理論上可把 jose 當 ESM 模組（`<script type="module">` 或從 static asset 匯入）載入頁面。所以 jose **是可行選項**。
+   → 真正要權衡的是**整合成本 vs 安全性**：
+   - **原生 Web Crypto（`crypto.subtle`）**：`AES-GCM`、`AES-KW`、`HKDF`、`getRandomValues` 全原生支援，零依賴、無供應鏈/資產載入複雜度；但封裝格式要自己定（版本化 envelope + AEAD + 綁定欄位）。
+   - **jose**：現成 JWE 實作、格式成熟；但要處理模組載入、版本/供應鏈、資產快取。
+   - 兩種都仍要自己做好**金鑰管理、密文格式、錯誤處理**。這點由 GPT 在 B 設計拍板，不是本盤點代定。
 
-3. **目前完全沒有把私人內容寫進 log**（`console.log/error/warn` 印 payload/ins/doc = 0 筆）。這點符合 GPT 的「不得記錄內容」要求，是好的起點。
+3. **本次讀碼盤點未發現把私人內容寫進 log**（`console.log/error/warn` 印 payload/ins/doc = 0 筆）。這是靜態讀碼的結果，符合「不得記錄內容」的方向；**但仍需在 B2 檢查實際執行時的錯誤紀錄**（例如例外堆疊、未預期的 error 物件是否夾帶內容），才能下定論。
 
 ---
 
@@ -43,7 +47,7 @@
 > **重要**：`meals`（飲食占卜的選擇與解讀）只存在本機 localStorage，**從來沒同步到 server**（同步只含 ins/quest）。所以占卜私人內容目前**已經只在裝置**——這部分對 E2E 友善。要加密的 server 內容主要是 ins / quest / 回顧 / health-insight。
 
 ### 1.3 日誌 / 分析
-- `console.*` 印出 payload/ins/doc：**0 筆**（已確認）。
+- `console.*` 印出 payload/ins/doc：**本次讀碼未發現（0 筆）**；但實際執行時的例外/錯誤紀錄是否夾帶內容，**B2 要再查**。
 - 無第三方 analytics/APM。
 - D1 `usage_metrics` 只記**數字**（rows/requests），無內容。✓
 
