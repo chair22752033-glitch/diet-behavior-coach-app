@@ -491,7 +491,8 @@ export default {
           if (!targetId) return new Response(JSON.stringify({ ok: false, error: 'user_not_found' }), { status: 404, headers: jsonHeaders });
           if (adminPath === '/api/admin/grant') {
             const days = (body && Number(body.days) > 0) ? Number(body.days) : 14;
-            const r = await grantBeta(app.db.raw, targetId, days, 'admin_ui', 'owner:' + own.userId);
+            const tier = (body && typeof body.tier === 'string' && body.tier) ? body.tier : 'app';
+            const r = await grantBeta(app.db.raw, targetId, days, 'admin_ui', 'owner:' + own.userId, tier);
             if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason || 'grant_failed' }), { status: 500, headers: jsonHeaders });
             return new Response(JSON.stringify({ ok: true, validUntil: r.validUntil }), { headers: jsonHeaders });
           }

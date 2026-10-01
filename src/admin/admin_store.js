@@ -7,6 +7,7 @@
  */
 
 import { first, all, run } from '../db/query.js';
+import { estimateMonthlyUSD } from './cf_rates.js';
 
 function today() {
   return new Date().toISOString().slice(0, 10); // UTC YYYY-MM-DD
@@ -47,7 +48,7 @@ export async function getOverview(rawDb, options) {
   // 現有 premium 會員（權益狀態，非飲食資料）
   const members = await all(
     rawDb,
-    "SELECT m.user_id, m.plan, m.status, m.valid_until, m.source, m.updated_at, u.display_name " +
+    "SELECT m.user_id, m.plan, m.status, m.tier, m.valid_until, m.source, m.updated_at, u.display_name, u.email " +
       'FROM memberships m LEFT JOIN users u ON u.id = m.user_id ' +
       "WHERE m.plan = 'premium' AND m.status = 'active' " +
       'ORDER BY m.updated_at DESC LIMIT ?',
@@ -57,9 +58,28 @@ export async function getOverview(rawDb, options) {
   // 近期加入的帳號（供擁有者找出要開通的人——只有帳號 metadata，無飲食資料）
   const signups = await all(
     rawDb,
-    "SELECT id, display_name, auth_provider, is_guest, created_at FROM users ORDER BY created_at DESC LIMIT ?",
+    "SELECT id, display_name, email, auth_provider, is_guest, created_at FROM users ORDER BY created_at DESC LIMIT ?",
     [(options && options.signupLimit) || 50]
   );
+
+  // 成本粗估（估計值，非帳單）：近 30 天用量 + D1 文字資料粗略位元組
+  const use = await first(
+    rawDb,
+    "SELECT COALESCE(SUM(rows_read),0) AS rr, COALESCE(SUM(rows_written),0) AS rw FROM usage_metrics WHERE day >= date('now','-30 days')",
+    []
+  );
+  const stor = await first(
+    rawDb,
+    "SELECT (SELECT COALESCE(SUM(LENGTH(payload)),0) FROM sync_records) + (SELECT COALESCE(SUM(LENGTH(payload)),0) FROM review_reports) AS bytes",
+    []
+  );
+  const costEstimate = estimateMonthlyUSD({
+    rowsRead30d: use.ok && use.row ? Number(use.row.rr) || 0 : 0,
+    rowsWritten30d: use.ok && use.row ? Number(use.row.rw) || 0 : 0,
+    d1StorageBytes: stor.ok && stor.row ? Number(stor.row.bytes) || 0 : 0,
+    r2StorageBytes: 0, // 目前只有共用圖，不隨使用者成長；開放上傳後再估
+    plan: (options && options.plan) || 'paid'
+  });
 
   // 近期權益稽核
   const audit = await all(
@@ -84,7 +104,8 @@ export async function getOverview(rawDb, options) {
       activeMembers: members.ok ? members.results : [],
       recentSignups: signups.ok ? signups.results : [],
       recentAudit: audit.ok ? audit.results : [],
-      usage30d: usage.ok ? usage.results : []
+      usage30d: usage.ok ? usage.results : [],
+      costEstimate
     }
   };
 }

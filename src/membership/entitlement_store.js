@@ -78,30 +78,31 @@ export async function getEntitlement(rawDb, userId) {
  * @param {string} actor - 操作者（例如管理者 email），寫入稽核
  * @returns {Promise<{ok:boolean, validUntil?:string, reason?:string}>}
  */
-export async function grantBeta(rawDb, userId, days, source, actor) {
+export async function grantBeta(rawDb, userId, days, source, actor, tier) {
   if (!rawDb || typeof userId !== 'string' || userId.length === 0) {
     return { ok: false, reason: 'invalid_user' };
   }
   const validFrom = nowIso();
   const validUntil = addDaysIso(days && days > 0 ? days : 14);
   const src = source || 'beta_manual';
+  const tierLabel = (typeof tier === 'string' && tier.length) ? tier : 'app';
   const upsert = await run(
     rawDb,
-    'INSERT INTO memberships (user_id, plan, status, valid_from, valid_until, source, created_at, updated_at) ' +
-      "VALUES (?, 'premium', 'active', ?, ?, ?, datetime('now'), datetime('now')) " +
+    'INSERT INTO memberships (user_id, plan, status, tier, valid_from, valid_until, source, created_at, updated_at) ' +
+      "VALUES (?, 'premium', 'active', ?, ?, ?, ?, datetime('now'), datetime('now')) " +
       'ON CONFLICT(user_id) DO UPDATE SET ' +
-      "plan='premium', status='active', valid_from=excluded.valid_from, valid_until=excluded.valid_until, " +
+      "plan='premium', status='active', tier=excluded.tier, valid_from=excluded.valid_from, valid_until=excluded.valid_until, " +
       'source=excluded.source, updated_at=excluded.updated_at',
-    [userId, validFrom, validUntil, src]
+    [userId, tierLabel, validFrom, validUntil, src]
   );
   if (!upsert.ok) return { ok: false, reason: upsert.error || 'write_failed' };
   await run(
     rawDb,
     'INSERT INTO membership_audit (user_id, action, plan, valid_until, source, actor, at) ' +
       "VALUES (?, 'grant', 'premium', ?, ?, ?, datetime('now'))",
-    [userId, validUntil, src, actor || 'system']
+    [userId, validUntil, src + ':' + tierLabel, actor || 'system']
   );
-  return { ok: true, validUntil };
+  return { ok: true, validUntil, tier: tierLabel };
 }
 
 /**

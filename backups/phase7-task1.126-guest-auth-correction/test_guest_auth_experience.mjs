@@ -1209,9 +1209,9 @@ async function main() {
     assert.strictEqual(app.router.routes.length, 28);
   });
 
-  await test('（14.P1-P6）migrations/共10個.sql檔案（含 0008 sync ownership，rollout 授權新增）', () => {
+  await test('（14.P1-P6）migrations/共11個.sql檔案（含 0008 sync ownership，rollout 授權新增）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 10);
+    assert.strictEqual(files.length, 11);
   });
 
   await test('（14.P1-P6）migrations/完全沒有新增或修改任何檔案', () => {

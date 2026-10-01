@@ -12,13 +12,14 @@ export function bind(db) {
      */
     async insert(u) {
       const sql = `INSERT INTO users
-        (id, auth_provider, auth_provider_id, display_name, is_guest, status, legacy_sync_code, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (id, auth_provider, auth_provider_id, display_name, email, is_guest, status, legacy_sync_code, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const params = [
         u.id,
         u.auth_provider || null,
         u.auth_provider_id || null,
         u.display_name || null,
+        u.email || null,
         u.is_guest === false ? 0 : 1,
         u.status || 'active',
         u.legacy_sync_code || null,
@@ -26,6 +27,10 @@ export function bind(db) {
         u.updated_at,
       ];
       return run(db, sql, params);
+    },
+    /** Phase 9：登入時回填 email（既有帳號在 email 欄位新增後，下次登入補上） */
+    async updateEmail(id, email, updatedAt) {
+      return run(db, 'UPDATE users SET email = ?, updated_at = ? WHERE id = ?', [email || null, updatedAt, id]);
     },
     async getById(id) {
       return first(db, 'SELECT * FROM users WHERE id = ?', [id]);

@@ -989,9 +989,9 @@ async function main() {
     assert.strictEqual(app.router.routes.length, 28);
   });
 
-  await test('（P1-P6）migrations/共10個.sql檔案（含 0008 sync ownership）', () => {
+  await test('（P1-P6）migrations/共11個.sql檔案（含 0008 sync ownership）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 10);
+    assert.strictEqual(files.length, 11);
   });
 
   await test('（P1-P6）src/intelligence/enhancement/gemini/整個目錄除了gemini_client.js之外完全沒有其他改動（手動上線階段後更新：DEFAULT_MODEL更新為gemini-3.8-flash）', () => {

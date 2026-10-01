@@ -45,6 +45,10 @@ export async function resolveLoginIdentity(db, identity) {
     if (!statusCheck.allowed) {
       return { ok: false, reason: statusCheck.reason };
     }
+    // Phase 9：email 欄位是後加的；既有帳號登入時若尚無 email，就用這次 OAuth 帶回的補上。
+    if (identity.email && !existing.row.email && typeof db.users.updateEmail === 'function') {
+      try { await db.users.updateEmail(existing.row.id, identity.email, new Date().toISOString()); existing.row.email = identity.email; } catch (e) {}
+    }
     return { ok: true, user: existing.row, created: false };
   }
 
@@ -56,6 +60,7 @@ export async function resolveLoginIdentity(db, identity) {
     auth_provider: identity.auth_provider,
     auth_provider_id: identity.auth_provider_id,
     display_name: identity.display_name || null,
+    email: identity.email || null,
     is_guest: false,
     status: 'active',
     legacy_sync_code: null,
