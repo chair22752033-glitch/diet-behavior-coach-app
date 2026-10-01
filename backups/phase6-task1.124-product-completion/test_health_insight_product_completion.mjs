@@ -1415,7 +1415,7 @@ async function main() {
     const status = execFileSync('sh', ['-c', 'git status --porcelain -- migrations/'], { cwd: repoRoot, encoding: 'utf8' });
     assert.strictEqual(status.trim(), '');
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 9);
+    assert.strictEqual(files.length, 10);
   });
 
   await test('（11.persistence compatibility）history_service.js只呼叫listHealthInsightRecordsForUser()，完全不呼叫saveHealthInsightRecord()（History是唯讀邊界）', () => {

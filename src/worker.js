@@ -2,9 +2,11 @@ import { createApplication } from './bootstrap/application.js';
 import { createRouteGateway } from './bootstrap/route_gateway.js';
 import { getCurrentUser } from './services/auth_application_service.js';
 import { pushSyncDoc, getSyncDoc } from './sync/sync_store.js';
-import { getEntitlement } from './membership/entitlement_store.js';
+import { getEntitlement, grantBeta, revoke } from './membership/entitlement_store.js';
 import { computeFacts, buildReview, reportKey, REVIEW_MODEL_VERSION } from './review/review_service.js';
 import { getReport, getLatestReport, countReportsSince, saveReport } from './review/review_store.js';
+import { resolveOwner, getOverview, recordUsage, getAdminHTML } from './admin/index.js';
+import { first as d1First } from './db/query.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -320,6 +322,10 @@ export default {
           if (request.method === 'GET') {
             const res = await getSyncDoc(app.db.raw, ownerId);
             if (!res.ok) return new Response(JSON.stringify({ ok: false, error: res.reason || 'read_failed' }), { status: 500, headers: jsonHeaders });
+            try {
+              const rr = ((res.doc && Array.isArray(res.doc.ins)) ? res.doc.ins.length : 0) + ((res.doc && res.doc.quest && Array.isArray(res.doc.quest.entries)) ? res.doc.quest.entries.length : 0);
+              await recordUsage(app.db.raw, 'api/sync', rr, 0);
+            } catch (e) {}
             return new Response(JSON.stringify({ ok: true, data: res.doc }), { headers: jsonHeaders });
           }
           const payload = await parseJsonBody(request);
@@ -329,6 +335,7 @@ export default {
             const status = clientErrors.indexOf(res.reason) >= 0 ? 400 : 500;
             return new Response(JSON.stringify({ ok: false, error: res.reason || 'write_failed' }), { status, headers: jsonHeaders });
           }
+          try { await recordUsage(app.db.raw, 'api/sync', 0, res.written || 0); } catch (e) {}
           return new Response(JSON.stringify({ ok: true, data: { written: res.written } }), { headers: jsonHeaders });
         }
         // /api/qlive — ephemeral QUEST live state, owner-scoped KV key
@@ -429,7 +436,65 @@ export default {
           return new Response(JSON.stringify({ ok: false, error: saved.reason || 'save_failed' }), { status: 500, headers: jsonHeaders });
         }
         const after = await countReportsSince(app.db.raw, ownerId, null);
+        try { await recordUsage(app.db.raw, 'api/review', facts.recordCount || 0, saved.inserted ? 1 : 0); } catch (e) {}
         return new Response(JSON.stringify({ ok: true, data: { review, generated: saved.inserted, quota: { used: after.count, limit: REVIEW_BETA_ALLOWANCE } } }), { headers: jsonHeaders });
+      }
+    }
+
+    // Phase 9（後台 A 階段）：擁有者專用後台。只有 env.ADMIN_GOOGLE_SUB 對應的
+    // Google 帳號（已驗證 session 的 auth_provider_id）能進。頁面與 API 都在 server
+    // 端驗證擁有者。只讀聚合人數/會員/稽核/用量，沒有任何飲食明細 API。
+    {
+      const adminPath = new URL(request.url).pathname;
+      if (adminPath === '/admin' || adminPath.indexOf('/api/admin/') === 0) {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        const cookieHeader = request.headers.get('Cookie');
+        const own = await resolveOwner(app.db, app.db.raw, cookieHeader, env);
+        if (adminPath === '/admin' && request.method === 'GET') {
+          if (!own.owner) {
+            return new Response('403 — 此頁僅限擁有者', { status: 403, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+          }
+          return new Response(getAdminHTML(), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+        }
+        if (!own.authenticated) return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        if (!own.owner) return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), { status: 403, headers: jsonHeaders });
+        if (request.method === 'POST') {
+          // Origin 檢查（SameSite=Lax 已擋跨站 POST，這是縱深防禦）。
+          // host 由 request.url 推導（Host 標頭不一定存在）。
+          const origin = request.headers.get('Origin');
+          const host = new URL(request.url).host;
+          if (origin && host && origin.indexOf('://' + host) === -1) {
+            return new Response(JSON.stringify({ ok: false, error: 'bad_origin' }), { status: 403, headers: jsonHeaders });
+          }
+        }
+        if (adminPath === '/api/admin/overview' && request.method === 'GET') {
+          const ov = await getOverview(app.db.raw, {});
+          return new Response(JSON.stringify(ov), { headers: jsonHeaders });
+        }
+        if ((adminPath === '/api/admin/grant' || adminPath === '/api/admin/revoke') && request.method === 'POST') {
+          const body = await parseJsonBody(request);
+          const who = body && typeof body.who === 'string' ? body.who.trim() : '';
+          if (!who) return new Response(JSON.stringify({ ok: false, error: 'missing_who' }), { status: 400, headers: jsonHeaders });
+          // who 可為 user id，或 Google sub（auth_provider_id）。users 表無 email。
+          let targetId = null;
+          const byId = await d1First(app.db.raw, 'SELECT id FROM users WHERE id = ?', [who]);
+          if (byId.ok && byId.row) targetId = byId.row.id;
+          if (!targetId) {
+            const bySub = await d1First(app.db.raw, "SELECT id FROM users WHERE auth_provider = 'google' AND auth_provider_id = ?", [who]);
+            if (bySub.ok && bySub.row) targetId = bySub.row.id;
+          }
+          if (!targetId) return new Response(JSON.stringify({ ok: false, error: 'user_not_found' }), { status: 404, headers: jsonHeaders });
+          if (adminPath === '/api/admin/grant') {
+            const days = (body && Number(body.days) > 0) ? Number(body.days) : 14;
+            const r = await grantBeta(app.db.raw, targetId, days, 'admin_ui', 'owner:' + own.userId);
+            if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason || 'grant_failed' }), { status: 500, headers: jsonHeaders });
+            return new Response(JSON.stringify({ ok: true, validUntil: r.validUntil }), { headers: jsonHeaders });
+          }
+          const r = await revoke(app.db.raw, targetId, 'owner:' + own.userId);
+          if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason || 'revoke_failed' }), { status: 500, headers: jsonHeaders });
+          return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
+        }
+        return new Response(JSON.stringify({ ok: false, error: 'not_found' }), { status: 404, headers: jsonHeaders });
       }
     }
 

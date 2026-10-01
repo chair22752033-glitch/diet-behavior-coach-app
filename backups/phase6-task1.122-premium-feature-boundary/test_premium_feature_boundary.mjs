@@ -774,9 +774,9 @@ async function main() {
     assert.strictEqual(status.trim(), '');
   });
 
-  await test('（9.persistence compatibility）migrations/目錄恰好9個.sql檔案', () => {
+  await test('（9.persistence compatibility）migrations/目錄恰好10個.sql檔案', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 9);
+    assert.strictEqual(files.length, 10);
   });
 
   await test('（9.persistence compatibility）src/db/整個目錄完全沒有被本次任務修改', () => {
