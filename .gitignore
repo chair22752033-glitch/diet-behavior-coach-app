@@ -3,3 +3,7 @@ node_modules/
 .env
 *.log
 backups/*/kv-export/*.json
+
+# B2/C prototype generated preview artifacts
+c_prototype/*.png
+b2_prototype/*.png
