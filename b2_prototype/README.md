@@ -10,7 +10,16 @@ node b2_prototype/test_review_port.mjs  # review edge cases vs production algo (
 node b2_prototype/run_browser_check.mjs # real-Chromium crypto round-trip (12 checks)
 node b2_prototype/run_idb_check.mjs     # Chromium persistent profile: IndexedDB restart + A->B switch (9 checks)
 node b2_prototype/test_b2_real_d1.mjs   # ciphertext over a REAL file-backed node:sqlite D1 + no-plaintext file scan (38 checks)
+node b2_prototype/test_b3_migration.mjs # B3 drill: legacy plaintext -> E2EE migration, resume/verify/cleanup/rollback (25 checks)
 ```
+
+## B3 migration drill
+`migration_drill.mjs` + `schema_b3.sql` + `test_b3_migration.mjs` simulate GPT §7 on a real
+file-backed D1 with fake data: legacy → migration_locked → ciphertext_verified → e2ee_only,
+with resumable batching (checkpoint), verify (count+content), crypto-aware rollback (can't
+return to plaintext once verified), and cleanup. Finding: `DELETE` does not erase bytes from
+the SQLite file — `VACUUM` is required; and D1 Time Travel still retains prior versions for
+the retention window (Free 7d / Paid 30d), which must be disclosed. Not production; no real data.
 
 ## Files
 - `vault_crypto.mjs` — crypto core (jose JWE A256KW/A256GCM + native Web Crypto). Runs in Node and browser.

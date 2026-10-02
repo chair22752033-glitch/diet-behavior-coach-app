@@ -150,3 +150,28 @@
 ### 本附錄的測試數字（jose 6.2.12）
 - `test_b2_real_d1.mjs`（真實檔案型 D1）= **38 / 0**
 - 其餘同前：test_b2 57/0、test_review_port 12/0、run_browser_check 12/0、run_idb_check 9/0。
+
+---
+
+## 附錄二：B3 遷移演練（2026-10-02，隔離、假資料，已授權）
+
+擁有者授權開始 B3。以下在 `b2_prototype/`、真實 file-backed D1、假資料，**不碰正式資料**。
+
+### 完成
+- `migration_drill.mjs` + `schema_b3.sql` + `test_b3_migration.mjs`（**25/0**）演練 GPT §7 的狀態機與流程：
+  `legacy → migration_locked → ciphertext_verified → e2ee_only`。
+  - **鎖定**：進入遷移後拒絕 legacy 明文寫入。
+  - **可續批次**：以 checkpoint 水位分批把 legacy 明文讀出→裝置端加密→寫入 e2ee 密文；中途中斷可從 checkpoint 續跑，**不重不漏**（250 筆驗證）。
+  - **驗證**：重讀密文解密，比對筆數與內容與 legacy 一致才前進。
+  - **第二瀏覽器**用恢復碼可解已遷移資料。
+  - **crypto-aware rollback**：一旦 verified，**禁止**回到會服務明文的 `legacy` 狀態（舊版 worker 讀不了密文）；只能回到同樣懂密文的狀態。
+  - **清理**：切換到 e2ee_only 後才刪 legacy 明文；遷移後裝置端回顧與遷移前 server 版結果一致。
+
+### 重要發現（誠實）
+- **SQLite `DELETE` 不會真的從檔案抹除位元組**：被刪的明文殘留在 free page，必須 `VACUUM` 重寫檔案才清掉（已加入 cleanup）。
+- **即使 VACUUM，D1 Time Travel 仍保留舊版本**（Free 7 天 / Paid 30 天）；在這段窗內，舊明文技術上仍可被還原。**正式遷移與對外措辭必須如實揭露此保留期**，不能宣稱「清理後立即不可還原」。
+- 正式環境的 D1 對 `VACUUM` 支援與單次執行上限需在 B3 正式規劃時再確認（本演練在 node:sqlite 成立）。
+
+### 仍未做（B4 / 正式遷移）
+- 正式使用者資料遷移（需另行、單獨授權；且要先補 Safari/Firefox 實機、金鑰輪替/撤銷、真實 KV）。
+- 獨立安全審查 + 真人跨裝置驗收（B4）。
