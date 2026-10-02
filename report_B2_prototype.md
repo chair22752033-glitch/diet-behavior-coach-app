@@ -107,7 +107,7 @@
 **未確認（B2 續作 / B3）：**
 - **真實 Worker/D1/KV 路徑**：目前是「假 server + 記憶體 DB」。要在**隔離的 Worker/D1/KV** 接線後，才算驗證真實路徑無明文、CAS/配額在 D1 上成立。
 - **health-insight 裝置端運算**：只證明輸入/結果可加密往返；其運算子系統（`src/intelligence/...`）尚未移植、尚未證明結果一致。
-- **手機實機**：容器只有 Chromium。須在 **iOS Safari、Android Chrome**（與桌面 Firefox）實測 `AES-KW`+非匯出金鑰+IndexedDB 行為——**此項需擁有者協助操作**。
+- **手機實機**：已上線自我檢查頁 `/ui-assets/selftest/`（6 項：Web Crypto / AES-KW 非匯出 / HKDF / AES-GCM / 不可匯出 / IndexedDB）。**2026-10-02 實機結果：桌機 Chrome 154（Blink）6/6；iPhone iOS 18 WebKit（Brave=iOS Safari 引擎）6/6。** → WebKit + Blink 兩大引擎已驗；Android Chrome（Blink，預期相同）與桌面 Firefox（Gecko）為加分項，尚未測。
 - **實際錯誤日誌檢查**：接線到真實 Worker 後，確認例外/錯誤回報不夾帶明文（B1 的靜態結論要用執行期證據補強）。
 - **共用演算法維護方式**：回顧邏輯 server/client 一份來源如何同步進字串陣列前端，避免分叉。
 - **對齊設計 0.2 / 第 05 份工作包**：本試作的**恢復碼編碼（Crockford base32 分組）**與**JWE 標頭欄位命名（`ver/vault_id/rid/rev/epoch/use`）**是我在 0.1 基礎上的實作選擇；GPT 指出與設計 0.2 有差異。**我手上目前只有設計 0.1**——請提供 0.2 對這兩項的確切規格，我再對齊（或明確記錄變更），以免未來裝置互不相容。
@@ -145,7 +145,8 @@
 ### 誠實狀態更新
 - 「真實路徑無明文」**D1 已驗**（檔案層）；**KV（qlive）仍是模擬**，B3 再用真實 KV 驗。
 - **health-insight 裝置端運算**：確認其運算路徑**無亂數／時間／網路**（可移植、可決定性），但它是 `src/intelligence/...` 的多層子系統且會讀 db；**完整裝置端移植留待 B3**（比回顧大）。本輪只證明其輸入/結果可加密往返、presentation 層（`buildSuccessResponse`）為純函式。移植範圍：入口 `createInsightUseCase → applicationService` 鏈，E2EE 下私人輸入要改由裝置解密提供、不走 server db。
-- 仍未做：Safari/Firefox 實機、真實 KV、金鑰輪替/撤銷、衝突雙版本、遷移流程（B3）。
+- 手機實機：**已驗 iOS WebKit + 桌機 Blink 各 6/6**（2026-10-02）；Android Chrome / 桌面 Firefox 加分項未測。
+- 仍未做：真實 KV、金鑰輪替/撤銷、衝突雙版本、遷移流程（B3）。
 
 ### 本附錄的測試數字（jose 6.2.12）
 - `test_b2_real_d1.mjs`（真實檔案型 D1）= **38 / 0**
@@ -173,5 +174,5 @@
 - 正式環境的 D1 對 `VACUUM` 支援與單次執行上限需在 B3 正式規劃時再確認（本演練在 node:sqlite 成立）。
 
 ### 仍未做（B4 / 正式遷移）
-- 正式使用者資料遷移（需另行、單獨授權；且要先補 Safari/Firefox 實機、金鑰輪替/撤銷、真實 KV）。
+- 正式使用者資料遷移（需另行、單獨授權；手機實機已驗 WebKit+Blink，仍要補金鑰輪替/撤銷、真實 KV、B4 審查）。
 - 獨立安全審查 + 真人跨裝置驗收（B4）。
