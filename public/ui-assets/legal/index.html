@@ -74,6 +74,40 @@
  <div class="muted" style="margin-top:8px">試辦期間若為免費試用，不會收費、也不會自動扣款；目前 App 內<strong>尚未開放線上付款</strong>。</div>
 </div>
 
+<div class="card" id="consentBox">
+ <label><input type="checkbox" id="agreeChk"> 我已閱讀上述意向書、服務條款與個人資料告知，並同意參加試辦（試行草稿）。</label>
+ <div style="margin-top:10px"><button id="agreeBtn" style="background:#b5793a;color:#fff;border:none;border-radius:8px;padding:9px 16px;cursor:pointer" disabled>送出同意</button></div>
+ <div id="consentMsg" class="muted" style="margin-top:8px"></div>
+ <div class="muted" style="margin-top:6px">同意僅記錄你對此版本文件的選擇，可日後撤回；不是付款同意，也不是把記錄分享給社群的同意。</div>
+</div>
+
+<h2>六、想聊聊？用 LINE 加我</h2>
+<div class="card">
+ 想了解方案或參加試辦，歡迎用 LINE 加我、先聊聊，再一起看需不需要服務配合——這階段先不透過線上金流收款。<br>
+ <a id="lineLink" href="【待填：你的 LINE 連結】" target="_blank" rel="noopener">【待填：你的 LINE 連結 / ID】</a>
+ <div class="muted" style="margin-top:6px">（把你的 LINE 官方帳號或個人連結給我，我就幫你填上。）</div>
+</div>
+
+<script>
+ (function(){
+  var chk=document.getElementById('agreeChk'),btn=document.getElementById('agreeBtn'),msg=document.getElementById('consentMsg');
+  if(!chk||!btn) return;
+  chk.onchange=function(){btn.disabled=!chk.checked;};
+  function post(path,body){return fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j};});});}
+  btn.onclick=function(){
+   btn.disabled=true;
+   post('/api/consent',{purpose:'free_trial',docType:'intent',action:'granted',sourceScreen:'legal_page'}).then(function(res){
+    if(res.s===401){msg.textContent='請先回 App 以 Google 登入，再回到本頁送出同意。';btn.disabled=false;return;}
+    if(res.j&&res.j.ok){msg.textContent='已記錄你的同意，謝謝！';chk.disabled=true;}
+    else{msg.textContent='送出失敗：'+((res.j&&res.j.error)||res.s);btn.disabled=false;}
+   }).catch(function(){msg.textContent='網路錯誤，請稍後再試。';btn.disabled=false;});
+  };
+  fetch('/api/consent/status?purpose=free_trial&type=intent').then(function(r){return r.json();}).then(function(j){
+   if(j&&j.ok&&j.active){msg.textContent='你已同意過目前版本，謝謝！';chk.checked=true;chk.disabled=true;btn.disabled=true;}
+  }).catch(function(){});
+ })();
+</script>
+
 <div class="links card">
  <a href="./terms.html">→ 服務條款</a>
  <a href="./privacy.html">→ 個人資料告知</a>

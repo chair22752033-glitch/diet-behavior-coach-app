@@ -7,6 +7,8 @@ import { computeFacts, buildReview, reportKey, REVIEW_MODEL_VERSION } from './re
 import { getReport, getLatestReport, countReportsSince, saveReport } from './review/review_store.js';
 import { resolveOwner, getOverview, recordUsage, getAdminHTML } from './admin/index.js';
 import { first as d1First } from './db/query.js';
+import { recordConsent, hasActiveConsent, listConsentHistory, CONSENT_ACTIONS } from './legal/consent_store.js';
+import { fetchDocHash, isKnownDoc } from './legal/documents.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -355,6 +357,56 @@ export default {
         if (!kv) return new Response(JSON.stringify({ ok: false, error: 'kv_unavailable' }), { status: 503, headers: jsonHeaders });
         await kv.put('qlive:u:' + ownerId, qbody, { expirationTtl: 3600 });
         return new Response(JSON.stringify({ ok: true, data: { stored: true } }), { headers: jsonHeaders });
+      }
+    }
+
+    // Phase C：同意事件記錄（append-only）。/ui-assets/legal/ 靜態頁同源 POST，帶
+    // session cookie；未登入 -> 401。文件雜湊由 server 從「實際服務的頁面內容」計算，
+    // 綁定「同意的是哪一版文字」；文件被改過會讓舊同意失效（content_changed）。
+    // 不存任何私人內容/金鑰/token（結構上無欄位）。
+    {
+      const consentPath = new URL(request.url).pathname;
+      if (consentPath === '/api/consent' || consentPath === '/api/consent/status' || consentPath === '/api/consent/history') {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        }
+        const ownerId = auth.userId;
+        if (consentPath === '/api/consent/history') {
+          if (request.method !== 'GET') return new Response('Method Not Allowed', { status: 405 });
+          const h = await listConsentHistory(app.db.raw, ownerId);
+          return new Response(JSON.stringify({ ok: !!h.ok, events: h.events || [] }), { headers: jsonHeaders });
+        }
+        if (consentPath === '/api/consent/status') {
+          if (request.method !== 'GET') return new Response('Method Not Allowed', { status: 405 });
+          const u2 = new URL(request.url);
+          const docType = u2.searchParams.get('type');
+          const purpose = u2.searchParams.get('purpose');
+          if (!isKnownDoc(docType) || !purpose) return new Response(JSON.stringify({ ok: false, error: 'bad_params' }), { status: 400, headers: jsonHeaders });
+          const dh = await fetchDocHash(env, request.url, docType);
+          if (!dh.ok) return new Response(JSON.stringify({ ok: false, error: dh.reason }), { status: 503, headers: jsonHeaders });
+          const st = await hasActiveConsent(app.db.raw, ownerId, purpose, { requiredVersion: dh.version, currentHash: dh.hash });
+          return new Response(JSON.stringify({ ok: true, active: !!st.active, reason: st.reason || null }), { headers: jsonHeaders });
+        }
+        // POST /api/consent
+        if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+        const body = await parseJsonBody(request);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return new Response(JSON.stringify({ ok: false, error: 'invalid_json' }), { status: 400, headers: jsonHeaders });
+        if (!isKnownDoc(body.docType)) return new Response(JSON.stringify({ ok: false, error: 'unknown_doc' }), { status: 400, headers: jsonHeaders });
+        if (CONSENT_ACTIONS.indexOf(body.action) < 0) return new Response(JSON.stringify({ ok: false, error: 'bad_action' }), { status: 400, headers: jsonHeaders });
+        if (!body.purpose || typeof body.purpose !== 'string') return new Response(JSON.stringify({ ok: false, error: 'missing_purpose' }), { status: 400, headers: jsonHeaders });
+        const dh = await fetchDocHash(env, request.url, body.docType);
+        if (!dh.ok) return new Response(JSON.stringify({ ok: false, error: dh.reason }), { status: 503, headers: jsonHeaders });
+        const rec = await recordConsent(app.db.raw, {
+          userId: ownerId, purpose: String(body.purpose).slice(0, 64), docType: body.docType, docVersion: dh.version,
+          docContentSha256: dh.hash, action: body.action,
+          sourceScreen: (typeof body.sourceScreen === 'string' && body.sourceScreen) ? body.sourceScreen.slice(0, 64) : 'legal_page',
+          orderId: (typeof body.orderId === 'string' && body.orderId) ? body.orderId.slice(0, 64) : null,
+        });
+        if (!rec.ok) return new Response(JSON.stringify({ ok: false, error: rec.reason }), { status: 400, headers: jsonHeaders });
+        return new Response(JSON.stringify({ ok: true, eventId: rec.eventId }), { headers: jsonHeaders });
       }
     }
 
