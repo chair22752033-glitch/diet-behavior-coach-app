@@ -3835,6 +3835,7 @@ function getHTML(){return [
   '  s5.appendChild(flow);',
   '  var startBtn=mkEl("button","idq-btn","開始使用 →");startBtn.style.marginTop="22px";startBtn.onclick=goHome;body.appendChild(startBtn);',
   '  var med=mkEl("div","guide-flow-cap");med.style.marginTop="16px";med.textContent="本 App 僅供飲食衛教與行為練習參考。有任何症狀，請優先找醫師或營養師討論，切勿依內容自行調整。";body.appendChild(med);',
+  '  var legal=mkEl("div","guide-flow-cap");legal.style.marginTop="10px";var la=document.createElement("a");la.href="/ui-assets/legal/";la.target="_blank";la.rel="noopener";la.textContent="服務條款・個人資料告知・意向書（試行草稿）";la.style.color="#b5793a";la.style.textDecoration="underline";legal.appendChild(la);body.appendChild(legal);',
   '}',
   'var BA={};',
   'var BA_CATS=[{v:"正餐",l:"正餐"},{v:"輕食",l:"輕食"},{v:"點心甜點",l:"點心/甜點"},{v:"飲料",l:"飲料"},{v:"宵夜",l:"宵夜"},{v:"水果",l:"水果"},{v:"速食炸物",l:"速食/炸物"},{v:"其他",l:"其他"}];',
