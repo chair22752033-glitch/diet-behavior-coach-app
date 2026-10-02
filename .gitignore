@@ -7,3 +7,6 @@ backups/*/kv-export/*.json
 # B2/C prototype generated preview artifacts
 c_prototype/*.png
 b2_prototype/*.png
+
+# D1 exports contain REAL user data — never commit
+backups/d1-exports/
