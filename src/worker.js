@@ -10,6 +10,7 @@ import { first as d1First } from './db/query.js';
 import { recordConsent, hasActiveConsent, listConsentHistory, CONSENT_ACTIONS } from './legal/consent_store.js';
 import { fetchDocHash, isKnownDoc } from './legal/documents.js';
 import { putVault, getVault } from './crypto/vault_server.js';
+import { putE2eeRecord, listE2eeEnvelopes, E2EE_KINDS } from './crypto/e2ee_records_store.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -435,6 +436,39 @@ export default {
           return new Response(JSON.stringify({ ok: false, error: r.reason }), { status, headers: jsonHeaders });
         }
         return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
+      }
+    }
+
+    // Phase B（E2EE 第 3 步・第一塊）：密文記錄儲存。與現有明文 /api/sync 完全分開，
+    // 只存不透明 JWE 密文；未登入 -> 401。目前尚未有任何正式流程寫入這裡（供遷移後使用）。
+    {
+      const e2eePath = new URL(request.url).pathname;
+      if (e2eePath === '/api/e2ee/records') {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        if (request.method !== 'GET' && request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        const ownerId = auth.userId;
+        if (request.method === 'GET') {
+          const kind = new URL(request.url).searchParams.get('kind') || null;
+          if (kind && E2EE_KINDS.indexOf(kind) < 0) return new Response(JSON.stringify({ ok: false, error: 'bad_kind' }), { status: 400, headers: jsonHeaders });
+          const r = await listE2eeEnvelopes(app.db.raw, ownerId, kind);
+          if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason }), { status: 500, headers: jsonHeaders });
+          return new Response(JSON.stringify({ ok: true, records: r.rows }), { headers: jsonHeaders });
+        }
+        const body = await parseJsonBody(request);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return new Response(JSON.stringify({ ok: false, error: 'invalid_json' }), { status: 400, headers: jsonHeaders });
+        const r = await putE2eeRecord(app.db.raw, ownerId, {
+          kind: body.kind, recordId: body.recordId, baseRevision: (body.baseRevision === undefined ? null : body.baseRevision),
+          revisionId: body.revisionId, envelope: body.envelope,
+        });
+        if (!r.ok) {
+          const clientErr = ['bad_kind', 'bad_record_id', 'not_ciphertext', 'too_large', 'bad_revision', 'conflict'];
+          const status = r.reason === 'conflict' ? 409 : (clientErr.indexOf(r.reason) >= 0 ? 400 : 500);
+          return new Response(JSON.stringify({ ok: false, error: r.reason, currentRevision: r.currentRevision }), { status, headers: jsonHeaders });
+        }
+        return new Response(JSON.stringify({ ok: true, idempotent: !!r.idempotent }), { headers: jsonHeaders });
       }
     }
 
