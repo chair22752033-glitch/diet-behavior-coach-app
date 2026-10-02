@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>加密遷移（複製加密版）</title>
+<style>
+ body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;background:#FBF3E7;color:#4a3728;margin:0;padding:20px;line-height:1.7}
+ .wrap{max-width:620px;margin:0 auto}h1{font-size:21px}h2{font-size:16px;margin-top:20px}
+ .card{background:#fff;border:1px solid #e5d5bf;border-radius:12px;padding:14px 16px;margin:12px 0}
+ .muted{color:#8a7a68;font-size:13px}.warn{background:#f6e0e0;border-color:#e3b4b4}
+ button{background:#b5793a;color:#fff;border:none;border-radius:8px;padding:11px 18px;cursor:pointer;font-size:15px}
+ button.sec{background:#eee;color:#4a3728}button:disabled{opacity:.5;cursor:not-allowed}
+ input{font-size:15px;padding:9px 11px;border-radius:8px;border:1px solid #d8b88f;width:100%;box-sizing:border-box;font-family:ui-monospace,monospace}
+ .msg{padding:9px 11px;border-radius:8px;margin-top:10px;font-size:14px}.ok{background:#e6f3e6}.err{background:#f6e0e0}
+ .bar{height:10px;background:#eee;border-radius:6px;overflow:hidden;margin:8px 0}.bar>i{display:block;height:100%;background:#b5793a;width:0}
+ pre{white-space:pre-wrap;font-size:12px;color:#5a4a38}
+</style></head>
+<body><div class="wrap">
+<h1>🔁 加密遷移（第 1 階段：複製加密版）</h1>
+<div class="card muted">
+ 這一步把你目前的記錄<strong>複製一份加密版</strong>到新的密文儲存，用來驗證加密流程正確。
+ <strong>完全不會刪除或改動你現在的資料</strong>——原本的記錄照常存在、App 照常使用。清理原始明文是最後、另外、需要你再次確認的步驟。
+</div>
+
+<div id="gate" class="card">載入中…</div>
+
+<div id="unlock" style="display:none" class="card">
+ <h2 style="margin-top:4px">先解鎖你的保險庫</h2>
+ <div id="unlockHint" class="muted"></div>
+ <div id="codeArea" style="display:none">
+  <input id="recInput" placeholder="輸入恢復碼" autocomplete="off">
+  <button class="sec" id="unlockBtn" style="margin-top:8px">解鎖</button>
+ </div>
+ <div id="unlockMsg"></div>
+</div>
+
+<div id="run" style="display:none" class="card">
+ <h2 style="margin-top:4px">開始複製加密版</h2>
+ <button id="startBtn">開始（非破壞性）</button>
+ <div class="bar"><i id="bar"></i></div>
+ <div id="runMsg" class="muted"></div>
+ <pre id="log"></pre>
+</div>
+
+<script type="module">
+import { recoverVK, unlockWithDevice } from '/ui-assets/lib/vault_keys.mjs';
+import { jweEncrypt, jweDecrypt } from '/ui-assets/lib/webcrypto_jwe.mjs';
+
+const $=id=>document.getElementById(id);
+let VK=null, VAULT=null, EPOCH=1;
+function logln(s){$('log').textContent += s + '\n';}
+
+async function getJSON(url,opt){const r=await fetch(url,opt);return {status:r.status, j:await r.json().catch(()=>null)};}
+
+async function init(){
+ const {status,j}=await getJSON('/api/vault',{headers:{'Accept':'application/json'}});
+ if(status===401){$('gate').className='card warn';$('gate').innerHTML='請先回 App 以 Google 登入。';return;}
+ if(!j||!j.exists){$('gate').className='card warn';$('gate').innerHTML='你還沒啟用加密保險庫。請先到 <a href="/ui-assets/vault/">加密保險庫</a> 啟用。';return;}
+ VAULT=j.vault; EPOCH=j.vault.epoch||1;
+ $('gate').style.display='none';$('unlock').style.display='block';
+ // try trusted device first
+ try{const vk=await unlockWithDevice(VAULT.vault_id); if(vk){VK=vk; afterUnlock('（已用信任裝置自動解鎖）'); return;}}catch(e){}
+ $('unlockHint').textContent='這台裝置未信任，請用恢復碼解鎖。';$('codeArea').style.display='block';
+}
+function afterUnlock(note){
+ $('unlock').style.display='block';$('unlockMsg').className='msg ok';$('unlockMsg').textContent='✓ 已解鎖 '+(note||'');
+ $('codeArea').style.display='none';$('run').style.display='block';
+}
+$('unlockBtn').onclick=async()=>{
+ const m=$('unlockMsg');
+ try{ VK=await recoverVK($('recInput').value, VAULT); afterUnlock(''); }
+ catch(e){ m.className='msg err'; m.textContent='✗ 恢復碼錯誤或格式不對。'; }
+};
+
+$('startBtn').onclick=async()=>{
+ if(!VK){return;}
+ $('startBtn').disabled=true;$('runMsg').textContent='讀取目前資料…';
+ try{
+  const {j}=await getJSON('/api/sync',{headers:{'Accept':'application/json'}});
+  const doc=(j&&j.data)||{ins:[],quest:{entries:[]}};
+  const ins=Array.isArray(doc.ins)?doc.ins:[];
+  const quest=(doc.quest&&Array.isArray(doc.quest.entries))?doc.quest.entries:[];
+  const items=ins.map(r=>({kind:'ins',rec:r})).concat(quest.map(r=>({kind:'quest',rec:r})));
+  if(items.length===0){$('runMsg').textContent='目前沒有可遷移的記錄（ins/quest 皆空）。加密流程仍可視為通過。';$('startBtn').disabled=false;return;}
+  logln('共 '+items.length+' 筆要複製加密版。');
+  let done=0, written=0;
+  for(const it of items){
+   const rid=(it.rec&&typeof it.rec.id==='string'&&it.rec.id)?it.rec.id:(it.kind+'_'+done);
+   const env=await jweEncrypt(VK, it.rec, {ver:'dms-e2ee-1',vault_id:VAULT.vault_id,rid,rev:'m1',epoch:EPOCH,use:'record'});
+   const r=await fetch('/api/e2ee/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:it.kind,recordId:rid,baseRevision:null,revisionId:'m1',envelope:env})});
+   const jr=await r.json().catch(()=>null);
+   if(jr&&jr.ok) written++;
+   else if(jr&&jr.error==='conflict'){/* already there from a prior run; treat as ok */ written++;}
+   else logln('× '+it.kind+' '+rid+'：'+((jr&&jr.error)||r.status));
+   done++; $('bar').style.width=Math.round(done/items.length*100)+'%';$('runMsg').textContent='複製中… '+done+'/'+items.length;
+  }
+  logln('寫入完成：'+written+'/'+items.length);
+  // verify: read back + decrypt + compare count
+  $('runMsg').textContent='驗證中…';
+  const back=await getJSON('/api/e2ee/records',{headers:{'Accept':'application/json'}});
+  const recs=(back.j&&back.j.records)||[];
+  let okCount=0;
+  for(const rc of recs){ try{ const d=await jweDecrypt(VK, rc.envelope); if(d&&d.obj) okCount++; }catch(e){} }
+  logln('驗證：密文 '+recs.length+' 筆，可解密 '+okCount+' 筆。');
+  if(okCount===recs.length && recs.length>=written){
+   $('runMsg').className='msg ok';$('runMsg').textContent='✓ 加密版複製並驗證完成。原始資料未更動。';
+  }else{
+   $('runMsg').className='msg err';$('runMsg').textContent='驗證未完全通過，請把下面訊息給我，原始資料未更動、可安全重試。';
+  }
+  $('startBtn').disabled=false;
+ }catch(e){$('runMsg').className='msg err';$('runMsg').textContent='發生錯誤：'+e.message+'（原始資料未更動）';$('startBtn').disabled=false;}
+};
+init();
+</script>
+</div></body></html>

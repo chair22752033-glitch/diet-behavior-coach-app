@@ -4,7 +4,7 @@
  *
  * Run: node b2_prototype/test_webcrypto_jwe_interop.mjs
  */
-import { jweEncrypt, jweDecrypt } from './webcrypto_jwe.mjs';
+import { jweEncrypt, jweDecrypt } from '../public/ui-assets/lib/webcrypto_jwe.mjs';
 import { CompactEncrypt, compactDecrypt } from 'jose';
 
 let pass = 0, fail = 0; const fails = [];
