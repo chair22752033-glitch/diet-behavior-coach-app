@@ -33,7 +33,7 @@
   <button id="genBtn">在這台裝置產生鑰匙</button>
   <div id="genArea" style="display:none">
    <div class="warn card" style="margin-top:12px">
-    <strong>請把下面的恢復碼抄下來、存到安全的地方（例如密碼管理器）。</strong><br>
+    <strong>請把下面的恢復碼抄下來、存到安全的地方（例如密碼管理器），不要公開分享。</strong><br>
     這是唯一能在其他裝置、或清除瀏覽器後救回你資料的東西。<strong>遺失恢復碼且所有裝置都登出／清除後，沒有人（包含我們）能幫你還原。</strong>
    </div>
    <div class="code" id="recCode"></div>
@@ -47,14 +47,25 @@
 </div>
 
 <div id="done" style="display:none">
- <div class="card ok" style="background:#e6f3e6">✓ 你的加密保險庫已啟用。這台裝置目前可用。</div>
- <h2>在其他裝置／清除瀏覽器後：用恢復碼解鎖</h2>
- <div class="card">
-  <input id="recTest" placeholder="輸入恢復碼測試解鎖" autocomplete="off">
-  <button class="sec" id="testBtn" style="margin-top:8px">測試恢復碼</button>
-  <div id="testMsg"></div>
+ <div class="card ok" style="background:#e6f3e6">✓ 你的加密保險庫已啟用。</div>
+
+ <div id="deviceState" class="card">
+  <div id="devStatus" class="muted">檢查這台裝置狀態…</div>
+  <div id="unlockArea" style="display:none">
+   <h2 style="margin-top:4px">用恢復碼解鎖這台裝置</h2>
+   <input id="recUnlock" placeholder="輸入恢復碼" autocomplete="off">
+   <button class="sec" id="unlockBtn" style="margin-top:8px">解鎖</button>
+   <div id="unlockMsg"></div>
+  </div>
+  <div id="trustArea" style="display:none;margin-top:12px">
+   <label><input type="checkbox" id="trustChk" style="width:auto"> 這是我的個人裝置，允許這個瀏覽器記住解鎖能力（下次免恢復碼）。共用電腦請勿勾選。</label>
+   <button id="trustBtn" disabled>信任這台裝置</button>
+   <div id="trustMsg"></div>
+  </div>
+  <button id="forgetBtn" class="sec" style="display:none;margin-top:10px">移除這台裝置的信任</button>
  </div>
- <div class="muted">完整的「加密同步、裝置端回顧、舊資料遷移」會在之後的步驟陸續開放；目前先完成鑰匙建立。</div>
+
+ <div class="muted">完整的「加密同步、裝置端回顧、舊資料遷移」會在之後的步驟陸續開放；目前先完成鑰匙與裝置設定。</div>
 </div>
 
 <script type="module">
@@ -68,32 +79,57 @@ function enc32(bytes){let bits=0,val=0,out='';for(let i=0;i<bytes.length;i++){va
 function norm(s){return String(s||'').toUpperCase().replace(/[\s-]/g,'').replace(/O/g,'0').replace(/[IL]/g,'1').replace(/U/g,'V');}
 function dec32(s){const n=norm(s);let bits=0,val=0;const out=[];for(const ch of n){const idx=CB32.indexOf(ch);if(idx<0)throw new Error('bad char');val=(val<<5)|idx;bits+=5;if(bits>=8){out.push((val>>>(bits-8))&255);bits-=8;}}return new Uint8Array(out);}
 async function rkFrom(recBytes,salt){const ikm=await crypto.subtle.importKey('raw',recBytes,'HKDF',false,['deriveKey']);return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt,info:te.encode(INFO)},ikm,{name:'AES-KW',length:256},false,['wrapKey','unwrapKey']);}
-async function wrapVK(vkBytes,rk){const vkKey=await crypto.subtle.importKey('raw',vkBytes,{name:'AES-GCM'},true,['encrypt','decrypt']);return crypto.subtle.wrapKey('raw',vkKey,rk,'AES-KW');}
-async function unwrapVK(wrapped,rk){return crypto.subtle.unwrapKey('raw',wrapped,rk,'AES-KW',{name:'AES-GCM',length:256},true,['encrypt','decrypt']);}
+async function vkCryptoKey(vkBytes){return crypto.subtle.importKey('raw',vkBytes,{name:'AES-GCM'},true,['encrypt','decrypt']);}
+async function wrapVKwith(key,vkBytes){return crypto.subtle.wrapKey('raw',await vkCryptoKey(vkBytes),key,'AES-KW');}
+async function unwrapVKwith(key,wrapped){const k=await crypto.subtle.unwrapKey('raw',wrapped,key,'AES-KW',{name:'AES-GCM',length:256},true,['encrypt','decrypt']);return new Uint8Array(await crypto.subtle.exportKey('raw',k));}
+
+// IndexedDB: store the non-extractable device key + the device-wrapped VK, per vault.
+const DB='dms_vault',STORE='dev';
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbPut(k,v){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const g=tx.objectStore(STORE).get(k);g.onsuccess=()=>res(g.result);g.onerror=()=>rej(g.error);});}
+async function idbDel(k){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
 
 const $=id=>document.getElementById(id);
-let pending=null; // {vaultId, recoveryCode, salt, wrappedB64}
+let pending=null;      // after generate, before enable
+let currentVK=null;    // VK bytes in memory after activate/unlock
+let currentVaultId=null;
+
+async function getVault(){const r=await fetch('/api/vault',{headers:{'Accept':'application/json'}});return {status:r.status,j:await r.json().catch(()=>null)};}
 
 async function refresh(){
  try{
-  const r=await fetch('/api/vault',{headers:{'Accept':'application/json'}});
-  if(r.status===401){$('gate').className='card warn';$('gate').innerHTML='請先回 App 以 Google 登入，再回到本頁。';return;}
-  const j=await r.json();
-  if(j.exists){$('gate').style.display='none';$('activate').style.display='none';$('done').style.display='block';}
+  const {status,j}=await getVault();
+  if(status===401){$('gate').className='card warn';$('gate').innerHTML='請先回 App 以 Google 登入，再回到本頁。';return;}
+  if(j&&j.exists){currentVaultId=j.vault.vault_id;$('gate').style.display='none';$('activate').style.display='none';$('done').style.display='block';await initDeviceState(j.vault);}
   else{$('gate').style.display='none';$('activate').style.display='block';}
  }catch(e){$('gate').className='card warn';$('gate').textContent='載入失敗，請稍後再試。';}
+}
+
+async function initDeviceState(vault){
+ // trusted on this device?
+ let dev=null; try{dev=await idbGet('vault:'+vault.vault_id);}catch(e){}
+ if(dev&&dev.deviceKey&&dev.wrapped){
+  try{
+   currentVK=await unwrapVKwith(dev.deviceKey,dev.wrapped);
+   $('devStatus').innerHTML='✓ 這台裝置已信任，已自動解鎖（免恢復碼）。';
+   $('unlockArea').style.display='none';$('trustArea').style.display='none';$('forgetBtn').style.display='inline-block';
+   return;
+  }catch(e){/* device key broken -> fall through to recovery */}
+ }
+ $('devStatus').textContent='這台裝置尚未信任。用恢復碼解鎖後，可選擇信任這台裝置。';
+ $('unlockArea').style.display='block';$('forgetBtn').style.display='none';
 }
 
 $('genBtn').onclick=async()=>{
  try{
   const vaultId='v_'+enc32(rand(10)).replace(/-/g,'').toLowerCase();
-  const vk=rand(32), recBytes=rand(32), salt=rand(16);
+  const vk=rand(32),recBytes=rand(32),salt=rand(16);
   const recoveryCode=enc32(recBytes);
   const rk=await rkFrom(recBytes,salt);
-  const wrapped=await wrapVK(vk,rk);
-  pending={vaultId,recoveryCode,salt:b64(salt),wrappedB64:b64(wrapped)};
-  $('recCode').textContent=recoveryCode;
-  $('genArea').style.display='block';$('genBtn').disabled=true;
+  const wrapped=await wrapVKwith(rk,vk);
+  pending={vaultId,recoveryCode,salt:b64(salt),wrappedB64:b64(wrapped),vk};
+  $('recCode').textContent=recoveryCode;$('genArea').style.display='block';$('genBtn').disabled=true;
  }catch(e){alert('產生失敗：'+e.message);}
 };
 $('savedChk').onchange=()=>{$('enableBtn').disabled=!$('savedChk').checked;};
@@ -106,19 +142,39 @@ $('enableBtn').onclick=async()=>{
   const r=await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vaultId:pending.vaultId,recoverySalt:pending.salt,wrappedVkRecovery:pending.wrappedB64,format:FORMAT,epoch:1})});
   const j=await r.json();
   if(r.status===409){msg.className='msg err';msg.textContent='這個帳號已經啟用過保險庫了。';return;}
-  if(j.ok){msg.className='msg ok';msg.textContent='啟用成功！';setTimeout(refresh,700);}
+  if(j.ok){currentVK=pending.vk;currentVaultId=pending.vaultId;msg.className='msg ok';msg.textContent='啟用成功！';setTimeout(refresh,600);}
   else{msg.className='msg err';msg.textContent='啟用失敗：'+(j.error||r.status);$('enableBtn').disabled=false;}
  }catch(e){msg.className='msg err';msg.textContent='網路錯誤，請再試。';$('enableBtn').disabled=false;}
 };
-$('testBtn').onclick=async()=>{
- const m=$('testMsg');
+
+$('unlockBtn').onclick=async()=>{
+ const m=$('unlockMsg');
  try{
-  const r=await fetch('/api/vault');const j=await r.json();
-  if(!j.exists){m.className='msg err';m.textContent='找不到保險庫記錄。';return;}
-  const rk=await rkFrom(dec32($('recTest').value),unb64(j.vault.recovery_salt));
-  const vk=await unwrapVK(unb64(j.vault.wrapped_vk_recovery),rk);
-  m.className='msg ok';m.textContent=vk?'✓ 恢復碼正確，可以解鎖。':'解鎖失敗。';
+  const {j}=await getVault();
+  if(!j||!j.exists){m.className='msg err';m.textContent='找不到保險庫記錄。';return;}
+  const rk=await rkFrom(dec32($('recUnlock').value),unb64(j.vault.recovery_salt));
+  currentVK=await unwrapVKwith(rk,unb64(j.vault.wrapped_vk_recovery));
+  currentVaultId=j.vault.vault_id;
+  m.className='msg ok';m.textContent='✓ 已解鎖。你現在可以選擇信任這台裝置。';
+  $('trustArea').style.display='block';
  }catch(e){m.className='msg err';m.textContent='✗ 恢復碼錯誤或格式不對，請重新輸入。';}
+};
+$('trustChk').onchange=()=>{$('trustBtn').disabled=!$('trustChk').checked;};
+$('trustBtn').onclick=async()=>{
+ const m=$('trustMsg');
+ if(!currentVK||!currentVaultId){m.className='msg err';m.textContent='請先解鎖。';return;}
+ $('trustBtn').disabled=true;
+ try{
+  const dk=await crypto.subtle.generateKey({name:'AES-KW',length:256},false,['wrapKey','unwrapKey']); // non-extractable
+  const wrapped=await wrapVKwith(dk,currentVK);
+  await idbPut('vault:'+currentVaultId,{deviceKey:dk,wrapped,vaultId:currentVaultId});
+  m.className='msg ok';m.textContent='✓ 已信任這台裝置，下次免恢復碼。';
+  setTimeout(refresh,600);
+ }catch(e){m.className='msg err';m.textContent='信任失敗：'+e.message;$('trustBtn').disabled=false;}
+};
+$('forgetBtn').onclick=async()=>{
+ if(currentVaultId){try{await idbDel('vault:'+currentVaultId);}catch(e){}}
+ setTimeout(refresh,300);
 };
 refresh();
 </script>
