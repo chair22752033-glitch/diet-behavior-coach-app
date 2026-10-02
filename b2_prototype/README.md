@@ -11,7 +11,16 @@ node b2_prototype/run_browser_check.mjs # real-Chromium crypto round-trip (12 ch
 node b2_prototype/run_idb_check.mjs     # Chromium persistent profile: IndexedDB restart + A->B switch (9 checks)
 node b2_prototype/test_b2_real_d1.mjs   # ciphertext over a REAL file-backed node:sqlite D1 + no-plaintext file scan (38 checks)
 node b2_prototype/test_b3_migration.mjs # B3 drill: legacy plaintext -> E2EE migration, resume/verify/cleanup/rollback (25 checks)
+node b2_prototype/test_b4_key_rotation.mjs # key rotation/revocation: change recovery code, rotate VK on compromise (9 checks)
+node b2_prototype/test_b5_kv.mjs         # encrypt QUEST live state before KV put; no plaintext in KV (10 checks)
 ```
+
+## B4/B5 (key rotation + KV ciphertext)
+- `test_b4_key_rotation.mjs` (9/0): change recovery code (same VK; old code stops working),
+  rotate VK on compromise (new epoch, re-encrypt, old VK locked out of new-epoch data),
+  revocation semantics. Helpers `rewrapVaultWithNewRecovery` / `rotateVaultKey` in vault_crypto.
+- `test_b5_kv.mjs` (10/0): encrypt the qlive blob (4th private store) before KV put; KV holds
+  only ciphertext; get+decrypt round-trip; wrong-key/tamper/wrong-purpose rejected.
 
 ## B3 migration drill
 `migration_drill.mjs` + `schema_b3.sql` + `test_b3_migration.mjs` simulate GPT §7 on a real

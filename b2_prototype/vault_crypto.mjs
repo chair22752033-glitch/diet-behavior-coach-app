@@ -130,6 +130,34 @@ async function unwrapVault(jwe, wrapKey, { vaultId, epoch, use }) {
   return new Uint8Array(plaintext);
 }
 
+/**
+ * Rotation — re-wrap the SAME VK under a NEW recovery code (GPT §5.6 "一般更換恢復碼").
+ * This is NOT content-key rotation: records stay readable with the same VK. The old
+ * recovery code no longer works (new salt + new wrap replace the server record).
+ */
+export async function rewrapVaultWithNewRecovery(vkBytes, { vaultId, epoch }) {
+  const recoveryBytes = randomBytes(32);
+  const recoveryCode = encodeRecoveryCode(recoveryBytes);
+  const salt = randomBytes(16);
+  const rk = await deriveRecoveryWrapKey(recoveryBytes, salt);
+  const wrapped = await wrapVault(vkBytes, rk, { vaultId, epoch, use: 'recovery-wrap' });
+  return {
+    recoveryCode,
+    serverVaultRecord: { vault_id: vaultId, epoch, recovery_salt: bytesToB64(salt), wrapped_vk_recovery: wrapped, format: FORMAT_VERSION },
+  };
+}
+
+/**
+ * Rotation — generate a NEW VK at a NEW epoch (GPT §5.6 compromise path). New records are
+ * encrypted under the new VK/epoch; existing records must be re-encrypted from old VK to new.
+ * A device still holding only the old VK cannot read new-epoch records (epoch binding + new key).
+ */
+export async function rotateVaultKey({ vaultId, newEpoch }) {
+  const vk = randomBytes(32);
+  const { recoveryCode, serverVaultRecord } = await rewrapVaultWithNewRecovery(vk, { vaultId, epoch: newEpoch });
+  return { vk, epoch: newEpoch, recoveryCode, serverVaultRecord };
+}
+
 /** Recover VK on a NEW device/browser using the recovery code + server record. */
 export async function recoverVaultWithCode(recoveryCodeInput, serverVaultRecord) {
   const recoveryBytes = decodeRecoveryCode(recoveryCodeInput);

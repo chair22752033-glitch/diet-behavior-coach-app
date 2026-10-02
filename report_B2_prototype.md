@@ -146,7 +146,9 @@
 - 「真實路徑無明文」**D1 已驗**（檔案層）；**KV（qlive）仍是模擬**，B3 再用真實 KV 驗。
 - **health-insight 裝置端運算**：確認其運算路徑**無亂數／時間／網路**（可移植、可決定性），但它是 `src/intelligence/...` 的多層子系統且會讀 db；**完整裝置端移植留待 B3**（比回顧大）。本輪只證明其輸入/結果可加密往返、presentation 層（`buildSuccessResponse`）為純函式。移植範圍：入口 `createInsightUseCase → applicationService` 鏈，E2EE 下私人輸入要改由裝置解密提供、不走 server db。
 - 手機實機：**已驗 iOS WebKit + 桌機 Blink 各 6/6**（2026-10-02）；Android Chrome / 桌面 Firefox 加分項未測。
-- 仍未做：真實 KV、金鑰輪替/撤銷、衝突雙版本、遷移流程（B3）。
+- **金鑰輪替/撤銷：已做（隔離）** `test_b4_key_rotation.mjs` 9/0 — 換恢復碼（同 VK、舊碼失效）、外洩時換 VK（新 epoch、重新加密、舊 VK 讀不到新資料）、撤銷語意。
+- **真實 KV 密文：已做（隔離）** `test_b5_kv.mjs` 10/0 — qlive 加密後才進 KV、KV 無明文、往返正確、壞鑰/竄改/錯用途被拒。
+- 仍未做：衝突雙版本；**第 3 步「加密同步」正式上線＝與正式資料遷移綁一起（需 B4 審查 + 擁有者單獨授權）**。
 
 ### 本附錄的測試數字（jose 6.2.12）
 - `test_b2_real_d1.mjs`（真實檔案型 D1）= **38 / 0**
