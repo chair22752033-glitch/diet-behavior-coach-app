@@ -13,7 +13,14 @@ node b2_prototype/test_b2_real_d1.mjs   # ciphertext over a REAL file-backed nod
 node b2_prototype/test_b3_migration.mjs # B3 drill: legacy plaintext -> E2EE migration, resume/verify/cleanup/rollback (25 checks)
 node b2_prototype/test_b4_key_rotation.mjs # key rotation/revocation: change recovery code, rotate VK on compromise (9 checks)
 node b2_prototype/test_b5_kv.mjs         # encrypt QUEST live state before KV put; no plaintext in KV (10 checks)
+node b2_prototype/test_webcrypto_jwe_interop.mjs # native Web Crypto JWE <-> jose interop (9 checks)
 ```
+
+## Shipped record-crypto (`webcrypto_jwe.mjs`)
+Native Web Crypto implementation of JWE compact (A256KW + A256GCM) for the no-bundler
+browser. `test_webcrypto_jwe_interop.mjs` (9/0) proves it is real RFC 7516 JWE by decrypting
+jose's output and having jose decrypt its output, plus tamper/wrong-key/AAD-tamper rejection.
+Verified in real Chromium too. This avoids shipping jose's ~80-file browser build into the app.
 
 ## B4/B5 (key rotation + KV ciphertext)
 - `test_b4_key_rotation.mjs` (9/0): change recovery code (same VK; old code stops working),
