@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>B2 IndexedDB persistence check</title>
+<script type="importmap">
+{ "imports": { "jose": "/jose/index.js" } }
+</script>
+</head>
+<body><pre id="out">running…</pre>
+<script type="module">
+import { createVault, trustDevice, unlockWithDevice, encryptRecord, decryptRecordChecked } from './vault_crypto.mjs';
+
+/* Minimal IndexedDB helpers. In reality a trusted device stores a NON-EXTRACTABLE
+   CryptoKey (structured-clone) plus the device-wrapped VK + vault id, namespaced by account. */
+const DB = 'dms_vault', STORE = 'devices';
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function put(key, val) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).put(val, key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+async function get(key) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction(STORE, 'readonly'); const g = tx.objectStore(STORE).get(key); g.onsuccess = () => res(g.result); g.onerror = () => rej(g.error); }); }
+async function del(key) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction(STORE, 'readwrite'); tx.objectStore(STORE).delete(key); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+
+const results = [];
+const ok = (c, n) => results.push({ name: n, ok: !!c });
+const thr = async (fn, n) => { try { await fn(); results.push({ name: n, ok: false, note: 'no throw' }); } catch { results.push({ name: n, ok: true }); } };
+const phase = new URLSearchParams(location.search).get('phase');
+
+const SAMPLE = { id: 'ins_0', ts: 1759400000000, st: { crave: 'fried', stress_raw: 8 }, crave: 'fried' };
+
+(async () => {
+  try {
+    if (phase === 'activate') {
+      // first run on this device: create vault, trust device, persist to IndexedDB under account A
+      const vault = await createVault({ epoch: 1 });
+      const dev = await trustDevice(vault.vk, { vaultId: vault.vaultId, epoch: 1 });
+      const env = await encryptRecord(vault.vk, SAMPLE, { vaultId: vault.vaultId, recordId: 'ins_0', revisionId: 'r1', epoch: 1 });
+      await put('A', { deviceKey: dev.deviceKey, wrappedVkByDevice: dev.wrappedVkByDevice, vaultId: vault.vaultId, epoch: 1, sampleEnv: env });
+      // non-extractable survives structured clone into IDB
+      ok(true, 'activate: stored device key + wrap + sample in IndexedDB (account A)');
+    }
+    else if (phase === 'reopen') {
+      // browser was closed & reopened (persistent profile): read device key back, unlock without recovery code
+      const a = await get('A');
+      ok(!!a, 'reopen: account A record survived browser restart');
+      ok(a && a.deviceKey && a.deviceKey.type === 'secret', 'reopen: device CryptoKey restored from IndexedDB');
+      await thr(() => crypto.subtle.exportKey('raw', a.deviceKey), 'reopen: restored device key still non-extractable');
+      const vk = await unlockWithDevice(a.deviceKey, a.wrappedVkByDevice, { vaultId: a.vaultId, epoch: a.epoch });
+      ok(vk.length === 32, 'reopen: unlocked VK via persisted device key (no recovery code)');
+      const { record } = await decryptRecordChecked(vk, a.sampleEnv, { vaultId: a.vaultId, recordId: 'ins_0', epoch: 1 });
+      ok(record.crave === 'fried', 'reopen: decrypted the sample record after restart');
+    }
+    else if (phase === 'switch') {
+      // A -> B account switch (GPT §5.4): clear prior account's decryptable state on switch
+      const before = await get('A');
+      ok(!!before, 'switch: account A present before switch');
+      await del('A'); // logout/switch must wipe A's trusted-device wrap + decryptable state
+      const after = await get('A');
+      ok(!after, 'switch: account A decryptable state cleared on switch');
+      // B logs in fresh: a new vault, A's old wrap is gone and unusable
+      const vaultB = await createVault({ epoch: 1 });
+      const devB = await trustDevice(vaultB.vk, { vaultId: vaultB.vaultId, epoch: 1 });
+      await put('B', { deviceKey: devB.deviceKey, wrappedVkByDevice: devB.wrappedVkByDevice, vaultId: vaultB.vaultId, epoch: 1 });
+      ok(!!(await get('B')) && !(await get('A')), 'switch: only account B state remains');
+    }
+  } catch (e) { results.push({ name: 'FATAL ' + (e && e.message), ok: false }); }
+  const passed = results.filter(r => r.ok).length, failed = results.length - passed;
+  window.__IDB = { phase, passed, failed, results };
+  document.getElementById('out').textContent = JSON.stringify(window.__IDB, null, 2);
+})();
+</script>
+</body></html>

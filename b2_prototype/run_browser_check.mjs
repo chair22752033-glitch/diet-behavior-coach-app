@@ -11,7 +11,7 @@ import pkg from '/home/user/diet-behavior-coach-app/node_modules/playwright/inde
 const { chromium } = pkg;
 
 const DIR = path.dirname(fileURLToPath(import.meta.url)) + '/browser';
-const JOSE_DIR = '/home/user/diet-behavior-coach-app/node_modules/jose/dist/browser';
+const JOSE_DIR = '/home/user/diet-behavior-coach-app/node_modules/jose/dist/webapi';
 const TYPES = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript' };
 
 const server = http.createServer(async (req, res) => {
