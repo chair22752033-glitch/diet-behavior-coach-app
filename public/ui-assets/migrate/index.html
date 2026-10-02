@@ -41,6 +41,18 @@
  <pre id="log"></pre>
 </div>
 
+<div id="cutover" style="display:none" class="card warn">
+ <h2 style="margin-top:4px">完成切換（進階・不可逆）</h2>
+ <div class="muted">只有在上面「複製加密版」完成後才做，且建議先確認你已有備份。步驟：① 切換到加密模式（App 改讀密文）→ 確認 App 正常 → ② 清理舊明文（<strong>不可逆</strong>）。清理前都可「還原」。</div>
+ <div style="margin-top:10px">
+  <button id="cutBtn" class="sec">① 切換到加密模式</button>
+  <button id="cleanBtn" class="sec">② 清理舊明文（不可逆）</button>
+  <button id="rbBtn" class="sec">還原（清理前可用）</button>
+ </div>
+ <div id="cutMsg"></div>
+ <div class="muted" style="margin-top:6px">註：即使清理，Cloudflare D1 的 Time Travel 在保留期（免費 7 天／付費 30 天）內仍可能保有舊版本——這點之後對外要如實說明。</div>
+</div>
+
 <script type="module">
 import { recoverVK, unlockWithDevice } from '/ui-assets/lib/vault_keys.mjs';
 import { jweEncrypt, jweDecrypt } from '/ui-assets/lib/webcrypto_jwe.mjs';
@@ -103,11 +115,32 @@ $('startBtn').onclick=async()=>{
   logln('驗證：密文 '+recs.length+' 筆，可解密 '+okCount+' 筆。');
   if(okCount===recs.length && recs.length>=written){
    $('runMsg').className='msg ok';$('runMsg').textContent='✓ 加密版複製並驗證完成。原始資料未更動。';
+   $('cutover').style.display='block';
   }else{
    $('runMsg').className='msg err';$('runMsg').textContent='驗證未完全通過，請把下面訊息給我，原始資料未更動、可安全重試。';
   }
   $('startBtn').disabled=false;
  }catch(e){$('runMsg').className='msg err';$('runMsg').textContent='發生錯誤：'+e.message+'（原始資料未更動）';$('startBtn').disabled=false;}
+};
+async function postConfirm(path){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});return {status:r.status, j:await r.json().catch(()=>null)};}
+$('cutBtn').onclick=async()=>{
+ if(!window.confirm('切換到加密模式後，App 會改用加密資料。確認目前「複製加密版」已完成並驗證成功？')) return;
+ const m=$('cutMsg'); const r=await postConfirm('/api/e2ee/cutover');
+ if(r.j&&r.j.ok){m.className='msg ok';m.textContent='✓ 已切換到加密模式。請回 App 確認讀寫與回顧都正常，沒問題再做②清理。';}
+ else{m.className='msg err';m.textContent='切換失敗：'+((r.j&&r.j.error)||r.status);}
+};
+$('cleanBtn').onclick=async()=>{
+ if(!window.confirm('這會刪除舊的明文記錄，無法復原（建議已備份）。確定清理？')) return;
+ if(!window.confirm('再次確認：清理舊明文是不可逆的。是否繼續？')) return;
+ const m=$('cutMsg'); const r=await postConfirm('/api/e2ee/cleanup');
+ if(r.j&&r.j.ok){m.className='msg ok';m.textContent='✓ 已清理舊明文（刪除 '+r.j.deleted+' 筆）。注意：D1 Time Travel 保留期內仍可能有舊版本。';}
+ else{m.className='msg err';m.textContent='清理失敗：'+((r.j&&r.j.error)||r.status);}
+};
+$('rbBtn').onclick=async()=>{
+ if(!window.confirm('還原會切回明文模式（僅在尚未清理時可用）。確定還原？')) return;
+ const m=$('cutMsg'); const r=await postConfirm('/api/e2ee/rollback');
+ if(r.j&&r.j.ok){m.className='msg ok';m.textContent='✓ 已還原為明文模式。';}
+ else{m.className='msg err';m.textContent='還原失敗：'+((r.j&&r.j.error)||r.status);}
 };
 init();
 </script>

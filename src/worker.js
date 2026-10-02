@@ -6,10 +6,10 @@ import { getEntitlement, grantBeta, revoke } from './membership/entitlement_stor
 import { computeFacts, buildReview, reportKey, REVIEW_MODEL_VERSION } from './review/review_service.js';
 import { getReport, getLatestReport, countReportsSince, saveReport } from './review/review_store.js';
 import { resolveOwner, getOverview, recordUsage, getAdminHTML } from './admin/index.js';
-import { first as d1First } from './db/query.js';
+import { first as d1First, run as d1Run } from './db/query.js';
 import { recordConsent, hasActiveConsent, listConsentHistory, CONSENT_ACTIONS } from './legal/consent_store.js';
 import { fetchDocHash, isKnownDoc } from './legal/documents.js';
-import { putVault, getVault } from './crypto/vault_server.js';
+import { putVault, getVault, setCryptoMode } from './crypto/vault_server.js';
 import { putE2eeRecord, listE2eeEnvelopes, E2EE_KINDS } from './crypto/e2ee_records_store.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
@@ -332,6 +332,12 @@ export default {
             } catch (e) {}
             return new Response(JSON.stringify({ ok: true, data: res.doc }), { headers: jsonHeaders });
           }
+          // E2EE lock: once an account is cut over to e2ee_only, refuse plaintext writes
+          // so no plaintext can be re-created (the app uses the ciphertext path instead).
+          const vlk = await getVault(app.db.raw, ownerId);
+          if (vlk.ok && vlk.exists && vlk.vault.crypto_mode === 'e2ee_only') {
+            return new Response(JSON.stringify({ ok: false, error: 'e2ee_locked' }), { status: 409, headers: jsonHeaders });
+          }
           const payload = await parseJsonBody(request);
           const res = await pushSyncDoc(app.db.raw, ownerId, payload);
           if (!res.ok) {
@@ -469,6 +475,45 @@ export default {
           return new Response(JSON.stringify({ ok: false, error: r.reason, currentRevision: r.currentRevision }), { status, headers: jsonHeaders });
         }
         return new Response(JSON.stringify({ ok: true, idempotent: !!r.idempotent }), { headers: jsonHeaders });
+      }
+    }
+
+    // Phase B（E2EE 第 4 步）：切換加密模式 + 清理舊明文（不可逆，需 confirm:true）。
+    // cutover 需已有遷移密文；cleanup 只在 e2ee_only 才允許；rollback 僅在清理前可用。
+    {
+      const cp = new URL(request.url).pathname;
+      if (cp === '/api/e2ee/cutover' || cp === '/api/e2ee/cleanup' || cp === '/api/e2ee/rollback') {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        const ownerId = auth.userId;
+        const body = await parseJsonBody(request);
+        if (!body || body.confirm !== true) return new Response(JSON.stringify({ ok: false, error: 'confirm_required' }), { status: 400, headers: jsonHeaders });
+        const vres = await getVault(app.db.raw, ownerId);
+        if (!vres.ok || !vres.exists) return new Response(JSON.stringify({ ok: false, error: 'no_vault' }), { status: 409, headers: jsonHeaders });
+        const mode = vres.vault.crypto_mode;
+        if (cp === '/api/e2ee/cutover') {
+          const cnt = await d1First(app.db.raw, 'SELECT COUNT(*) AS c FROM e2ee_records WHERE user_id = ?', [ownerId]);
+          const have = (cnt.ok && cnt.row) ? cnt.row.c : 0;
+          if (!have) return new Response(JSON.stringify({ ok: false, error: 'nothing_migrated' }), { status: 409, headers: jsonHeaders });
+          const r = await setCryptoMode(app.db.raw, ownerId, 'e2ee_only');
+          return new Response(JSON.stringify({ ok: r.ok, crypto_mode: r.ok ? 'e2ee_only' : undefined, error: r.ok ? undefined : r.reason }), { status: r.ok ? 200 : 500, headers: jsonHeaders });
+        }
+        if (cp === '/api/e2ee/rollback') {
+          if (mode !== 'e2ee_only') return new Response(JSON.stringify({ ok: false, error: 'not_e2ee' }), { status: 409, headers: jsonHeaders });
+          const pc = await d1First(app.db.raw, 'SELECT COUNT(*) AS c FROM sync_records WHERE user_id = ?', [ownerId]);
+          if (!(pc.ok && pc.row && pc.row.c > 0)) return new Response(JSON.stringify({ ok: false, error: 'plaintext_already_cleaned' }), { status: 409, headers: jsonHeaders });
+          const r = await setCryptoMode(app.db.raw, ownerId, 'vault_created');
+          return new Response(JSON.stringify({ ok: r.ok, crypto_mode: 'vault_created' }), { status: r.ok ? 200 : 500, headers: jsonHeaders });
+        }
+        // cleanup — delete plaintext (irreversible), only once e2ee_only
+        if (mode !== 'e2ee_only') return new Response(JSON.stringify({ ok: false, error: 'not_e2ee' }), { status: 409, headers: jsonHeaders });
+        const del = await d1Run(app.db.raw, 'DELETE FROM sync_records WHERE user_id = ?', [ownerId]);
+        await d1Run(app.db.raw, 'DELETE FROM sync_meta WHERE user_id = ?', [ownerId]);
+        if (!del.ok) return new Response(JSON.stringify({ ok: false, error: del.error || 'delete_failed' }), { status: 500, headers: jsonHeaders });
+        return new Response(JSON.stringify({ ok: true, deleted: (del.meta && del.meta.changes) || 0, note: 'D1 Time Travel retains prior versions within the retention window' }), { headers: jsonHeaders });
       }
     }
 

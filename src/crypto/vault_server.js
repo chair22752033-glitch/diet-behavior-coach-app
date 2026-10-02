@@ -32,6 +32,15 @@ export async function putVault(rawDb, userId, v) {
   return r.ok ? { ok: true } : { ok: false, reason: r.error || 'insert_failed' };
 }
 
+const VALID_MODES = ['vault_created', 'migration_locked', 'ciphertext_verified', 'e2ee_only'];
+export async function setCryptoMode(rawDb, userId, mode) {
+  if (VALID_MODES.indexOf(mode) < 0) return { ok: false, reason: 'bad_mode' };
+  const r = await run(rawDb, "UPDATE e2ee_vaults SET crypto_mode = ?, updated_at = datetime('now') WHERE user_id = ?", [mode, userId]);
+  if (!r.ok) return { ok: false, reason: r.error || 'update_failed' };
+  if (!r.meta || r.meta.changes === 0) return { ok: false, reason: 'no_vault' };
+  return { ok: true, mode };
+}
+
 export async function getVault(rawDb, userId) {
   if (!userId || typeof userId !== 'string') return { ok: false, reason: 'missing_user' };
   const r = await first(rawDb, 'SELECT vault_id, epoch, recovery_salt, wrapped_vk_recovery, format, crypto_mode FROM e2ee_vaults WHERE user_id = ?', [userId]);
