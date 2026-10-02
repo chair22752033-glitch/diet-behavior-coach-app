@@ -9,6 +9,7 @@ node b2_prototype/test_b2.mjs           # Node core acceptance (57 checks)
 node b2_prototype/test_review_port.mjs  # review edge cases vs production algo (12 checks)
 node b2_prototype/run_browser_check.mjs # real-Chromium crypto round-trip (12 checks)
 node b2_prototype/run_idb_check.mjs     # Chromium persistent profile: IndexedDB restart + A->B switch (9 checks)
+node b2_prototype/test_b2_real_d1.mjs   # ciphertext over a REAL file-backed node:sqlite D1 + no-plaintext file scan (38 checks)
 ```
 
 ## Files

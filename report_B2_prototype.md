@@ -123,3 +123,30 @@
 4. **對外措辭**：B4 通過前**不得**宣稱「營運者無法解密」；現況仍是「server 會處理明文以提供回顧」。
 
 **本輪只交付隔離試作與驗收；未對正式 App、資料或收款做任何變更。**
+
+---
+
+## 附錄：B2 續作進度（2026-10-02，仍隔離、仍假資料）
+
+擁有者指示在 GPT token 用盡期間先往下做 B2 續作（之後再請 GPT 複核）。本附錄記錄新完成項，全部仍在 `b2_prototype/`、不碰正式資料/程式/部署。
+
+### 新完成
+1. **接到「真實 D1」路徑（補 GPT 最大一項更正「假 server ≠ 真 Worker/D1/KV」）**
+   - 新增 `e2ee_sync_store.mjs`：用**專案真正的 DB 存取層**（`src/db/query.js` + `src/db/transaction.js`）把密文寫進 D1；驗 ownership / kind / 大小 / JWE 形狀 / revision CAS；排序用 server 指派的 seq（不看明文時間）；store 本身無金鑰、不解密。
+   - 新增 `schema_e2ee.sql`：`e2ee_vaults`（含 `crypto_mode`）+ `e2ee_records`（payload = 密文）。
+   - 新增 `test_b2_real_d1.mjs`（**38/0**）：用 **node:sqlite 檔案型資料庫**跑完整流程後，**直接讀 .sqlite 檔的原始位元組**，證實：
+     - 檔案裡**找不到任何私人明文**（ascii：fried/sweet/energy/stress_raw/note-0/input_snapshot；中文 UTF-8：宵夜炸雞祕密）；
+     - 每一列 `envelope` 都是 compact JWE；
+     - CAS（過期 baseRevision 拒絕）、idempotent 重送、拒絕明文 payload、單一保險庫都在**真 D1** 上成立；
+     - 裝置端解密 + 回顧與正式演算法相等；恢復碼能從**真 D1 的 vault 列**復原 VK；
+     - 錯金鑰解密會丟例外，且**例外訊息與 console 都不含明文**（補 GPT 的「錯誤日誌」項，於真實 round-trip 上驗證）。
+2. **手機實機步驟** `PHONE_TEST_STEPS.md`：iOS Safari／Android Chrome／桌面 Firefox 的逐項清單（需你操作；容器只有 Chromium）。
+
+### 誠實狀態更新
+- 「真實路徑無明文」**D1 已驗**（檔案層）；**KV（qlive）仍是模擬**，B3 再用真實 KV 驗。
+- **health-insight 裝置端運算**：確認其運算路徑**無亂數／時間／網路**（可移植、可決定性），但它是 `src/intelligence/...` 的多層子系統且會讀 db；**完整裝置端移植留待 B3**（比回顧大）。本輪只證明其輸入/結果可加密往返、presentation 層（`buildSuccessResponse`）為純函式。移植範圍：入口 `createInsightUseCase → applicationService` 鏈，E2EE 下私人輸入要改由裝置解密提供、不走 server db。
+- 仍未做：Safari/Firefox 實機、真實 KV、金鑰輪替/撤銷、衝突雙版本、遷移流程（B3）。
+
+### 本附錄的測試數字（jose 6.2.12）
+- `test_b2_real_d1.mjs`（真實檔案型 D1）= **38 / 0**
+- 其餘同前：test_b2 57/0、test_review_port 12/0、run_browser_check 12/0、run_idb_check 9/0。
