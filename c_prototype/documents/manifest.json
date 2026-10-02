@@ -1,0 +1,6 @@
+{
+  "documents": [
+    { "docType": "terms",   "version": "v0.1-draft", "title": "服務條款（草稿）",       "file": "terms_v0.1-draft.md",   "status": "draft" },
+    { "docType": "privacy", "version": "v0.1-draft", "title": "個人資料告知（草稿）",   "file": "privacy_v0.1-draft.md", "status": "draft" }
+  ]
+}

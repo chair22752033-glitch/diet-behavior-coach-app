@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>文件與同意（草稿空殼頁）</title>
+<style>
+ body{font-family:system-ui,"Noto Sans TC",sans-serif;background:#FBF3E7;color:#4a3728;margin:0;padding:18px;max-width:760px}
+ h1{font-size:20px}.draft{display:inline-block;background:#f6e0e0;color:#a33;border-radius:6px;padding:2px 8px;font-size:12px;margin-left:8px}
+ .doc-tabs button{margin:4px 6px 4px 0;padding:8px 12px;border:1px solid #d8b88f;border-radius:8px;background:#fff;cursor:pointer}
+ .doc-tabs button.on{background:#b5793a;color:#fff;border:none}
+ pre{white-space:pre-wrap;background:#fff;border:1px solid #e5d5bf;border-radius:10px;padding:14px;font-size:13px;line-height:1.6;max-height:50vh;overflow:auto}
+ .row{margin:12px 0}.hash{color:#8a7a68;font-size:11px;word-break:break-all}
+ button.cta{background:#b5793a;color:#fff;border:none;border-radius:8px;padding:10px 16px;cursor:pointer}
+ button.cta:disabled{opacity:.5;cursor:not-allowed}.msg{margin-top:10px;padding:8px 10px;border-radius:8px;font-size:13px}
+ .ok{background:#e6f3e6}.err{background:#f6e0e0}
+</style></head>
+<body>
+<h1>法律文件（草稿空殼頁）<span class="draft">DRAFT・未定稿</span></h1>
+<p style="font-size:13px;color:#8a7a68">這是隔離試作頁，內容為骨架草稿、含【待定】欄位，尚未定稿、未經法務確認，不作正式契約用。</p>
+<div class="doc-tabs" id="tabs"></div>
+<div id="docview" style="display:none">
+  <h2 id="dtitle"></h2>
+  <div class="hash" id="dhash"></div>
+  <pre id="dbody"></pre>
+  <div class="row"><label><input type="checkbox" id="agree"> 我已閱讀上述內容，並同意（草稿測試）</label></div>
+  <button class="cta" id="submit" disabled>送出同意</button>
+  <div id="msg"></div>
+</div>
+<script>
+const U = 'proto_user_1';
+let current = null;
+function h(method, path, body){ return fetch(path, { method, headers: Object.assign({'content-type':'application/json','x-prototype-user':U}, {}), body: body?JSON.stringify(body):undefined }).then(r=>r.json()); }
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+async function loadTabs(){
+  const j = await h('GET','/c/consent/documents');
+  const tabs = document.getElementById('tabs'); tabs.innerHTML='';
+  (j.documents||[]).forEach(d=>{
+    const b=document.createElement('button'); b.textContent=d.title; b.onclick=()=>openDoc(d.docType,d.version,b);
+    tabs.appendChild(b);
+  });
+  window.__CPAGE = { loaded:true, count:(j.documents||[]).length, status:null, lastEventId:null };
+}
+async function openDoc(type,version,btn){
+  Array.from(document.querySelectorAll('.doc-tabs button')).forEach(x=>x.classList.remove('on')); if(btn)btn.classList.add('on');
+  const j = await h('GET','/c/consent/document?type='+encodeURIComponent(type)+'&version='+encodeURIComponent(version));
+  current = { type, version, purpose:'accept_'+type };
+  document.getElementById('docview').style.display='block';
+  document.getElementById('dtitle').textContent=j.title+'（'+j.version+'・'+j.status+'）';
+  document.getElementById('dhash').textContent='內容雜湊 '+j.contentSha256;
+  document.getElementById('dbody').textContent=j.content;
+  const agree=document.getElementById('agree'), submit=document.getElementById('submit');
+  agree.checked=false; submit.disabled=true; document.getElementById('msg').textContent='';
+  agree.onchange=()=>submit.disabled=!agree.checked;
+}
+document.getElementById('submit').onclick=async ()=>{
+  if(!current) return;
+  const j = await h('POST','/c/consent',{ purpose:current.purpose, docType:current.type, docVersion:current.version, action:'granted', sourceScreen:'shell_page' });
+  const msg=document.getElementById('msg');
+  if(j.ok){ msg.className='msg ok'; msg.textContent='已記錄同意（草稿測試）event='+j.eventId;
+    const s = await h('GET','/c/consent/status?purpose='+current.purpose+'&type='+current.type+'&version='+current.version);
+    window.__CPAGE.status=s.active; window.__CPAGE.lastEventId=j.eventId;
+  } else { msg.className='msg err'; msg.textContent='失敗：'+j.error; }
+};
+loadTabs();
+</script>
+</body></html>
