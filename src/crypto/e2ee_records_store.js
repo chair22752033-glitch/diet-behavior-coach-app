@@ -11,7 +11,7 @@
 import { all, first } from '../db/query.js';
 import { batch } from '../db/transaction.js';
 
-export const E2EE_KINDS = ['ins', 'quest', 'review', 'health_insight'];
+export const E2EE_KINDS = ['ins', 'quest', 'review', 'health_insight', 'root'];
 const MAX_ENVELOPE_BYTES = 12000;
 
 function isCompactJWE(s) {
