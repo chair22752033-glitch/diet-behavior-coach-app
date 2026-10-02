@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>B2 browser crypto check</title>
+<script type="importmap">
+{ "imports": { "jose": "/jose/index.js" } }
+</script>
+</head>
+<body>
+<pre id="out">running…</pre>
+<script type="module">
+import {
+  createVault, recoverVaultWithCode, trustDevice, unlockWithDevice,
+  encryptRecord, decryptRecordChecked, FORMAT_VERSION
+} from './vault_crypto.mjs';
+
+const results = [];
+function ok(cond, name){ results.push({name, ok: !!cond}); }
+async function thr(fn, name){ try { await fn(); results.push({name, ok:false, note:'no throw'}); } catch(e){ results.push({name, ok:true}); } }
+
+(async () => {
+  try {
+    // feature detection: the exact primitives GPT's design needs
+    ok(!!(crypto && crypto.subtle && crypto.getRandomValues), 'Web Crypto present');
+    const akw = await crypto.subtle.generateKey({name:'AES-KW',length:256}, false, ['wrapKey','unwrapKey']);
+    ok(!!akw, 'AES-KW generateKey (non-extractable) supported');
+    const ikm = await crypto.subtle.importKey('raw', crypto.getRandomValues(new Uint8Array(32)), 'HKDF', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(16),info:new Uint8Array(0)}, ikm, 256);
+    ok(bits && bits.byteLength === 32, 'HKDF-SHA256 deriveBits supported');
+
+    // full vault round-trip using the SAME vault_crypto.mjs as node
+    const vault = await createVault({epoch:1});
+    ok(vault.vk.length === 32, 'VK 256-bit');
+    const rec = { id:'ins_0', ts: 1759400000000, st:{crave:'fried', stress_raw:8}, crave:'fried' };
+    const env = await encryptRecord(vault.vk, rec, {vaultId:vault.vaultId, recordId:'ins_0', revisionId:'r1', epoch:1});
+    ok(env.split('.').length === 5, 'record encrypts to compact JWE');
+    const { record } = await decryptRecordChecked(vault.vk, env, {vaultId:vault.vaultId, recordId:'ins_0', epoch:1});
+    ok(record.crave === 'fried' && record.st.stress_raw === 8, 'record decrypts correctly');
+
+    // recovery on a "fresh browser": only recovery code + server vault record
+    const rv = await recoverVaultWithCode(vault.recoveryCode, vault.serverVaultRecord);
+    ok(rv.vk.length === 32 && rv.vk.every((b,i)=>b===vault.vk[i]), 'recovery code restores VK');
+
+    // wrong code rejected, not silent
+    await thr(() => recoverVaultWithCode('ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ', vault.serverVaultRecord), 'wrong recovery code rejected');
+
+    // trusted device: non-extractable + device-scoped
+    const dev = await trustDevice(vault.vk, {vaultId:vault.vaultId, epoch:1});
+    const u = await unlockWithDevice(dev.deviceKey, dev.wrappedVkByDevice, {vaultId:vault.vaultId, epoch:1});
+    ok(u.every((b,i)=>b===vault.vk[i]), 'trusted device unlocks VK');
+    await thr(() => crypto.subtle.exportKey('raw', dev.deviceKey), 'device key non-extractable');
+
+    // tamper + cross-record rejected in-browser too
+    const segs = env.split('.'); segs[3] = segs[3].slice(0,-2) + (segs[3].slice(-2)==='AA'?'BB':'AA');
+    await thr(() => decryptRecordChecked(vault.vk, segs.join('.'), {vaultId:vault.vaultId, recordId:'ins_0', epoch:1}), 'tampered ciphertext rejected');
+    await thr(() => decryptRecordChecked(vault.vk, env, {vaultId:vault.vaultId, recordId:'ins_9', epoch:1}), 'cross-record substitution rejected');
+  } catch (e) {
+    results.push({name:'FATAL '+(e&&e.message), ok:false});
+  }
+  const passed = results.filter(r=>r.ok).length, failed = results.length - passed;
+  window.__B2 = { passed, failed, results, version: FORMAT_VERSION, ua: navigator.userAgent };
+  document.getElementById('out').textContent = JSON.stringify(window.__B2, null, 2);
+})();
+</script>
+</body></html>
