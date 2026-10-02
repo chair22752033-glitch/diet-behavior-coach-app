@@ -9,6 +9,7 @@ import { resolveOwner, getOverview, recordUsage, getAdminHTML } from './admin/in
 import { first as d1First } from './db/query.js';
 import { recordConsent, hasActiveConsent, listConsentHistory, CONSENT_ACTIONS } from './legal/consent_store.js';
 import { fetchDocHash, isKnownDoc } from './legal/documents.js';
+import { putVault, getVault } from './crypto/vault_server.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -407,6 +408,33 @@ export default {
         });
         if (!rec.ok) return new Response(JSON.stringify({ ok: false, error: rec.reason }), { status: 400, headers: jsonHeaders });
         return new Response(JSON.stringify({ ok: true, eventId: rec.eventId }), { headers: jsonHeaders });
+      }
+    }
+
+    // Phase B（E2EE 第 1 步）：加密保險庫。/ui-assets/vault/ 靜態頁同源呼叫，帶 session
+    // cookie；未登入 -> 401。server 只存「被恢復碼包裝的 VK」+ salt，無法解密內容。
+    // 這一步只建立保險庫，尚未遷移任何現有資料（現有明文同步不受影響）。
+    {
+      const vaultPath = new URL(request.url).pathname;
+      if (vaultPath === '/api/vault') {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        if (request.method !== 'GET' && request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        const ownerId = auth.userId;
+        if (request.method === 'GET') {
+          const r = await getVault(app.db.raw, ownerId);
+          if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason }), { status: 500, headers: jsonHeaders });
+          return new Response(JSON.stringify({ ok: true, exists: !!r.exists, vault: r.vault || null }), { headers: jsonHeaders });
+        }
+        const body = await parseJsonBody(request);
+        const r = await putVault(app.db.raw, ownerId, body || {});
+        if (!r.ok) {
+          const status = r.reason === 'vault_exists' ? 409 : (r.reason && r.reason.indexOf('bad_') === 0 ? 400 : (r.reason === 'invalid_body' ? 400 : 500));
+          return new Response(JSON.stringify({ ok: false, error: r.reason }), { status, headers: jsonHeaders });
+        }
+        return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
       }
     }
 
@@ -3888,6 +3916,7 @@ function getHTML(){return [
   '  var startBtn=mkEl("button","idq-btn","開始使用 →");startBtn.style.marginTop="22px";startBtn.onclick=goHome;body.appendChild(startBtn);',
   '  var med=mkEl("div","guide-flow-cap");med.style.marginTop="16px";med.textContent="本 App 僅供飲食衛教與行為練習參考。有任何症狀，請優先找醫師或營養師討論，切勿依內容自行調整。";body.appendChild(med);',
   '  var legal=mkEl("div","guide-flow-cap");legal.style.marginTop="10px";var la=document.createElement("a");la.href="/ui-assets/legal/";la.target="_blank";la.rel="noopener";la.textContent="服務條款・個人資料告知・意向書（試行草稿）";la.style.color="#b5793a";la.style.textDecoration="underline";legal.appendChild(la);body.appendChild(legal);',
+  '  var vlt=mkEl("div","guide-flow-cap");vlt.style.marginTop="8px";var va=document.createElement("a");va.href="/ui-assets/vault/";va.target="_blank";va.rel="noopener";va.textContent="加密保險庫（搶先啟用・beta）";va.style.color="#b5793a";va.style.textDecoration="underline";vlt.appendChild(va);body.appendChild(vlt);',
   '}',
   'var BA={};',
   'var BA_CATS=[{v:"正餐",l:"正餐"},{v:"輕食",l:"輕食"},{v:"點心甜點",l:"點心/甜點"},{v:"飲料",l:"飲料"},{v:"宵夜",l:"宵夜"},{v:"水果",l:"水果"},{v:"速食炸物",l:"速食/炸物"},{v:"其他",l:"其他"}];',

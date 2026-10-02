@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>加密保險庫（啟用）</title>
+<style>
+ body{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;background:#FBF3E7;color:#4a3728;margin:0;padding:20px;line-height:1.7}
+ .wrap{max-width:620px;margin:0 auto}
+ h1{font-size:21px}h2{font-size:16px;margin-top:22px}
+ .card{background:#fff;border:1px solid #e5d5bf;border-radius:12px;padding:14px 16px;margin:12px 0}
+ .muted{color:#8a7a68;font-size:13px}
+ .warn{background:#f6e0e0;border-color:#e3b4b4}
+ button{background:#b5793a;color:#fff;border:none;border-radius:8px;padding:11px 18px;cursor:pointer;font-size:15px}
+ button.sec{background:#eee;color:#4a3728}
+ button:disabled{opacity:.5;cursor:not-allowed}
+ .code{font-family:ui-monospace,Menlo,monospace;font-size:18px;letter-spacing:1px;background:#fbf0dd;border:1px dashed #d8b88f;border-radius:8px;padding:12px;word-break:break-all;margin:8px 0}
+ input{font-size:15px;padding:9px 11px;border-radius:8px;border:1px solid #d8b88f;width:100%;box-sizing:border-box;font-family:ui-monospace,monospace}
+ .msg{padding:9px 11px;border-radius:8px;margin-top:10px;font-size:14px}
+ .ok{background:#e6f3e6}.err{background:#f6e0e0}
+ label{display:block;margin:10px 0}
+</style></head>
+<body><div class="wrap">
+<h1>🔐 加密保險庫（啟用）</h1>
+<div class="card muted">
+ 這是「使用者持鑰加密」的第一步：在<strong>你的裝置上</strong>產生一把只屬於你的鑰匙，並取得<strong>恢復碼</strong>。
+ 這一步<strong>只建立鑰匙，不會動到你現在的任何記錄</strong>；目前你的飲食記錄仍以原方式同步（尚未加密）。完整加密遷移是之後、另外的步驟。
+</div>
+
+<div id="gate" class="card">載入中…</div>
+
+<div id="activate" style="display:none">
+ <h2>步驟 1：產生你的鑰匙與恢復碼</h2>
+ <div class="card">
+  <button id="genBtn">在這台裝置產生鑰匙</button>
+  <div id="genArea" style="display:none">
+   <div class="warn card" style="margin-top:12px">
+    <strong>請把下面的恢復碼抄下來、存到安全的地方（例如密碼管理器）。</strong><br>
+    這是唯一能在其他裝置、或清除瀏覽器後救回你資料的東西。<strong>遺失恢復碼且所有裝置都登出／清除後，沒有人（包含我們）能幫你還原。</strong>
+   </div>
+   <div class="code" id="recCode"></div>
+   <h2>步驟 2：再輸入一次恢復碼確認</h2>
+   <input id="recConfirm" placeholder="貼上或輸入剛剛的恢復碼" autocomplete="off">
+   <label><input type="checkbox" id="savedChk" style="width:auto"> 我已把恢復碼安全保存，了解遺失將無法還原。</label>
+   <button id="enableBtn" disabled>確認並啟用保險庫</button>
+   <div id="msg"></div>
+  </div>
+ </div>
+</div>
+
+<div id="done" style="display:none">
+ <div class="card ok" style="background:#e6f3e6">✓ 你的加密保險庫已啟用。這台裝置目前可用。</div>
+ <h2>在其他裝置／清除瀏覽器後：用恢復碼解鎖</h2>
+ <div class="card">
+  <input id="recTest" placeholder="輸入恢復碼測試解鎖" autocomplete="off">
+  <button class="sec" id="testBtn" style="margin-top:8px">測試恢復碼</button>
+  <div id="testMsg"></div>
+ </div>
+ <div class="muted">完整的「加密同步、裝置端回顧、舊資料遷移」會在之後的步驟陸續開放；目前先完成鑰匙建立。</div>
+</div>
+
+<script type="module">
+const FORMAT='dms-e2ee-1', INFO='diet-main-show|recovery-wrap|v1';
+const CB32='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const te=new TextEncoder();
+function rand(n){const b=new Uint8Array(n);crypto.getRandomValues(b);return b;}
+function b64(buf){const b=new Uint8Array(buf);let s='';for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s);}
+function unb64(s){const bin=atob(s);const o=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)o[i]=bin.charCodeAt(i);return o;}
+function enc32(bytes){let bits=0,val=0,out='';for(let i=0;i<bytes.length;i++){val=(val<<8)|bytes[i];bits+=8;while(bits>=5){out+=CB32[(val>>>(bits-5))&31];bits-=5;}}if(bits>0)out+=CB32[(val<<(5-bits))&31];return out.replace(/(.{4})/g,'$1-').replace(/-$/,'');}
+function norm(s){return String(s||'').toUpperCase().replace(/[\s-]/g,'').replace(/O/g,'0').replace(/[IL]/g,'1').replace(/U/g,'V');}
+function dec32(s){const n=norm(s);let bits=0,val=0;const out=[];for(const ch of n){const idx=CB32.indexOf(ch);if(idx<0)throw new Error('bad char');val=(val<<5)|idx;bits+=5;if(bits>=8){out.push((val>>>(bits-8))&255);bits-=8;}}return new Uint8Array(out);}
+async function rkFrom(recBytes,salt){const ikm=await crypto.subtle.importKey('raw',recBytes,'HKDF',false,['deriveKey']);return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt,info:te.encode(INFO)},ikm,{name:'AES-KW',length:256},false,['wrapKey','unwrapKey']);}
+async function wrapVK(vkBytes,rk){const vkKey=await crypto.subtle.importKey('raw',vkBytes,{name:'AES-GCM'},true,['encrypt','decrypt']);return crypto.subtle.wrapKey('raw',vkKey,rk,'AES-KW');}
+async function unwrapVK(wrapped,rk){return crypto.subtle.unwrapKey('raw',wrapped,rk,'AES-KW',{name:'AES-GCM',length:256},true,['encrypt','decrypt']);}
+
+const $=id=>document.getElementById(id);
+let pending=null; // {vaultId, recoveryCode, salt, wrappedB64}
+
+async function refresh(){
+ try{
+  const r=await fetch('/api/vault',{headers:{'Accept':'application/json'}});
+  if(r.status===401){$('gate').className='card warn';$('gate').innerHTML='請先回 App 以 Google 登入，再回到本頁。';return;}
+  const j=await r.json();
+  if(j.exists){$('gate').style.display='none';$('activate').style.display='none';$('done').style.display='block';}
+  else{$('gate').style.display='none';$('activate').style.display='block';}
+ }catch(e){$('gate').className='card warn';$('gate').textContent='載入失敗，請稍後再試。';}
+}
+
+$('genBtn').onclick=async()=>{
+ try{
+  const vaultId='v_'+enc32(rand(10)).replace(/-/g,'').toLowerCase();
+  const vk=rand(32), recBytes=rand(32), salt=rand(16);
+  const recoveryCode=enc32(recBytes);
+  const rk=await rkFrom(recBytes,salt);
+  const wrapped=await wrapVK(vk,rk);
+  pending={vaultId,recoveryCode,salt:b64(salt),wrappedB64:b64(wrapped)};
+  $('recCode').textContent=recoveryCode;
+  $('genArea').style.display='block';$('genBtn').disabled=true;
+ }catch(e){alert('產生失敗：'+e.message);}
+};
+$('savedChk').onchange=()=>{$('enableBtn').disabled=!$('savedChk').checked;};
+$('enableBtn').onclick=async()=>{
+ const msg=$('msg');
+ if(!pending){msg.className='msg err';msg.textContent='請先產生鑰匙。';return;}
+ if(norm($('recConfirm').value)!==norm(pending.recoveryCode)){msg.className='msg err';msg.textContent='恢復碼不一致，請再確認一次。';return;}
+ $('enableBtn').disabled=true;
+ try{
+  const r=await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vaultId:pending.vaultId,recoverySalt:pending.salt,wrappedVkRecovery:pending.wrappedB64,format:FORMAT,epoch:1})});
+  const j=await r.json();
+  if(r.status===409){msg.className='msg err';msg.textContent='這個帳號已經啟用過保險庫了。';return;}
+  if(j.ok){msg.className='msg ok';msg.textContent='啟用成功！';setTimeout(refresh,700);}
+  else{msg.className='msg err';msg.textContent='啟用失敗：'+(j.error||r.status);$('enableBtn').disabled=false;}
+ }catch(e){msg.className='msg err';msg.textContent='網路錯誤，請再試。';$('enableBtn').disabled=false;}
+};
+$('testBtn').onclick=async()=>{
+ const m=$('testMsg');
+ try{
+  const r=await fetch('/api/vault');const j=await r.json();
+  if(!j.exists){m.className='msg err';m.textContent='找不到保險庫記錄。';return;}
+  const rk=await rkFrom(dec32($('recTest').value),unb64(j.vault.recovery_salt));
+  const vk=await unwrapVK(unb64(j.vault.wrapped_vk_recovery),rk);
+  m.className='msg ok';m.textContent=vk?'✓ 恢復碼正確，可以解鎖。':'解鎖失敗。';
+ }catch(e){m.className='msg err';m.textContent='✗ 恢復碼錯誤或格式不對，請重新輸入。';}
+};
+refresh();
+</script>
+</div></body></html>
