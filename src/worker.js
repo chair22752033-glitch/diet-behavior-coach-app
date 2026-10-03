@@ -1637,7 +1637,7 @@ function getHTML(){return [
   '  ["登入好處：解鎖首頁所有飲食互動（占卜／五大面向／營養知識／情境演練／行為拆解）","跨裝置同步你的記錄，換手機也不會不見","七日飲食行為回顧，看見自己的改變"].forEach(function(x){var li=mkEl("div","");li.textContent="✓ "+x;ul.appendChild(li);});',
   '  box.appendChild(ul);',
   '  var pw=mkEl("div","");pw.style.cssText="background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#6b5a44;line-height:1.8;";',
-  '  pw.innerHTML="<b>方案與服務（先享 7 天免費試用・完整功能）</b><br>・試用後只想用 App：NT$1,200／年<br>・3,000：App 全功能＋社群討論<br>・35,000：含 App＋六個月一對一陪伴＋視訊／通話＋運動陪伴＋2 次工作坊<br>・48,000：含 35,000＋未來工作坊永久參加<br>真人服務包已含 App 使用期間，免費試用與付費方案分開；細節以方案確認單為準。";box.appendChild(pw);',
+  '  pw.innerHTML="<b>方案與服務（先享 7 天免費試用・完整功能）</b><br>・NT$1,200／年：純 App（高成本新功能如圖片／AI 可能另計，會事先說明）<br>・3,000：App 全功能（不限期）＋琮心開始社群討論、直播與分享<br>・35,000：含 App＋開通隔天起 180 天個案陪同＋面對面視訊／通話＋未來工作坊任選 2 場招待<br>・48,000：含 35,000＋未來工作坊永久免費（日後漲價也免費）<br>真人服務包已含 App 使用期間、服務期間內新功能不另收；免費試用與付費方案分開，細節以方案確認單為準。";box.appendChild(pw);',
   '  var btn=mkEl("div","");btn.setAttribute("role","button");btn.style.cssText="margin-top:12px;background:#b5793a;color:#fff;border-radius:10px;padding:13px;font-size:16px;font-weight:700;text-align:center;cursor:pointer;";btn.textContent="用 Google 登入（7 天免費）";btn.onclick=function(){location.href="/auth/google/start";};box.appendChild(btn);',
   '  var plan=mkEl("div","");plan.setAttribute("role","button");plan.style.cssText="margin-top:8px;background:#eee;color:#4a3728;border-radius:10px;padding:11px;font-size:14px;text-align:center;cursor:pointer;";plan.textContent="看完整方案與服務內容";plan.onclick=function(){window.open("/ui-assets/legal/","_blank");};box.appendChild(plan);',
   '  return box;',
