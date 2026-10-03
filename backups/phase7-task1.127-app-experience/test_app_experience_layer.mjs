@@ -1077,9 +1077,9 @@ async function main() {
   // =========================================================================
   console.log('--- N. Database protection ---');
 
-  await test('（14.database protection）migrations/共14個.sql檔案（含 0013 e2ee vaults + 0014 e2ee records，授權新增）', () => {
+  await test('（14.database protection）migrations/共15個.sql檔案（含 0013 e2ee vaults + 0014 e2ee records + 0015 support requests，授權新增）', () => {
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    assert.strictEqual(files.length, 14);
+    assert.strictEqual(files.length, 15);
   });
 
   await test('（14.database protection）migrations/完全沒有新增或修改任何檔案', () => {

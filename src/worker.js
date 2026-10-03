@@ -11,6 +11,7 @@ import { recordConsent, hasActiveConsent, listConsentHistory, CONSENT_ACTIONS } 
 import { fetchDocHash, isKnownDoc } from './legal/documents.js';
 import { putVault, getVault, setCryptoMode } from './crypto/vault_server.js';
 import { putE2eeRecord, listE2eeEnvelopes, E2EE_KINDS } from './crypto/e2ee_records_store.js';
+import { createSupportRequest, listSupportRequests, getSupportRequest, SUPPORT_MIN_PERIOD_DAYS } from './support/support_store.js';
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -418,6 +419,51 @@ export default {
       }
     }
 
+    // Phase D｜使用者主動把「自選期間的記錄快照 + 問題」分享給管理者。
+    // 使用者本人（已驗證 session）POST；期間最少 90 天、且為最近 90 天（前端計算、
+    // 後端存實際 range）。這是使用者主動、明確同意、期間受限的分享，非後台任意翻看。
+    {
+      const supportPath = new URL(request.url).pathname;
+      if (supportPath === '/api/support/share') {
+        const jsonHeaders = { 'Content-Type': 'application/json' };
+        if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+        const cookieHeader = request.headers.get('Cookie');
+        const auth = await getCurrentUser(app.db, cookieHeader, {});
+        if (!auth.ok) return new Response(JSON.stringify({ ok: false, error: 'not_authenticated' }), { status: 401, headers: jsonHeaders });
+        const origin = request.headers.get('Origin');
+        const host = new URL(request.url).host;
+        if (origin && host && origin.indexOf('://' + host) === -1) {
+          return new Response(JSON.stringify({ ok: false, error: 'bad_origin' }), { status: 403, headers: jsonHeaders });
+        }
+        const body = await parseJsonBody(request);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return new Response(JSON.stringify({ ok: false, error: 'invalid_json' }), { status: 400, headers: jsonHeaders });
+        const records = Array.isArray(body.records) ? body.records : null;
+        if (!records || records.length === 0) return new Response(JSON.stringify({ ok: false, error: 'no_records' }), { status: 400, headers: jsonHeaders });
+        let periodDays = Number(body.periodDays);
+        if (!Number.isFinite(periodDays) || periodDays < SUPPORT_MIN_PERIOD_DAYS) periodDays = SUPPORT_MIN_PERIOD_DAYS;
+        // payload 存使用者端已過濾的快照（記錄 + 身份 + 隨身卡等，皆由前端整理）。
+        const snapshot = {
+          records: records,
+          identity: (body.identity && typeof body.identity === 'object') ? body.identity : null,
+          quest: Array.isArray(body.quest) ? body.quest : null
+        };
+        const payload = JSON.stringify(snapshot);
+        const r = await createSupportRequest(app.db.raw, auth.userId, {
+          question: typeof body.question === 'string' ? body.question : '',
+          periodDays: periodDays,
+          rangeFrom: typeof body.rangeFrom === 'string' ? body.rangeFrom : null,
+          rangeTo: typeof body.rangeTo === 'string' ? body.rangeTo : null,
+          recordCount: records.length,
+          payload: payload
+        });
+        if (!r.ok) {
+          const code = r.reason === 'payload_too_large' ? 413 : 400;
+          return new Response(JSON.stringify({ ok: false, error: r.reason || 'share_failed' }), { status: code, headers: jsonHeaders });
+        }
+        return new Response(JSON.stringify({ ok: true, id: r.id }), { headers: jsonHeaders });
+      }
+    }
+
     // Phase B（E2EE 第 1 步）：加密保險庫。/ui-assets/vault/ 靜態頁同源呼叫，帶 session
     // cookie；未登入 -> 401。server 只存「被恢復碼包裝的 VK」+ salt，無法解密內容。
     // 這一步只建立保險庫，尚未遷移任何現有資料（現有明文同步不受影響）。
@@ -691,6 +737,17 @@ export default {
           const top = { ok: okCount > 0, okCount: okCount, total: results.length, results: results };
           if (results.length === 1 && results[0].ok) top.validUntil = results[0].validUntil || null;
           return new Response(JSON.stringify(top), { headers: jsonHeaders });
+        }
+        if (adminPath === '/api/admin/support' && request.method === 'GET') {
+          const lst = await listSupportRequests(app.db.raw, { limit: 100 });
+          return new Response(JSON.stringify({ ok: !!lst.ok, items: lst.items || [] }), { headers: jsonHeaders });
+        }
+        if (adminPath === '/api/admin/support/get' && request.method === 'GET') {
+          const sid = new URL(request.url).searchParams.get('id');
+          if (!sid) return new Response(JSON.stringify({ ok: false, error: 'missing_id' }), { status: 400, headers: jsonHeaders });
+          const one = await getSupportRequest(app.db.raw, sid);
+          if (!one.ok || !one.row) return new Response(JSON.stringify({ ok: false, error: 'not_found' }), { status: 404, headers: jsonHeaders });
+          return new Response(JSON.stringify({ ok: true, item: one.row }), { headers: jsonHeaders });
         }
         return new Response(JSON.stringify({ ok: false, error: 'not_found' }), { status: 404, headers: jsonHeaders });
       }
@@ -1310,6 +1367,7 @@ function getHTML(){return [
   '<div id="nutricard"></div>',
   '<div id="scencard"></div>',
   '<div id="guidecard"></div>',
+  '<div id="supportcard"></div>',
   '<div id="today-area"></div>',
   '</div>',
   '<div id="sci" class="scr">',
@@ -1363,6 +1421,10 @@ function getHTML(){return [
   '<div id="sscen" class="scr">',
   '<div class="idq-hdr"><div class="idq-prog" id="sc-prog"></div><button id="sc-skip-btn" class="idq-skip"></button></div>',
   '<div class="idq-body" id="sc-body"></div>',
+  '</div>',
+  '<div id="ssupport" class="scr">',
+  '<div class="idq-hdr"><div class="idq-prog">把我的記錄整理給管理者</div><button id="sp-skip-btn" class="idq-skip">返回</button></div>',
+  '<div class="idq-body" id="sp-body"></div>',
   '</div>',
   '<div id="sguide" class="scr">',
   '<div class="mv-hdr"><button class="back-btn" id="guide-back">&#8592; 回首頁</button><div class="mv-ttl">使用說明</div><div class="mv-sub">3 分鐘看懂怎麼用，以及每個功能怎麼串起來</div></div>',
@@ -1670,7 +1732,7 @@ function getHTML(){return [
   '    (function(idx){tag.onclick=function(){showDimInfo(idx);};})(i);',
   '    ft.appendChild(tag);',
   '  });',
-  '  (function(){var _ht=document.getElementById("htip");if(_ht){_ht.innerHTML="";var _ts=icoSpan("bulb",18);if(_ts){_ts.style.marginRight="6px";_ts.style.verticalAlign="-3px";_ht.appendChild(_ts);}_ht.appendChild(document.createTextNode(S.home_tip));}})();var _dk=["eat","move","sleep","stress","social"];var _dd=["\u5403","\u52d5","\u7761","\u58d3","\u4eba"];var _ds=["\u98f2\u98df\u578b\u614b","\u904b\u52d5\u98f2\u98df","\u7761\u7720\u98f2\u98df","\u58d3\u529b\u7ba1\u7406","\u4eba\u969b\u60c5\u5883"];for(var _i=0;_i<5;_i++){setIco("dgi"+_i,_dk[_i],38);tx("dgd"+_i,_dd[_i]);tx("dgs"+_i,_ds[_i]);}var _keys=["eat","move","sleep","stress","social"];_keys.forEach(function(k,i){var el=document.getElementById("dgc"+i);if(!el)return;el.setAttribute("tabindex","0");el.setAttribute("role","button");el.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();el.click();}};if(k==="move"){el.onclick=showMove;}else{(function(key){el.onclick=function(){showDimScreen(key);};})(k);}});renderNowCard();renderIdentityCard();renderQuestHomeCard();renderMealHomeCard();renderBAHomeCard();renderNutriHomeCard();renderScenHomeCard();renderGuideCard();renderToday();',
+  '  (function(){var _ht=document.getElementById("htip");if(_ht){_ht.innerHTML="";var _ts=icoSpan("bulb",18);if(_ts){_ts.style.marginRight="6px";_ts.style.verticalAlign="-3px";_ht.appendChild(_ts);}_ht.appendChild(document.createTextNode(S.home_tip));}})();var _dk=["eat","move","sleep","stress","social"];var _dd=["\u5403","\u52d5","\u7761","\u58d3","\u4eba"];var _ds=["\u98f2\u98df\u578b\u614b","\u904b\u52d5\u98f2\u98df","\u7761\u7720\u98f2\u98df","\u58d3\u529b\u7ba1\u7406","\u4eba\u969b\u60c5\u5883"];for(var _i=0;_i<5;_i++){setIco("dgi"+_i,_dk[_i],38);tx("dgd"+_i,_dd[_i]);tx("dgs"+_i,_ds[_i]);}var _keys=["eat","move","sleep","stress","social"];_keys.forEach(function(k,i){var el=document.getElementById("dgc"+i);if(!el)return;el.setAttribute("tabindex","0");el.setAttribute("role","button");el.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();el.click();}};if(k==="move"){el.onclick=showMove;}else{(function(key){el.onclick=function(){showDimScreen(key);};})(k);}});renderNowCard();renderIdentityCard();renderQuestHomeCard();renderMealHomeCard();renderBAHomeCard();renderNutriHomeCard();renderScenHomeCard();renderGuideCard();renderSupportCard();renderToday();',
   '}',
   'function renderToday(){',
   '  var data=ld();var area=document.getElementById("today-area");area.innerHTML="";',
@@ -4008,6 +4070,36 @@ function getHTML(){return [
   '  var tx=mkEl("div","gc-tx","使用說明 / 新手導覽");tx.appendChild(mkEl("small",null,"3 分鐘看懂每個功能，以及它們怎麼互通"));',
   '  c.appendChild(tx);c.appendChild(mkEl("div","gc-ar","›"));',
   '  c.onclick=showGuideScreen;el.appendChild(c);',
+  '}',
+  'function renderSupportCard(){var el=document.getElementById("supportcard");if(!el)return;el.innerHTML="";if(typeof SYNC_ON==="undefined"||!SYNC_ON)return;var c=mkEl("div","guidecard-cta");var ic=mkEl("div","gc-ic");var _s=icoSpan("note",26);if(_s)ic.appendChild(_s);c.appendChild(ic);var txw=mkEl("div","gc-tx","有問題想問？");txw.appendChild(mkEl("small",null,"把你的記錄整理一份，傳給管理者幫你看"));c.appendChild(txw);c.appendChild(mkEl("div","gc-ar","›"));c.onclick=showSupportScreen;el.appendChild(c);}',
+  'function showSupportScreen(){if(needLogin("詢問管理者"))return;showScreen("ssupport");renderSupport();}',
+  'function renderSupport(){',
+  '  var sk=document.getElementById("sp-skip-btn");if(sk){sk.onclick=goHome;sk.textContent="返回";}',
+  '  var b=document.getElementById("sp-body");if(!b)return;b.innerHTML="";',
+  '  var intro=mkEl("div","");intro.style.cssText="font-size:14px;color:#4a3728;line-height:1.8;";intro.textContent="有問題想詢問嗎？你可以把自己選定期間的記錄整理成一份，傳給管理者查看並回覆你。只有你按下送出的這份會被分享。";b.appendChild(intro);',
+  '  var lbl1=mkEl("div","");lbl1.style.cssText="margin-top:14px;font-size:13px;font-weight:700;color:#4a3728;";lbl1.textContent="要分享的期間（最少最近 90 天）";b.appendChild(lbl1);',
+  '  var sel=mkEl("select","");sel.id="sp-period";sel.style.cssText="width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #d8b88f;font-size:15px;box-sizing:border-box;";',
+  '  [["90","最近 90 天"],["180","最近 180 天"],["365","最近一年"],["all","全部記錄"]].forEach(function(o){var op=mkEl("option","");op.value=o[0];op.textContent=o[1];sel.appendChild(op);});b.appendChild(sel);',
+  '  var lbl2=mkEl("div","");lbl2.style.cssText="margin-top:14px;font-size:13px;font-weight:700;color:#4a3728;";lbl2.textContent="想問的問題（選填）";b.appendChild(lbl2);',
+  '  var ta=mkEl("textarea","");ta.id="sp-question";ta.rows=4;ta.style.cssText="width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;border:1px solid #d8b88f;font-size:14px;";ta.placeholder="例如：我最近壓力一來就想吃甜的，想知道可以怎麼調整？";b.appendChild(ta);',
+  '  var warn=mkEl("div","");warn.style.cssText="margin-top:10px;background:#fbf0dd;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#6b5a44;line-height:1.7;";warn.textContent="送出後，管理者會看到你所選期間的飲食記錄與這個問題，用來回覆你。請不要在問題中填入身分證、病歷等非必要的敏感資料。";b.appendChild(warn);',
+  '  var msg=mkEl("div","");msg.id="sp-msg";msg.style.cssText="margin-top:10px;font-size:13px;line-height:1.6;";b.appendChild(msg);',
+  '  var btn=mkEl("button","idq-btn");btn.textContent="整理並傳送給管理者";btn.onclick=function(){submitSupport(btn);};b.appendChild(btn);',
+  '  var home=mkEl("button","idq-btn sec");home.textContent="返回";home.onclick=goHome;b.appendChild(home);',
+  '}',
+  'function submitSupport(btn){',
+  '  var sel=document.getElementById("sp-period");var pd=sel?sel.value:"90";var msg=document.getElementById("sp-msg");',
+  '  var data=ld();var now=Date.now();var cutoff=(pd==="all")?0:(now-parseInt(pd,10)*86400000);',
+  '  var ins=(data.ins||[]).filter(function(x){return x&&typeof x.ts==="number"&&x.ts>=cutoff;});',
+  '  if(ins.length===0){if(msg){msg.style.color="#b23";msg.textContent="這個期間還沒有記錄，先在首頁做幾次飲食互動再來分享喔。";}return;}',
+  '  var quest=[];try{quest=((data.quest&&data.quest.entries)||[]).filter(function(x){var ts=x&&(x.ts||x.updated||0);return !ts||ts>=cutoff;});}catch(e){quest=[];}',
+  '  var tss=ins.map(function(x){return x.ts;}).sort(function(a,b){return a-b;});',
+  '  var payload={records:ins,identity:data.identity||null,quest:quest,periodDays:(pd==="all"?3650:parseInt(pd,10)),rangeFrom:new Date(tss[0]).toISOString(),rangeTo:new Date(tss[tss.length-1]).toISOString(),question:((document.getElementById("sp-question")||{}).value||"")};',
+  '  if(btn){btn.disabled=true;btn.textContent="傳送中…";}',
+  '  fetch("/api/support/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j};},function(){return{s:r.status,j:null};});}).then(function(res){',
+  '    if(res.s===200&&res.j&&res.j.ok){if(msg){msg.style.color="#2e7d32";msg.textContent="已送出！管理者會透過你的帳號或 LINE 與你聯繫。這次共分享了 "+ins.length+" 筆記錄。";}if(btn){btn.textContent="已送出";}}',
+  '    else{if(msg){msg.style.color="#b23";msg.textContent="送出失敗："+((res.j&&res.j.error)||("HTTP "+res.s));}if(btn){btn.disabled=false;btn.textContent="整理並傳送給管理者";}}',
+  '  }).catch(function(){if(msg){msg.style.color="#b23";msg.textContent="送出失敗，請檢查網路後再試。";}if(btn){btn.disabled=false;btn.textContent="整理並傳送給管理者";}});',
   '}',
   'function showGuideScreen(){showScreen("sguide");renderGuide();}',
   'function guideSection(body,title){var s=mkEl("div","guide-sec");s.appendChild(mkEl("div","guide-sec-t",title));body.appendChild(s);return s;}',
