@@ -637,27 +637,60 @@ export default {
         }
         if ((adminPath === '/api/admin/grant' || adminPath === '/api/admin/revoke') && request.method === 'POST') {
           const body = await parseJsonBody(request);
-          const who = body && typeof body.who === 'string' ? body.who.trim() : '';
-          if (!who) return new Response(JSON.stringify({ ok: false, error: 'missing_who' }), { status: 400, headers: jsonHeaders });
-          // who 可為 user id，或 Google sub（auth_provider_id）。users 表無 email。
-          let targetId = null;
-          const byId = await d1First(app.db.raw, 'SELECT id FROM users WHERE id = ?', [who]);
-          if (byId.ok && byId.row) targetId = byId.row.id;
-          if (!targetId) {
-            const bySub = await d1First(app.db.raw, "SELECT id FROM users WHERE auth_provider = 'google' AND auth_provider_id = ?", [who]);
-            if (bySub.ok && bySub.row) targetId = bySub.row.id;
+          const isGrant = adminPath === '/api/admin/grant';
+          // 收集對象：支援單筆 who 或批次 whoList（去空白、去重）。
+          let whoArr = [];
+          if (body && Array.isArray(body.whoList)) whoArr = body.whoList;
+          else if (body && typeof body.who === 'string') whoArr = [body.who];
+          whoArr = whoArr.map(function (x) { return typeof x === 'string' ? x.trim() : ''; }).filter(function (x) { return x.length > 0; });
+          whoArr = Array.from(new Set(whoArr));
+          if (whoArr.length === 0) return new Response(JSON.stringify({ ok: false, error: 'missing_who' }), { status: 400, headers: jsonHeaders });
+          if (whoArr.length > 500) return new Response(JSON.stringify({ ok: false, error: 'too_many', max: 500 }), { status: 400, headers: jsonHeaders });
+          // 方案預設：服務包 = 不限天數（days:null）；App 訂閱 = 365；試用 = 7。
+          // days:null → valid_until=NULL（premium 一直有效直到撤銷）。
+          const PLAN_PRESETS = {
+            trial:    { tier: 'app_trial',     days: 7 },
+            sub1200:  { tier: 'app_annual',    days: 365 },
+            svc3000:  { tier: 'service_3000',  days: null },
+            svc35000: { tier: 'service_35000', days: null },
+            svc48000: { tier: 'service_48000', days: null }
+          };
+          let planKey = 'custom';
+          let tierLabel = 'app';
+          let days = 14;
+          if (isGrant) {
+            const pk = body && typeof body.plan === 'string' ? body.plan : '';
+            if (pk && PLAN_PRESETS[pk]) {
+              planKey = pk; tierLabel = PLAN_PRESETS[pk].tier; days = PLAN_PRESETS[pk].days;
+            } else {
+              days = (body && Number(body.days) > 0) ? Number(body.days) : 14;
+              tierLabel = (body && typeof body.tier === 'string' && body.tier) ? body.tier : 'app';
+            }
           }
-          if (!targetId) return new Response(JSON.stringify({ ok: false, error: 'user_not_found' }), { status: 404, headers: jsonHeaders });
-          if (adminPath === '/api/admin/grant') {
-            const days = (body && Number(body.days) > 0) ? Number(body.days) : 14;
-            const tier = (body && typeof body.tier === 'string' && body.tier) ? body.tier : 'app';
-            const r = await grantBeta(app.db.raw, targetId, days, 'admin_ui', 'owner:' + own.userId, tier);
-            if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason || 'grant_failed' }), { status: 500, headers: jsonHeaders });
-            return new Response(JSON.stringify({ ok: true, validUntil: r.validUntil }), { headers: jsonHeaders });
+          const results = [];
+          for (let wi = 0; wi < whoArr.length; wi++) {
+            const who = whoArr[wi];
+            let targetId = null;
+            const byId = await d1First(app.db.raw, 'SELECT id FROM users WHERE id = ?', [who]);
+            if (byId.ok && byId.row) targetId = byId.row.id;
+            if (!targetId) {
+              const bySub = await d1First(app.db.raw, "SELECT id FROM users WHERE auth_provider = 'google' AND auth_provider_id = ?", [who]);
+              if (bySub.ok && bySub.row) targetId = bySub.row.id;
+            }
+            if (!targetId) { results.push({ who: who, ok: false, error: 'user_not_found' }); continue; }
+            if (isGrant) {
+              const r = await grantBeta(app.db.raw, targetId, days, 'admin_ui:' + planKey, 'owner:' + own.userId, tierLabel);
+              results.push({ who: who, ok: !!r.ok, validUntil: (r && typeof r.validUntil !== 'undefined') ? r.validUntil : null, tier: tierLabel, error: r.ok ? undefined : (r.reason || 'grant_failed') });
+            } else {
+              const r = await revoke(app.db.raw, targetId, 'owner:' + own.userId);
+              results.push({ who: who, ok: !!r.ok, error: r.ok ? undefined : (r.reason || 'revoke_failed') });
+            }
           }
-          const r = await revoke(app.db.raw, targetId, 'owner:' + own.userId);
-          if (!r.ok) return new Response(JSON.stringify({ ok: false, error: r.reason || 'revoke_failed' }), { status: 500, headers: jsonHeaders });
-          return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
+          const okCount = results.filter(function (x) { return x.ok; }).length;
+          // 相容舊單筆回傳：單筆時也帶 validUntil 於頂層。
+          const top = { ok: okCount > 0, okCount: okCount, total: results.length, results: results };
+          if (results.length === 1 && results[0].ok) top.validUntil = results[0].validUntil || null;
+          return new Response(JSON.stringify(top), { headers: jsonHeaders });
         }
         return new Response(JSON.stringify({ ok: false, error: 'not_found' }), { status: 404, headers: jsonHeaders });
       }

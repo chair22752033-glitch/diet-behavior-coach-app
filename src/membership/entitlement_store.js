@@ -73,17 +73,19 @@ export async function getEntitlement(rawDb, userId) {
  * 授予有期限的 beta premium 權益（只給明確指定的帳號；沒有公開自助升級端點）。
  * @param {object} rawDb
  * @param {string} userId - 已存在於 users 表的使用者 id
- * @param {number} days - 試用天數（例如 14）
+ * @param {number|null} days - 有效天數（例如 365）。傳入 null = 不限期（valid_until=NULL，
+ *                             premium 一直有效直到撤銷；用於真人服務包「直接開通、不論天數」）。
  * @param {string} source - 來源標記（例如 'beta_manual'）
  * @param {string} actor - 操作者（例如管理者 email），寫入稽核
- * @returns {Promise<{ok:boolean, validUntil?:string, reason?:string}>}
+ * @returns {Promise<{ok:boolean, validUntil?:string|null, reason?:string}>}
  */
 export async function grantBeta(rawDb, userId, days, source, actor, tier) {
   if (!rawDb || typeof userId !== 'string' || userId.length === 0) {
     return { ok: false, reason: 'invalid_user' };
   }
   const validFrom = nowIso();
-  const validUntil = addDaysIso(days && days > 0 ? days : 14);
+  // days === null → 不限期（valid_until = NULL）；其餘：正數天數，未給則預設 14。
+  const validUntil = (days === null) ? null : addDaysIso((typeof days === 'number' && days > 0) ? days : 14);
   const src = source || 'beta_manual';
   const tierLabel = (typeof tier === 'string' && tier.length) ? tier : 'app';
   const upsert = await run(
