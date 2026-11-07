@@ -733,6 +733,13 @@ export default {
             }
           }
           const okCount = results.filter(function (x) { return x.ok; }).length;
+          // 相容舊單筆契約：以 who 單筆呼叫時，失敗回原本的 HTTP 狀態碼
+          // （找不到使用者 -> 404），批次 whoList 則一律 200 + 逐筆 results。
+          const isBatch = !!(body && Array.isArray(body.whoList));
+          if (!isBatch && results.length === 1 && !results[0].ok) {
+            const code = results[0].error === 'user_not_found' ? 404 : 500;
+            return new Response(JSON.stringify({ ok: false, error: results[0].error }), { status: code, headers: jsonHeaders });
+          }
           // 相容舊單筆回傳：單筆時也帶 validUntil 於頂層。
           const top = { ok: okCount > 0, okCount: okCount, total: results.length, results: results };
           if (results.length === 1 && results[0].ok) top.validUntil = results[0].validUntil || null;
