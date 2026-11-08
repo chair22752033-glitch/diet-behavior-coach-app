@@ -9,9 +9,9 @@
 import { sha256Hex } from './consent_store.js';
 
 export const LEGAL_DOCS = {
-  intent:  { version: 'v0.2-draft', path: '/ui-assets/legal/index.html' },   // 意向書/服務說明
-  terms:   { version: 'v0.2-draft', path: '/ui-assets/legal/terms.html' },
-  privacy: { version: 'v0.2-draft', path: '/ui-assets/legal/privacy.html' },
+  intent:  { version: 'v0.3-draft', path: '/ui-assets/legal/index.html' },   // 意向書/服務說明
+  terms:   { version: 'v0.3-draft', path: '/ui-assets/legal/terms.html' },
+  privacy: { version: 'v0.3-draft', path: '/ui-assets/legal/privacy.html' },
 };
 
 export function isKnownDoc(docType) {
