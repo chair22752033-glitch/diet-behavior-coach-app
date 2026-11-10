@@ -12,6 +12,36 @@ import { fetchDocHash, isKnownDoc } from './legal/documents.js';
 import { putVault, getVault, setCryptoMode } from './crypto/vault_server.js';
 import { putE2eeRecord, listE2eeEnvelopes, E2EE_KINDS } from './crypto/e2ee_records_store.js';
 import { createSupportRequest, listSupportRequests, getSupportRequest, SUPPORT_MIN_PERIOD_DAYS } from './support/support_store.js';
+import { validateSession } from './auth/session.js';
+import { serializeCookie } from './auth/cookie.js';
+import { SESSION_COOKIE_NAME } from './auth/constants.js';
+
+// 滑動式登入有效期：打開 App 時（GET /auth/me）若這個 session「現在起算 90 天」比目前期限多出
+// 1 天以上，就把期限延長並重發 cookie，所以只要 90 天內開過一次就不必重新登入。
+// 安全上限：從登入那天起最多 365 天，到了就必須重新登入一次。過期或已登出的 session 不會被復活。
+// 刻意不改 src/auth、src/db：只在這裡對 sessions 表做一個 UPDATE。
+const SESSION_SLIDING_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+const SESSION_SLIDING_MIN_GAIN_MS = 24 * 60 * 60 * 1000;
+const SESSION_ABSOLUTE_MAX_MS = 365 * 24 * 60 * 60 * 1000;
+async function renewSessionIfDue(app, cookieHeader) {
+  try {
+    const v = await validateSession(app.db, cookieHeader, {});
+    if (!v.ok || !v.session) return null;
+    const now = Date.now();
+    const created = new Date(v.session.created_at).getTime();
+    let newExp = now + SESSION_SLIDING_TTL_MS;
+    if (Number.isFinite(created)) newExp = Math.min(newExp, created + SESSION_ABSOLUTE_MAX_MS);
+    const curExp = new Date(v.session.expires_at).getTime();
+    if (!(newExp - curExp >= SESSION_SLIDING_MIN_GAIN_MS)) return null;
+    const upd = await d1Run(app.db.raw,
+      'UPDATE sessions SET expires_at = ?, last_seen_at = ? WHERE id = ? AND revoked_at IS NULL',
+      [new Date(newExp).toISOString(), new Date(now).toISOString(), v.session.id]);
+    if (!upd.ok) return null;
+    return serializeCookie(SESSION_COOKIE_NAME, v.session.id, { maxAgeSeconds: Math.floor((newExp - now) / 1000) });
+  } catch (e) {
+    return null;
+  }
+}
 
 // Phase 1 TASK 1.24｜Worker Entry Integration（TASK1.25 起改由 Route Gateway 分派）
 //
@@ -162,10 +192,19 @@ export default {
 
       if ((method === 'GET' && pathname === '/auth/me') || (method === 'POST' && pathname === '/auth/logout')) {
         const cookieHeader = request.headers.get('Cookie');
-        return app.router.handle(
+        const meRes = await app.router.handle(
           { method, pathname, cookieHeader, options: {} },
           { db: app.db, env, services: app.services }
         );
+        if (method === 'GET' && meRes && meRes.status === 200) {
+          const renewedCookie = await renewSessionIfDue(app, cookieHeader);
+          if (renewedCookie) {
+            const h = new Headers(meRes.headers);
+            h.append('Set-Cookie', renewedCookie);
+            return new Response(meRes.body, { status: meRes.status, statusText: meRes.statusText, headers: h });
+          }
+        }
+        return meRes;
       }
 
       // TASK1.35：正式啟用五個資源（exploration/food-events/emotions/
